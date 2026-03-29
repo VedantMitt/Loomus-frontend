@@ -16,13 +16,24 @@ export default function Navbar() {
   const [showDropdown, setShowDropdown] = useState(false);
 
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) setUser(JSON.parse(storedUser));
-    } catch (err) {
-      console.error("Error parsing user");
-    }
+    const checkUser = () => {
+      try {
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) setUser(JSON.parse(storedUser));
+        else setUser(null);
+      } catch (err) {
+        console.error("Error parsing user");
+      }
+    };
+    
+    checkUser();
+    
+    // Custom event listener for instant auth state updates without route changes
+    window.addEventListener("auth-change", checkUser);
+    return () => window.removeEventListener("auth-change", checkUser);
+  }, [pathname]);
 
+  useEffect(() => {
     const fetchAlerts = async () => {
       try {
         const token = localStorage.getItem("token");
