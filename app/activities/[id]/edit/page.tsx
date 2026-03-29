@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { uploadSubmission } from "@/lib/uploadSubmission";
 import Link from "next/link";
 
@@ -9,8 +9,9 @@ const CATEGORIES = [
   "Party", "Music", "Tech", "Sports", "Dating", "Academic", "Cultural", "Other"
 ];
 
-export default function CreateActivityPage() {
+export default function EditActivityPage() {
   const router = useRouter();
+  const { id } = useParams<{ id: string }>();
 
   const [title, setTitle] = useState("");
   const [type, setType] = useState("Party");
@@ -19,34 +20,86 @@ export default function CreateActivityPage() {
   const [description, setDescription] = useState("");
   const [maxParticipants, setMaxParticipants] = useState<number | "">("");
   const [banner, setBanner] = useState<File | null>(null);
+  const [currentBanner, setCurrentBanner] = useState<string | null>(null);
   const [allowSubmissions, setAllowSubmissions] = useState(false);
   
   const [format, setFormat] = useState("Event");
   const [socialLinks, setSocialLinks] = useState([{ name: "", url: "" }]);
 
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createEvent = async (e: React.FormEvent) => {
+  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+  useEffect(() => {
+    async function fetchData() {
+      const token = localStorage.getItem("token");
+      if (!token) return router.push("/login");
+
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const myUserId = payload.userId || payload.id;
+
+        const res = await fetch(`${API}/activities/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (!res.ok) throw new Error("Failed to load activity");
+        const data = await res.json();
+
+        // Security check
+        if (data.host_user_id !== myUserId) {
+          router.push(`/activities/${id}`);
+          return;
+        }
+
+        setTitle(data.title || "");
+        setType(data.type || "Party");
+        // format date for datetime-local
+        if (data.date) {
+            const d = new Date(data.date);
+            const pad = (n: number) => n.toString().padStart(2, '0');
+            const formatted = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+            setDate(formatted);
+        }
+        setLocation(data.location || "");
+        setDescription(data.description || "");
+        setMaxParticipants(data.max_participants || "");
+        setCurrentBanner(data.banner);
+        setAllowSubmissions(!!data.allow_submissions);
+        setFormat(data.format || "Event");
+        
+        if (data.social_links && Array.isArray(data.social_links) && data.social_links.length > 0) {
+            setSocialLinks(data.social_links);
+        }
+
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [id, router, API]);
+
+  const updateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Custom specific error messages
     if (!title.trim()) return setError("Please enter an event title");
     if (!type.trim()) return setError("Please select a category");
-    if (!date) return setError("Please provide a valid date and time. (Make sure both are fully entered!)");
+    if (!date) return setError("Please provide a valid date and time.");
     if (!location.trim()) return setError("Please enter a location");
 
     try {
       setSubmitting(true);
       setError(null);
 
-      // Upload banner if present
-      let bannerUrl = null;
+      let bannerUrl = currentBanner;
       if (banner) {
         bannerUrl = await uploadSubmission(banner);
       }
 
-      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
       const payload = {
         title,
         type,
@@ -60,8 +113,8 @@ export default function CreateActivityPage() {
         social_links: socialLinks.filter(l => l.name.trim() && l.url.trim())
       };
 
-      const res = await fetch(`${API}/activities`, {
-        method: "POST",
+      const res = await fetch(`${API}/activities/${id}`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -71,17 +124,18 @@ export default function CreateActivityPage() {
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || "Failed to create activity");
+        throw new Error(err.error || "Failed to update activity");
       }
 
-      // Success, go to list
-      router.push("/activities");
+      router.push(`/activities/${id}`);
     } catch (err: any) {
       setError(err.message || "Server error occurred");
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (loading) return <div className="text-center mt-20 text-white">Loading...</div>;
 
   return (
     <div className="cac-container">
@@ -136,9 +190,7 @@ export default function CreateActivityPage() {
         }
         .cac-back:hover { color: #fff; }
 
-        .cac-form-group {
-          margin-bottom: 24px;
-        }
+        .cac-form-group { margin-bottom: 24px; }
 
         .cac-label {
           display: block;
@@ -181,25 +233,13 @@ export default function CreateActivityPage() {
           padding-right: 48px;
         }
         
-        .cac-select option {
-          background: #1a1a1c;
-          color: #fff;
-        }
+        .cac-select option { background: #1a1a1c; color: #fff; }
 
-        .cac-textarea {
-          resize: vertical;
-          min-height: 100px;
-        }
+        .cac-textarea { resize: vertical; min-height: 100px; }
 
-        .cac-row {
-          display: flex;
-          gap: 16px;
-        }
-        .cac-col {
-          flex: 1;
-        }
+        .cac-row { display: flex; gap: 16px; }
+        .cac-col { flex: 1; }
 
-        /* Banner Upload Area */
         .cac-upload-area {
           border: 2px dashed rgba(255, 255, 255, 0.1);
           border-radius: 16px;
@@ -211,109 +251,50 @@ export default function CreateActivityPage() {
           background: rgba(255, 255, 255, 0.02);
           overflow: hidden;
         }
-
         .cac-upload-area:hover {
           border-color: rgba(167, 139, 250, 0.4);
           background: rgba(167, 139, 250, 0.05);
         }
-
         .cac-upload-input {
-          position: absolute;
-          top: 0; left: 0; right: 0; bottom: 0;
-          opacity: 0;
-          cursor: pointer;
-          z-index: 10;
+          position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+          opacity: 0; cursor: pointer; z-index: 10;
         }
-
         .cac-upload-content {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 8px;
-          position: relative;
-          z-index: 5;
+          display: flex; flex-direction: column; align-items: center; gap: 8px;
+          position: relative; z-index: 5;
         }
-
-        .cac-upload-icon {
-          font-size: 28px;
-          color: rgba(255, 255, 255, 0.4);
-        }
-
-        .cac-upload-text {
-          font-size: 14px;
-          color: rgba(255, 255, 255, 0.6);
-          font-weight: 500;
-        }
+        .cac-upload-icon { font-size: 28px; color: rgba(255, 255, 255, 0.4); }
+        .cac-upload-text { font-size: 14px; color: rgba(255, 255, 255, 0.6); font-weight: 500; }
 
         .cac-banner-preview {
-          width: 100%;
-          height: 160px;
-          object-fit: cover;
-          border-radius: 12px;
-          margin-top: 16px;
-          box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-          border: 1px solid rgba(255,255,255,0.1);
+          width: 100%; height: 160px; object-fit: cover; border-radius: 12px;
+          margin-top: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
         }
 
-        .cac-char-count {
-          font-size: 12px;
-          color: rgba(255, 255, 255, 0.4);
-          text-align: right;
-          margin-top: 6px;
-        }
+        .cac-char-count { font-size: 12px; color: rgba(255, 255, 255, 0.4); text-align: right; margin-top: 6px; }
         
         .cac-error {
-          background: rgba(239, 68, 68, 0.1);
-          border: 1px solid rgba(239, 68, 68, 0.3);
-          color: #ef4444;
-          padding: 12px 16px;
-          border-radius: 12px;
-          font-size: 14px;
-          margin-bottom: 24px;
+          background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);
+          color: #ef4444; padding: 12px 16px; border-radius: 12px; font-size: 14px; margin-bottom: 24px;
         }
 
         .cac-submit {
-          width: 100%;
-          padding: 16px;
-          border-radius: 14px;
+          width: 100%; padding: 16px; border-radius: 14px;
           background: linear-gradient(135deg, #a78bfa 0%, #ec4899 100%);
-          color: #fff;
-          font-size: 16px;
-          font-weight: 700;
-          border: none;
-          cursor: pointer;
-          font-family: inherit;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          color: #fff; font-size: 16px; font-weight: 700; border: none; cursor: pointer;
+          font-family: inherit; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           box-shadow: 0 8px 24px rgba(167, 139, 250, 0.25);
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          gap: 10px;
+          display: flex; justify-content: center; align-items: center; gap: 10px;
         }
-
-        .cac-submit:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 12px 32px rgba(167, 139, 250, 0.35);
-        }
-        
-        .cac-submit:disabled {
-          opacity: 0.7;
-          cursor: not-allowed;
-          filter: grayscale(0.5);
-        }
+        .cac-submit:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(167, 139, 250, 0.35); }
+        .cac-submit:disabled { opacity: 0.7; cursor: not-allowed; filter: grayscale(0.5); }
         
         .cac-spinner {
-          width: 18px;
-          height: 18px;
-          border: 2px solid rgba(255,255,255,0.3);
-          border-top-color: #fff;
-          border-radius: 50%;
+          width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3);
+          border-top-color: #fff; border-radius: 50%;
           animation: cac-spin 1s linear infinite;
         }
-        
-        @keyframes cac-spin {
-          to { transform: rotate(360deg); }
-        }
+        @keyframes cac-spin { to { transform: rotate(360deg); } }
 
         @media (max-width: 640px) {
           .cac-card { padding: 24px; }
@@ -321,55 +302,29 @@ export default function CreateActivityPage() {
           .cac-row .cac-col { margin-bottom: 24px; }
         }
 
-        .cac-checkbox-wrapper {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 24px;
-          cursor: pointer;
-        }
-
-        .cac-checkbox {
-          width: 20px;
-          height: 20px;
-          accent-color: #a78bfa;
-          cursor: pointer;
-        }
+        .cac-checkbox-wrapper { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; cursor: pointer; }
+        .cac-checkbox { width: 20px; height: 20px; accent-color: #a78bfa; cursor: pointer; }
 
         .cac-format-btn {
-          flex: 1;
-          padding: 12px;
-          text-align: center;
-          border: 1px solid rgba(255,255,255,0.1);
-          background: rgba(255,255,255,0.02);
-          border-radius: 12px;
-          cursor: pointer;
-          font-weight: 600;
-          font-size: 14px;
-          color: rgba(255,255,255,0.6);
-          transition: all 0.2s;
+          flex: 1; padding: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.1);
+          background: rgba(255,255,255,0.02); border-radius: 12px; cursor: pointer;
+          font-weight: 600; font-size: 14px; color: rgba(255,255,255,0.6); transition: all 0.2s;
         }
-        .cac-format-btn:hover {
-          background: rgba(255,255,255,0.05);
-        }
-        .cac-format-btn.active {
-          background: rgba(167, 139, 250, 0.15);
-          border-color: rgba(167, 139, 250, 0.5);
-          color: #fff;
-        }
+        .cac-format-btn:hover { background: rgba(255,255,255,0.05); }
+        .cac-format-btn.active { background: rgba(167, 139, 250, 0.15); border-color: rgba(167, 139, 250, 0.5); color: #fff; }
       `}</style>
 
       <div className="cac-card">
         <div className="cac-header">
-          <h1 className="cac-title">Host Event</h1>
-          <Link href="/activities" className="cac-back">
+          <h1 className="cac-title">Edit Event</h1>
+          <Link href={`/activities/${id}`} className="cac-back">
             Cancel
           </Link>
         </div>
 
         {error && <div className="cac-error">{error}</div>}
 
-        <form onSubmit={createEvent}>
+        <form onSubmit={updateEvent}>
           <div className="cac-form-group">
             <label className="cac-label">Activity Format *</label>
             <div className="cac-row">
@@ -385,7 +340,6 @@ export default function CreateActivityPage() {
             </div>
           </div>
 
-          {/* Banner Upload */}
           <div className="cac-form-group">
             <label className="cac-label">Event Banner (Optional)</label>
             <div className="cac-upload-area">
@@ -398,56 +352,35 @@ export default function CreateActivityPage() {
               <div className="cac-upload-content">
                 <div className="cac-upload-icon">🖼️</div>
                 <div className="cac-upload-text">
-                  {banner ? banner.name : "Click or drag image to upload"}
+                  {banner ? banner.name : (currentBanner ? "Click to replace current banner" : "Click or drag image to upload")}
                 </div>
               </div>
             </div>
-            {banner && (
-              <img
-                src={URL.createObjectURL(banner)}
-                alt="Banner preview"
-                className="cac-banner-preview"
-              />
-            )}
+            {banner ? (
+              <img src={URL.createObjectURL(banner)} alt="Banner preview" className="cac-banner-preview" />
+            ) : currentBanner ? (
+              <img src={currentBanner} alt="Current banner" className="cac-banner-preview" />
+            ) : null}
           </div>
 
           <div className="cac-form-group">
             <label className="cac-label">Event Title *</label>
-            <input
-              type="text"
-              className="cac-input"
-              placeholder="e.g. Hacker House Open Mic"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
+            <input type="text" className="cac-input" placeholder="e.g. Hacker House Open Mic" value={title} onChange={(e) => setTitle(e.target.value)} />
           </div>
 
           <div className="cac-row">
             <div className="cac-col">
               <div className="cac-form-group">
                 <label className="cac-label">Category *</label>
-                <select
-                  className="cac-select"
-                  value={type}
-                  onChange={(e) => setType(e.target.value)}
-                >
-                  {CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
+                <select className="cac-select" value={type} onChange={(e) => setType(e.target.value)}>
+                  {CATEGORIES.map((cat) => ( <option key={cat} value={cat}>{cat}</option> ))}
                 </select>
               </div>
             </div>
             <div className="cac-col" style={{ marginBottom: 0 }}>
               <div className="cac-form-group">
                 <label className="cac-label">Date & Time *</label>
-                <input
-                  type="datetime-local"
-                  className="cac-input"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                />
+                <input type="datetime-local" className="cac-input" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
             </div>
           </div>
@@ -456,108 +389,44 @@ export default function CreateActivityPage() {
             <div className="cac-col">
               <div className="cac-form-group">
                 <label className="cac-label">Location *</label>
-                <input
-                  type="text"
-                  className="cac-input"
-                  placeholder="e.g. Main Auditorium / Zoom"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                />
+                <input type="text" className="cac-input" placeholder="e.g. Main Auditorium" value={location} onChange={(e) => setLocation(e.target.value)} />
               </div>
             </div>
             <div className="cac-col" style={{ marginBottom: 0 }}>
               <div className="cac-form-group">
                 <label className="cac-label">Max Participants (Optional)</label>
-                <input
-                  type="number"
-                  className="cac-input"
-                  placeholder="Unlimited"
-                  min="1"
-                  value={maxParticipants}
-                  onChange={(e) => setMaxParticipants(e.target.value ? Number(e.target.value) : "")}
-                />
+                <input type="number" className="cac-input" placeholder="Unlimited" min="1" value={maxParticipants} onChange={(e) => setMaxParticipants(e.target.value ? Number(e.target.value) : "")} />
               </div>
             </div>
           </div>
 
           <div className="cac-form-group">
             <label className="cac-label">Description</label>
-            <textarea
-              className="cac-textarea"
-              placeholder="Tell people what to expect..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value.slice(0, 500))}
-            />
-            <div className="cac-char-count">
-              {description.length} / 500
-            </div>
+            <textarea className="cac-textarea" placeholder="Tell people what to expect..." value={description} onChange={(e) => setDescription(e.target.value.slice(0, 500))} />
+            <div className="cac-char-count">{description.length} / 500</div>
           </div>
 
           <div className="cac-form-group">
             <label className="cac-label">Socials & Links</label>
             {socialLinks.map((link, i) => (
               <div key={i} className="cac-row" style={{ marginBottom: '12px' }}>
-                <input
-                  type="text"
-                  className="cac-input"
-                  placeholder="Platform (e.g., Discord)"
-                  value={link.name}
-                  onChange={(e) => {
-                    const newLinks = [...socialLinks];
-                    newLinks[i].name = e.target.value;
-                    setSocialLinks(newLinks);
-                  }}
-                  style={{ flex: 1 }}
-                />
-                <input
-                  type="text"
-                  className="cac-input"
-                  placeholder="URL (https://...)"
-                  value={link.url}
-                  onChange={(e) => {
-                    const newLinks = [...socialLinks];
-                    newLinks[i].url = e.target.value;
-                    setSocialLinks(newLinks);
-                  }}
-                  style={{ flex: 2 }}
-                />
+                <input type="text" className="cac-input" placeholder="Platform" value={link.name} onChange={(e) => { const n = [...socialLinks]; n[i].name = e.target.value; setSocialLinks(n); }} style={{ flex: 1 }} />
+                <input type="text" className="cac-input" placeholder="URL (https://...)" value={link.url} onChange={(e) => { const n = [...socialLinks]; n[i].url = e.target.value; setSocialLinks(n); }} style={{ flex: 2 }} />
+                <button type="button" className="ad-btn" style={{background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '0 16px', borderRadius: '12px'}} onClick={() => setSocialLinks(socialLinks.filter((_, idx) => idx !== i))}>X</button>
               </div>
             ))}
-            <button
-              type="button"
-              className="ad-btn ad-btn-secondary"
-              style={{ width: 'auto', padding: '8px 16px', fontSize: '13px', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', cursor: 'pointer' }}
-              onClick={() => setSocialLinks([...socialLinks, { name: "", url: "" }])}
-            >
+            <button type="button" className="ad-btn ad-btn-secondary" style={{ width: 'auto', padding: '8px 16px', fontSize: '13px', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', cursor: 'pointer' }} onClick={() => setSocialLinks([...socialLinks, { name: "", url: "" }])}>
               + Add Link
             </button>
           </div>
 
           <label className="cac-checkbox-wrapper">
-            <input
-              type="checkbox"
-              className="cac-checkbox"
-              checked={allowSubmissions}
-              onChange={(e) => setAllowSubmissions(e.target.checked)}
-            />
-            <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '15px' }}>
-              Allow Submissions & Leaderboard
-            </span>
+            <input type="checkbox" className="cac-checkbox" checked={allowSubmissions} onChange={(e) => setAllowSubmissions(e.target.checked)} />
+            <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '15px' }}>Allow Submissions & Leaderboard</span>
           </label>
 
-          <button
-            type="submit"
-            className="cac-submit"
-            disabled={submitting}
-          >
-            {submitting ? (
-              <>
-                <span className="cac-spinner" />
-                Processing...
-              </>
-            ) : (
-              "Create Event"
-            )}
+          <button type="submit" className="cac-submit" disabled={submitting}>
+            {submitting ? <><span className="cac-spinner" />Saving Changes...</> : "Update Event"}
           </button>
         </form>
       </div>

@@ -1,0 +1,480 @@
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import Cropper from "react-easy-crop";
+import type { Area } from "react-easy-crop";
+
+export default function EditProfile() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+
+  // Form fields
+  const [username, setUsername] = useState("");
+  const [bio, setBio] = useState("");
+  const [college, setCollege] = useState("");
+  const [year, setYear] = useState("");
+  const [currentStatus, setCurrentStatus] = useState("");
+  const [friendsIf, setFriendsIf] = useState("");
+  const [profilePic, setProfilePic] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  // Crop state
+  const [cropImage, setCropImage] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedArea, setCroppedArea] = useState<Area | null>(null);
+
+  // Tag arrays
+  const [interests, setInterests] = useState<string[]>([]);
+  const [vibeTags, setVibeTags] = useState<string[]>([]);
+  const [interestInput, setInterestInput] = useState("");
+  const [vibeInput, setVibeInput] = useState("");
+
+  // Load current data from API
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const stored = localStorage.getItem("user");
+        if (!stored) return;
+        const u = JSON.parse(stored);
+
+        const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        const res = await fetch(`${API}/users/${u.username}`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+
+        setUsername(data.username || "");
+        setBio(data.bio || "");
+        setCollege(data.college || "");
+        setYear(data.year || "");
+        setCurrentStatus(data.current_status || "");
+        setFriendsIf(data.friends_if || "");
+        setInterests(data.interests || []);
+        setVibeTags(data.vibe_tags || []);
+        setProfilePic(data.profile_pic || "");
+      } catch {
+        console.error("Failed to load profile");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setMessage(null);
+    try {
+      const token = localStorage.getItem("token");
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+      if (!token || !user) return;
+
+      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const res = await fetch(`${API}/users/${user.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          username: username.toLowerCase(),
+          bio,
+          college,
+          year,
+          current_status: currentStatus,
+          friends_if: friendsIf,
+          interests,
+          vibe_tags: vibeTags,
+          profile_pic: profilePic,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Update failed");
+
+      // Update localStorage
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          username: data.username,
+        })
+      );
+
+      setMessage({ type: "ok", text: "Profile saved! ✅" });
+      setTimeout(() => router.push(`/profile/${data.username}`), 1200);
+    } catch (err: any) {
+      setMessage({ type: "err", text: err.message });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addTag = (
+    val: string,
+    list: string[],
+    setList: (v: string[]) => void,
+    setInput: (v: string) => void
+  ) => {
+    const trimmed = val.trim();
+    if (trimmed && !list.includes(trimmed)) {
+      setList([...list, trimmed]);
+    }
+    setInput("");
+  };
+
+  const removeTag = (tag: string, list: string[], setList: (v: string[]) => void) => {
+    setList(list.filter((t) => t !== tag));
+  };
+
+  const onCropComplete = useCallback((_: Area, croppedPixels: Area) => {
+    setCroppedArea(croppedPixels);
+  }, []);
+
+  const getCroppedBlob = async (): Promise<Blob> => {
+    const image = new Image();
+    image.src = cropImage!;
+    await new Promise((r) => (image.onload = r));
+    const canvas = document.createElement("canvas");
+    const size = 400;
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d")!;
+    const { x, y, width, height } = croppedArea!;
+    ctx.drawImage(image, x, y, width, height, 0, 0, size, size);
+    return new Promise((resolve) => canvas.toBlob((b) => resolve(b!), "image/jpeg", 0.9));
+  };
+
+  const handleCropConfirm = async () => {
+    if (!cropImage || !croppedArea) return;
+    setUploading(true);
+    try {
+      const blob = await getCroppedBlob();
+      const token = localStorage.getItem("token");
+      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const fd = new FormData();
+      fd.append("avatar", blob, "avatar.jpg");
+      const res = await fetch(`${API}/upload/profile-pic`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setProfilePic(data.profile_pic);
+      setMessage({ type: "ok", text: "Profile picture updated!" });
+    } catch (err: any) {
+      setMessage({ type: "err", text: err.message });
+    } finally {
+      setUploading(false);
+      setCropImage(null);
+      setZoom(1);
+      setCrop({ x: 0, y: 0 });
+    }
+  };
+
+  const handleDeletePic = async () => {
+    setProfilePic("");
+    setMessage({ type: "ok", text: "Profile picture removed. Hit Save to apply." });
+  };
+
+  if (loading)
+    return (
+      <div className="h-screen flex items-center justify-center text-gray-400">
+        Loading...
+      </div>
+    );
+
+  return (
+    <div className="min-h-screen bg-black text-white px-4 py-12">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        .edit-container { max-width: 560px; margin: 0 auto; font-family: 'DM Sans', sans-serif; }
+        .edit-card { background: #111; border: 1px solid #1e1e1e; border-radius: 14px; padding: 20px 22px; margin-bottom: 16px; }
+        .edit-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: #555; margin-bottom: 8px; display: block; }
+        .edit-input {
+          width: 100%; background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 9px;
+          padding: 11px 14px; color: #f0f0f0; font-family: 'DM Sans', sans-serif; font-size: 14px;
+          outline: none; transition: border-color 0.2s;
+        }
+        .edit-input:focus { border-color: #1d4ed8; }
+        .edit-input::placeholder { color: #333; }
+        .edit-textarea { resize: vertical; min-height: 60px; }
+        .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .tag { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+        .tag-blue { background: rgba(59,130,246,0.12); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); }
+        .tag-blue:hover { background: rgba(239,68,68,0.15); color: #f87171; border-color: rgba(239,68,68,0.3); }
+        .tag-purple { background: rgba(168,85,247,0.12); color: #c084fc; border: 1px solid rgba(168,85,247,0.2); }
+        .tag-purple:hover { background: rgba(239,68,68,0.15); color: #f87171; border-color: rgba(239,68,68,0.3); }
+        .save-btn {
+          width: 100%; padding: 14px; background: #1d4ed8; color: #fff; border: none; border-radius: 10px;
+          font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer;
+          transition: background 0.2s, transform 0.1s;
+        }
+        .save-btn:hover { background: #1e40af; }
+        .save-btn:active { transform: scale(0.98); }
+        .save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .msg-ok { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); color: #4ade80; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 12px; text-align: center; }
+        .msg-err { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: #f87171; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 12px; text-align: center; }
+        .avatar-wrap { position: relative; width: 100px; height: 100px; margin: 0 auto 8px; cursor: pointer; }
+        .avatar-img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid #222; }
+        .avatar-overlay {
+          position: absolute; inset: 0; border-radius: 50%; background: rgba(0,0,0,0.55);
+          display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s;
+          font-size: 12px; color: #fff; font-weight: 500;
+        }
+        .avatar-wrap:hover .avatar-overlay { opacity: 1; }
+        .crop-modal {
+          position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.85);
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .crop-area { position: relative; width: 320px; height: 320px; border-radius: 12px; overflow: hidden; }
+        .crop-controls { margin-top: 16px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        .crop-slider { width: 260px; accent-color: #1d4ed8; }
+        .crop-btns { display: flex; gap: 10px; }
+        .crop-btn {
+          padding: 10px 28px; border-radius: 8px; border: none; font-weight: 600; font-size: 14px;
+          cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+        }
+        .crop-confirm { background: #1d4ed8; color: #fff; }
+        .crop-confirm:hover { background: #1e40af; }
+        .crop-cancel { background: #222; color: #aaa; }
+        .crop-cancel:hover { background: #333; }
+        .del-btn {
+          margin-top: 8px; background: none; border: 1px solid #333; color: #888; padding: 5px 14px;
+          border-radius: 6px; font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif;
+          transition: all 0.15s;
+        }
+        .del-btn:hover { border-color: #f87171; color: #f87171; }
+      `}</style>
+
+      {/* Crop Modal */}
+      {cropImage && (
+        <div className="crop-modal">
+          <div className="crop-area">
+            <Cropper
+              image={cropImage}
+              crop={crop}
+              zoom={zoom}
+              aspect={1}
+              cropShape="round"
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              onCropComplete={onCropComplete}
+            />
+          </div>
+          <div className="crop-controls">
+            <label style={{ color: "#888", fontSize: "12px" }}>Zoom</label>
+            <input
+              type="range"
+              className="crop-slider"
+              min={1}
+              max={3}
+              step={0.1}
+              value={zoom}
+              onChange={(e) => setZoom(Number(e.target.value))}
+            />
+            <div className="crop-btns">
+              <button className="crop-btn crop-cancel" onClick={() => { setCropImage(null); setZoom(1); }}>
+                Cancel
+              </button>
+              <button className="crop-btn crop-confirm" onClick={handleCropConfirm} disabled={uploading}>
+                {uploading ? "Uploading..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="edit-container">
+        <h1 style={{ fontSize: "24px", fontWeight: 700, marginBottom: "20px" }}>Edit Profile</h1>
+
+        {message && (
+          <div className={message.type === "ok" ? "msg-ok" : "msg-err"}>
+            {message.text}
+          </div>
+        )}
+
+        {/* Profile Picture */}
+        <div className="edit-card" style={{ textAlign: "center" }}>
+          <label className="edit-label">Profile Picture</label>
+          <div
+            className="avatar-wrap"
+            onClick={() => document.getElementById("avatar-file")?.click()}
+          >
+            <img
+              className="avatar-img"
+              src={
+                profilePic
+                  ? profilePic.startsWith("/uploads")
+                    ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}${profilePic}`
+                    : profilePic
+                  : `https://ui-avatars.com/api/?name=${username}&background=0D1117&color=fff&size=200`
+              }
+              alt="Profile"
+            />
+            <div className="avatar-overlay">{uploading ? "Uploading..." : "Change"}</div>
+          </div>
+          {profilePic && (
+            <button className="del-btn" onClick={handleDeletePic}>
+              Remove Photo
+            </button>
+          )}
+          <input
+            id="avatar-file"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onload = () => setCropImage(reader.result as string);
+              reader.readAsDataURL(file);
+              e.target.value = "";
+            }}
+          />
+        </div>
+
+        {/* Username */}
+        <div className="edit-card">
+          <label className="edit-label">Username</label>
+          <input
+            className="edit-input"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="your_username"
+          />
+        </div>
+
+        {/* College */}
+        <div className="edit-card">
+          <label className="edit-label">College</label>
+          <input
+            className="edit-input"
+            value={college}
+            onChange={(e) => setCollege(e.target.value)}
+            placeholder="e.g. NSUT"
+          />
+        </div>
+
+        {/* Graduation Year */}
+        <div className="edit-card">
+          <label className="edit-label">Graduation Year</label>
+          <select
+            className="edit-input"
+            value={year}
+            onChange={(e) => setYear(e.target.value)}
+            style={{ cursor: "pointer" }}
+          >
+            <option value="" disabled>Select year</option>
+            {[2025, 2026, 2027, 2028, 2029, 2030].map((y) => (
+              <option key={y} value={String(y)} style={{ background: "#0a0a0a" }}>{y}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Bio */}
+        <div className="edit-card">
+          <label className="edit-label">Bio</label>
+          <textarea
+            className="edit-input edit-textarea"
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            placeholder="Tell people about yourself..."
+            rows={3}
+          />
+        </div>
+
+        {/* Current Status */}
+        <div className="edit-card">
+          <label className="edit-label">📡 Current Status</label>
+          <input
+            className="edit-input"
+            value={currentStatus}
+            onChange={(e) => setCurrentStatus(e.target.value)}
+            placeholder="e.g. Building a startup 🚀"
+          />
+        </div>
+
+        {/* I'm into... (interests) */}
+        <div className="edit-card">
+          <label className="edit-label">🎯 I'm into...</label>
+          <input
+            className="edit-input"
+            value={interestInput}
+            onChange={(e) => setInterestInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addTag(interestInput, interests, setInterests, setInterestInput);
+              }
+            }}
+            placeholder="Type and press Enter (e.g. AI, Photography)"
+          />
+          <div className="tag-row">
+            {interests.map((item) => (
+              <span
+                key={item}
+                className="tag tag-blue"
+                onClick={() => removeTag(item, interests, setInterests)}
+              >
+                {item} ×
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Vibe Tags */}
+        <div className="edit-card">
+          <label className="edit-label">✨ Vibe Tags</label>
+          <input
+            className="edit-input"
+            value={vibeInput}
+            onChange={(e) => setVibeInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addTag(vibeInput, vibeTags, setVibeTags, setVibeInput);
+              }
+            }}
+            placeholder="Type and press Enter (e.g. Night Owl, Chai Lover)"
+          />
+          <div className="tag-row">
+            {vibeTags.map((tag) => (
+              <span
+                key={tag}
+                className="tag tag-purple"
+                onClick={() => removeTag(tag, vibeTags, setVibeTags)}
+              >
+                {tag} ×
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* We are friends if... */}
+        <div className="edit-card">
+          <label className="edit-label">🤝 We are friends if...</label>
+          <textarea
+            className="edit-input edit-textarea"
+            value={friendsIf}
+            onChange={(e) => setFriendsIf(e.target.value)}
+            placeholder="e.g. You also binge anime at 3am and argue about best programming language"
+            rows={3}
+          />
+        </div>
+
+        {/* Save */}
+        <button className="save-btn" onClick={handleSave} disabled={saving}>
+          {saving ? "Saving..." : "Save Changes →"}
+        </button>
+      </div>
+    </div>
+  );
+}
