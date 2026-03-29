@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { io, Socket } from "socket.io-client";
@@ -23,7 +23,7 @@ type Message = {
   created_at: string;
 };
 
-export default function ChatPage() {
+function ChatContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initConvId = searchParams.get("conversation");
@@ -715,5 +715,13 @@ export default function ChatPage() {
         </main>
       </div>
     </>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', color: '#888' }}>Loading chat...</div>}>
+      <ChatContent />
+    </Suspense>
   );
 }
