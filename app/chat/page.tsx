@@ -43,6 +43,9 @@ function ChatContent() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  // Mobile: toggle between sidebar and chat view
+  const [mobileShowChat, setMobileShowChat] = useState(false);
+
   // Parse JWT
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -151,6 +154,7 @@ function ChatContent() {
         const data = await res.json();
         await fetchConversations(data.conversation_id);
         setSearchQuery("");
+        setMobileShowChat(true);
       }
     } catch(err) { 
       console.error(err); 
@@ -528,22 +532,43 @@ function ChatContent() {
 
         @media (max-width: 768px) {
           .chat-page {
-            flex-direction: column;
-            padding: 16px;
+            padding: 0;
+            gap: 0;
+            height: calc(100vh - 70px - 72px);
           }
           .chat-sidebar {
             width: 100%;
-            height: 250px;
+            height: 100%;
+            border-radius: 0;
+            border: none;
           }
           .chat-main {
-            height: 500px;
+            width: 100%;
+            height: 100%;
+            border-radius: 0;
+            border: none;
+          }
+          .chat-sidebar.mobile-hidden {
+            display: none;
+          }
+          .chat-main.mobile-hidden {
+            display: none;
+          }
+          .mobile-back-btn {
+            display: flex !important;
+          }
+        }
+
+        @media (min-width: 769px) {
+          .mobile-back-btn {
+            display: none !important;
           }
         }
       `}</style>
       
       <div className="chat-page">
         {/* Sidebar */}
-        <aside className="chat-sidebar">
+        <aside className={`chat-sidebar ${mobileShowChat ? 'mobile-hidden' : ''}`}>
           <header className="chat-header">
             <h1>Messages</h1>
             <div style={{ marginTop: "16px", position: "relative" }}>
@@ -607,7 +632,7 @@ function ChatContent() {
                   <div 
                     key={conv.conversation_id} 
                     className={`conv-item ${activeConv?.conversation_id === conv.conversation_id ? 'active' : ''}`}
-                    onClick={() => setActiveConv(conv)}
+                    onClick={() => { setActiveConv(conv); setMobileShowChat(true); }}
                   >
                     <img src={avatarUrl} alt="" className="conv-avatar" />
                     <div className="conv-info">
@@ -622,10 +647,19 @@ function ChatContent() {
         </aside>
 
         {/* Main */}
-        <main className="chat-main">
+        <main className={`chat-main ${!mobileShowChat ? 'mobile-hidden' : ''}`}>
           {activeConv ? (
             <>
-              <header className="chat-header" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <header className="chat-header" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button
+                  className="mobile-back-btn"
+                  onClick={() => setMobileShowChat(false)}
+                  style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                </button>
                 <Link href={`/profile/${activeConv.username}`}>
                   <img 
                     src={activeConv.profile_pic 

@@ -295,6 +295,22 @@ export default function Navbar() {
         .nav-spacer {
           height: 90px;
         }
+
+        /* Mobile: hide profile pill, logout, username text */
+        @media (max-width: 767px) {
+          .nav-profile, .nav-btn { display: none !important; }
+          .nav-container { padding: 10px 16px; border-radius: 16px; }
+          .nav-wrapper { padding: 10px 12px; }
+          .nav-spacer { height: 70px; }
+          .notif-dropdown-mobile {
+            position: fixed !important;
+            top: 60px !important;
+            left: 12px !important;
+            right: 12px !important;
+            width: auto !important;
+            max-height: calc(100vh - 160px) !important;
+          }
+        }
       `}</style>
 
       <div className={`nav-wrapper ${scrolled ? "scrolled" : ""}`}>
@@ -344,7 +360,7 @@ export default function Navbar() {
                     </button>
 
                     {showDropdown && (
-                      <div style={{ position: "absolute", top: "100%", right: "-60px", marginTop: "16px", width: "340px", background: "rgba(15,15,15,0.95)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "16px", padding: "12px", boxShadow: "0 10px 40px rgba(0,0,0,0.5)", zIndex: 100, maxHeight: "400px", overflowY: "auto" }}>
+                      <div className="notif-dropdown-mobile" style={{ position: "absolute", top: "100%", right: "-60px", marginTop: "16px", width: "340px", background: "rgba(15,15,15,0.95)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "16px", padding: "12px", boxShadow: "0 10px 40px rgba(0,0,0,0.5)", zIndex: 100, maxHeight: "400px", overflowY: "auto" }}>
                         <h4 style={{ color: "#fff", margin: "0 0 12px 8px", fontSize: "15px", fontWeight: 700 }}>Activity</h4>
                         {pendingRequests.length === 0 && notifications.length === 0 ? (
                           <div style={{ padding: "20px", textAlign: "center", color: "#666", fontSize: "13px" }}>No new activity</div>
