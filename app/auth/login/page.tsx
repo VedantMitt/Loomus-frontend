@@ -1,6 +1,6 @@
-"use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { GoogleLogin } from "@react-oauth/google";
 
 type Screen = "login" | "register" | "otp" | "forgot" | "reset";
 
@@ -10,6 +10,10 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [pendingEmail, setPendingEmail] = useState("");
+
+  // Google Flow
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [profileCompletion, setProfileCompletion] = useState<{ id: string } | null>(null);
 
   // Login fields
   const [loginIdentifier, setLoginIdentifier] = useState("");
@@ -32,7 +36,58 @@ export default function AuthPage() {
 
   const API = process.env.NEXT_PUBLIC_API_URL;
 
-  // ─── LOGIN ────────────────────────────────────────
+  // ─── GOOGLE LOGIN ─────────────────────────────────
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential: credentialResponse.credential }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      if (data.needsCompletion) {
+        setProfileCompletion({ id: data.user.id });
+        setScreen("register"); // Redirect to the "Complete Profile" screen (re-using register screen)
+      } else {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        router.push(`/profile/${data.user.username}`);
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCompleteRegistration = async () => {
+    setError("");
+    if (!profileCompletion || !regUsername || !regYear) return setError("Fill in all fields");
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/auth/complete-registration`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: profileCompletion.id, username: regUsername, year: regYear }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        router.push(`/profile/${data.user.username}`);
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   const handleLogin = async () => {
     setError("");
     if (!loginIdentifier || !loginPassword) return setError("Fill in all fields");
@@ -377,6 +432,24 @@ export default function AuthPage() {
                   >
                     {loading ? "Signing in..." : "Sign In →"}
                   </button>
+
+                  <div style={{ textAlign: "center", margin: "24px 0", color: "#666", fontSize: "12px", position: "relative" }}>
+                    <span style={{ background: "#11", padding: "0 10px", position: "relative", zIndex: 1, backgroundColor: "#111" }}>OR</span>
+                    <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: "1px", background: "#333", zIndex: 0 }}></div>
+                  </div>
+
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
+                    <GoogleLogin
+                      text="signin_with"
+                      onSuccess={handleGoogleSuccess}
+                      onError={() => setError("Google Login Failed")}
+                      useOneTap={false}
+                      theme="filled_blue"
+                      shape="pill"
+                      size="large"
+                      width="100%"
+                    />
+                  </div>
                   <div className="foot">
                     <button
                       className="link"
@@ -506,72 +579,170 @@ export default function AuthPage() {
                 </>
               )}
 
-              {/* ── REGISTER ── */}
+              {/* ── REGISTER / COMPLETE PROFILE ── */}
               {screen === "register" && (
                 <>
-                  <label className="lbl">Full Name</label>
-                  <input
-                    className="inp"
-                    type="text"
-                    placeholder="Rahul Sharma"
-                    value={regName}
-                    onChange={(e) => setRegName(e.target.value)}
-                  />
-                  <label className="lbl">College Email</label>
-                  <input
-                    className="inp"
-                    type="email"
-                    placeholder="you@college.edu"
-                    value={regEmail}
-                    onChange={(e) => setRegEmail(e.target.value)}
-                  />
-                  <label className="lbl">Username</label>
-                  <input
-                    className="inp"
-                    type="text"
-                    placeholder="rahul_dev"
-                    value={regUsername}
-                    onChange={(e) => setRegUsername(e.target.value)}
-                  />
-                  <label className="lbl">Password</label>
-                  <input
-                    className="inp"
-                    type="password"
-                    placeholder="Min. 6 characters"
-                    value={regPassword}
-                    onChange={(e) => setRegPassword(e.target.value)}
-                  />
-                  <label className="lbl">Graduation Year</label>
-                  <select
-                    className="inp"
-                    value={regYear}
-                    onChange={(e) => setRegYear(e.target.value)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <option value="" disabled>Select year</option>
-                    {[2025, 2026, 2027, 2028, 2029, 2030].map((y) => (
-                      <option key={y} value={String(y)} style={{ background: "#1a1a1a" }}>{y}</option>
-                    ))}
-                  </select>
-                  <button
-                    className="btn"
-                    onClick={handleRegister}
-                    disabled={loading}
-                  >
-                    {loading ? "Sending OTP..." : "Send OTP →"}
-                  </button>
-                  <div className="foot">
-                    Already have an account?{" "}
-                    <button
-                      className="link"
-                      onClick={() => {
-                        setScreen("login");
-                        setError("");
-                      }}
-                    >
-                      Sign in
-                    </button>
+                  <div style={{ textAlign: "center", marginBottom: "20px" }}>
+                    <h3 style={{ color: "#fff", marginBottom: "8px" }}>
+                      {profileCompletion ? "Final Steps 🎓" : "Create Account"}
+                    </h3>
+                    <p style={{ color: "#666", fontSize: "13px" }}>
+                      {profileCompletion 
+                        ? "Pick your username and graduation year to finish."
+                        : "Sign in with Google below to join CampusConnect."}
+                    </p>
                   </div>
+
+                  {profileCompletion ? (
+                    <>
+                      <label className="lbl">Username</label>
+                      <input
+                        className="inp"
+                        type="text"
+                        placeholder="rahul_dev"
+                        value={regUsername}
+                        onChange={(e) => setRegUsername(e.target.value)}
+                      />
+                      <label className="lbl">Graduation Year</label>
+                      <select
+                        className="inp"
+                        value={regYear}
+                        onChange={(e) => setRegYear(e.target.value)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <option value="" disabled>Select year</option>
+                        {[2025, 2026, 2027, 2028, 2029, 2030].map((y) => (
+                          <option key={y} value={String(y)} style={{ background: "#1a1a1a" }}>{y}</option>
+                        ))}
+                      </select>
+                      <button
+                        className="btn"
+                        onClick={async () => {
+                          setError("");
+                          if (!regUsername || !regYear) return setError("Fill in all fields");
+                          setLoading(true);
+                          try {
+                            const res = await fetch(`${API}/auth/complete-registration`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ 
+                                userId: profileCompletion.id, 
+                                username: regUsername, 
+                                year: regYear 
+                              }),
+                            });
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.error);
+
+                            // The backend should return the token and user here
+                            // I'll update the backend to do this.
+                            if (data.token) {
+                              localStorage.setItem("token", data.token);
+                              localStorage.setItem("user", JSON.stringify(data.user));
+                              router.push(`/profile/${data.user.username}`);
+                            } else {
+                              setError("Registration complete. Please sign in again.");
+                              setScreen("login");
+                            }
+                          } catch (err: any) {
+                            setError(err.message);
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                        disabled={loading}
+                      >
+                        {loading ? "Finishing..." : "Start Exploring Campus →"}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
+                        <GoogleLogin
+                          text="signup_with"
+                          onSuccess={handleGoogleSuccess}
+                          onError={() => setError("Google Login Failed")}
+                          useOneTap={false}
+                          theme="filled_blue"
+                          shape="pill"
+                          size="large"
+                          width="100%"
+                        />
+                      </div>
+
+                      <div style={{ textAlign: "center", margin: "16px 0", color: "#666", fontSize: "12px", position: "relative" }}>
+                        <span style={{ background: "#111", padding: "0 10px", position: "relative", zIndex: 1 }}>OR CONTINUE WITH EMAIL</span>
+                        <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: "1px", background: "#333", zIndex: 0 }}></div>
+                      </div>
+
+                      <label className="lbl">Name</label>
+                      <input
+                        className="inp"
+                        type="text"
+                        placeholder="John Doe"
+                        value={regName}
+                        onChange={(e) => setRegName(e.target.value)}
+                      />
+                      <label className="lbl">College Email</label>
+                      <input
+                        className="inp"
+                        type="email"
+                        placeholder="you@college.edu"
+                        value={regEmail}
+                        onChange={(e) => setRegEmail(e.target.value)}
+                      />
+                      <label className="lbl">Username</label>
+                      <input
+                        className="inp"
+                        type="text"
+                        placeholder="johndoe"
+                        value={regUsername}
+                        onChange={(e) => setRegUsername(e.target.value)}
+                      />
+                      <label className="lbl">Password</label>
+                      <input
+                        className="inp"
+                        type="password"
+                        placeholder="Min. 6 characters"
+                        value={regPassword}
+                        onChange={(e) => setRegPassword(e.target.value)}
+                      />
+                      <label className="lbl">Graduation Year</label>
+                      <select
+                        className="inp"
+                        value={regYear}
+                        onChange={(e) => setRegYear(e.target.value)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <option value="" disabled>Select year</option>
+                        {[2025, 2026, 2027, 2028, 2029, 2030].map((y) => (
+                          <option key={y} value={String(y)} style={{ background: "#1a1a1a" }}>{y}</option>
+                        ))}
+                      </select>
+                      <button
+                        className="btn"
+                        onClick={handleRegister}
+                        disabled={loading}
+                      >
+                        {loading ? "Sending OTP..." : "Continue with Email →"}
+                      </button>
+                    </>
+                  )}
+
+                  {!profileCompletion && (
+                    <div className="foot" style={{ marginTop: "24px" }}>
+                      Already have an account?{" "}
+                      <button
+                        className="link"
+                        onClick={() => {
+                          setScreen("login");
+                          setError("");
+                        }}
+                      >
+                        Sign in
+                      </button>
+                    </div>
+                  )}
                 </>
               )}
             </>
