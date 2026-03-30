@@ -316,7 +316,7 @@ export default function Navbar() {
       <div className={`nav-wrapper ${scrolled ? "scrolled" : ""}`}>
         <div className="nav-container">
           <Link href="/" className="nav-logo">
-            Campus<span>Connect</span>
+            Loo<span>mus</span>
           </Link>
 
           <div className="nav-links">

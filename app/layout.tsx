@@ -5,7 +5,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
-  title: "CampusConnect",
+  title: "Loomus",
   description: "Connect with your campus community",
 };
 

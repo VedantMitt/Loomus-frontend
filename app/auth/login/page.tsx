@@ -320,7 +320,7 @@ export default function AuthPage() {
               letterSpacing: "-0.02em",
             }}
           >
-            Campus<span style={{ color: "#3b82f6" }}>Connect</span>
+            Loo<span style={{ color: "#3b82f6" }}>mus</span>
           </div>
           <p style={{ color: "#444", fontSize: "13px", marginTop: "5px" }}>
             {screen === "otp"
@@ -589,7 +589,7 @@ export default function AuthPage() {
                     <p style={{ color: "#666", fontSize: "13px" }}>
                       {profileCompletion 
                         ? "Pick your username and graduation year to finish."
-                        : "Sign in with Google below to join CampusConnect."}
+                        : "Sign in with Google below to join Loomus."}
                     </p>
                   </div>
 
