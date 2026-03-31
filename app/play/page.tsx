@@ -59,7 +59,7 @@ export default function PlayHub() {
       name: "Mafia",
       emoji: "🔫",
       tagline: "The classic social deduction game.",
-      description: "Roles, rounds, votes & deceit. Who's the mafia? Coming soon to CampusConnect.",
+      description: "Roles, rounds, votes & deceit. Who's the mafia? Coming soon to Loomus.",
       color: "#ef4444",
       shadowColor: "rgba(239, 68, 68, 0.25)",
       gradient: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)",

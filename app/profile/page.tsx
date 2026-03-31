@@ -90,7 +90,7 @@ const handleSaveProfile = async () => {
 
     if (!res.ok) throw new Error();
 
-    setMessage({ type: 'success', text: "Changes saved to CampusConnect!" });
+    setMessage({ type: 'success', text: "Changes saved to Loomus!" });
     setTimeout(() => setMessage(null), 3000);
   } catch (err) {
     setMessage({ type: 'error', text: "Failed to save. Try again." });
