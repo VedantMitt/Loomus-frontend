@@ -2,6 +2,8 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import MobileNav from "@/components/MobileNav";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { RoomProvider } from "@/context/RoomContext";
+import RoomOverlay from "@/components/RoomOverlay";
 import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
@@ -25,9 +27,12 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}>
-          <Navbar />
-          {children}
-          <MobileNav />
+          <RoomProvider>
+            <Navbar />
+            {children}
+            <RoomOverlay />
+            <MobileNav />
+          </RoomProvider>
         </GoogleOAuthProvider>
       </body>
     </html>

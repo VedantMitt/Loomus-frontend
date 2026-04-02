@@ -26,6 +26,10 @@ type Activity = {
   allow_submissions: boolean;
   format: string;
   social_links?: {name: string, url: string}[];
+  is_official?: boolean;
+  hosted_by_name?: string;
+  college_name?: string;
+  society_name?: string;
 };
 
 type Submission = {
@@ -732,7 +736,13 @@ export default function ActivityDetailPage() {
               <img src={hostPic} alt="Host" className="ad-host-pic" />
               <div className="ad-host-info">
                 <span className="ad-host-label">Hosted by</span>
-                <span className="ad-host-name">{activity.host_name}</span>
+                <span className="ad-host-name">
+                  {activity.is_official 
+                    ? (activity.society_name ? `${activity.society_name}, ${activity.college_name}` : activity.college_name)
+                    : (activity.hosted_by_name || activity.host_name)
+                  }
+                  {activity.is_official && <span title="Official Event" style={{ marginLeft: '6px' }}>🏛️</span>}
+                </span>
               </div>
             </div>
             
@@ -749,22 +759,19 @@ export default function ActivityDetailPage() {
           </div>
 
           <div className="ad-actions">
-            <button 
-              className={`ad-btn ${activity.my_rsvp === 'going' ? 'ad-btn-primary' : 'ad-btn-secondary'}`}
-              onClick={() => handleRsvp(activity.my_rsvp === 'going' ? 'not_going' : 'going')}
-            >
-              {activity.my_rsvp === 'going' ? '✓ Going' : 'Going'}
-            </button>
-            <button 
-              className={`ad-btn ${activity.my_rsvp === 'interested' ? 'ad-btn-primary' : 'ad-btn-secondary'}`}
-              onClick={() => handleRsvp(activity.my_rsvp === 'interested' ? 'not_going' : 'interested')}
-              style={activity.my_rsvp === 'interested' ? { background: '#f59e0b', color: '#fff' } : {}}
-            >
-              {activity.my_rsvp === 'interested' ? '⭐ Interested' : '☆ Interested'}
-            </button>
-            <button className="ad-btn ad-btn-secondary" onClick={() => setShowInviteModal(true)}>
-              💌 Invite Friend
-            </button>
+            {new Date(activity.date).getTime() > new Date().getTime() - 24 * 60 * 60 * 1000 && (
+              <>
+                <button 
+                  className={`ad-btn ${activity.my_rsvp === 'going' ? 'ad-btn-primary' : 'ad-btn-secondary'}`}
+                  onClick={() => handleRsvp(activity.my_rsvp === 'going' ? 'not_going' : 'going')}
+                >
+                  {activity.my_rsvp === 'going' ? 'Joined' : 'Join'}
+                </button>
+                <button className="ad-btn ad-btn-secondary" onClick={() => setShowInviteModal(true)}>
+                  💌 Invite Friend
+                </button>
+              </>
+            )}
             {activity.social_links && activity.social_links.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '4px' }}>
                 {activity.social_links.map((link, i) => (

@@ -2,19 +2,9 @@
 
 import { useEffect, useState, useRef, use } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { io, Socket } from "socket.io-client";
+import { useRoom } from "@/context/RoomContext";
 import ReactPlayer from "react-player";
-
-type Room = {
-  id: string;
-  name: string;
-  type: string;
-  host_id: string;
-  media_url: string;
-  queue?: any[];
-  roles?: Record<string, string>;
-};
+import Link from "next/link";
 
 type UserAction = {
   id: string;
@@ -26,9 +16,9 @@ type UserAction = {
 export default function ActiveRoomPage(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
   const router = useRouter();
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const { activeRoom, socket, leaveRoom, joinRoom } = useRoom();
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [room, setRoom] = useState<Room | null>(null);
+  const [room, setRoom] = useState<any>(null);
 
   const [participants, setParticipants] = useState<Map<string, UserAction>>(new Map());
   const [chatMessages, setChatMessages] = useState<any[]>([]);
@@ -39,8 +29,8 @@ export default function ActiveRoomPage(props: { params: Promise<{ id: string }> 
   const [activeTab, setActiveTab] = useState<'CHAT' | 'QUEUE' | 'PEOPLE'>('CHAT');
   const [queueInput, setQueueInput] = useState("");
 
-  // Media Sync State
-  const [playing, setPlaying] = useState(false);
+  // Media Sync State (Connected to Global Context)
+  const { playing, setPlaying, syncTime, setSyncTime } = useRoom();
   const playerRef = useRef<any>(null);
   const [isClient, setIsClient] = useState(false);
   const lastPlayed = useRef(0);
@@ -59,18 +49,16 @@ export default function ActiveRoomPage(props: { params: Promise<{ id: string }> 
     }
   }, [router]);
 
-  // 2. Fetch Room & Connect Socket
+  // 2. Fetch Room & Join via Context
   useEffect(() => {
     if (!currentUser) return;
     let isMounted = true;
-    let newSocket: Socket;
 
     const init = async () => {
       try {
         const token = localStorage.getItem("token");
         const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-        // Fetch Room Data
         const res = await fetch(`${API}/rooms/${params.id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -81,84 +69,83 @@ export default function ActiveRoomPage(props: { params: Promise<{ id: string }> 
             return router.push("/auth/login");
           }
           if (res.status === 404) return router.push("/rooms");
-          const errorMsg = await res.text().catch(() => "");
-          throw new Error(`Failed to fetch room (${res.status}): ${errorMsg}`);
+          throw new Error(`Failed to fetch room`);
         }
 
         const roomData = await res.json();
-        if (isMounted) setRoom(roomData);
-
-        // Connect Socket
-        newSocket = io(API);
-        setSocket(newSocket);
-
-        // Join Room
-        newSocket.emit("room_user_join", {
-          roomId: params.id,
-          user: { id: currentUser.id, name: currentUser.name, username: currentUser.username, profile_pic: currentUser.profile_pic }
-        });
-
-        // Listeners
-        newSocket.on("room_action", (data) => {
-          if (data.type === "JOIN") {
-            setParticipants(prev => {
-              const next = new Map(prev);
-              next.set(data.user.id, data.user);
-              return next;
-            });
-          } else if (data.type === "LEAVE") {
-            setParticipants(prev => {
-              const next = new Map(prev);
-              next.delete(data.userId);
-              return next;
-            });
-          }
-        });
-
-        newSocket.on("receive_room_message", (msg) => {
-          setChatMessages(prev => [...prev, msg]);
-        });
-
-        newSocket.on("room_update", (updatedRoom) => {
-          setRoom(updatedRoom);
-        });
-
-        // Sync Listeners
-        newSocket.on("receive_sync_play", (time) => {
-          if (playerRef.current && Math.abs(lastPlayed.current - time) > 2) {
-            isSeeking.current = true;
-            playerRef.current.currentTime = time;
-            setTimeout(() => { isSeeking.current = false; }, 1000);
-          }
-          setPlaying(true);
-        });
-
-        newSocket.on("receive_sync_pause", () => {
-          setPlaying(false);
-        });
-
-        newSocket.on("receive_sync_seek", (time) => {
-          if (playerRef.current) {
-            isSeeking.current = true;
-            playerRef.current.currentTime = time;
-            setTimeout(() => { isSeeking.current = false; }, 1000);
-          }
-        });
+        if (isMounted) {
+          setRoom(roomData);
+          joinRoom(roomData);
+        }
       } catch (err) {
         console.error(err);
       }
     };
 
     init();
+    return () => { isMounted = false; };
+  }, [currentUser, params.id, router, joinRoom]);
+
+  // 3. Socket Listeners (Using Context Socket)
+  useEffect(() => {
+    if (!socket || !currentUser) return;
+
+    socket.on("room_action", (data: any) => {
+      if (data.type === "JOIN") {
+        setParticipants(prev => {
+          const next = new Map(prev);
+          next.set(data.user.id, data.user);
+          return next;
+        });
+      } else if (data.type === "LEAVE") {
+        setParticipants(prev => {
+          const next = new Map(prev);
+          next.delete(data.userId);
+          return next;
+        });
+      }
+    });
+
+    socket.on("receive_room_message", (msg: any) => {
+      setChatMessages(prev => [...prev, msg]);
+    });
+
+    socket.on("room_update", (updatedRoom: any) => {
+      setRoom(updatedRoom);
+    });
+
+    socket.on("room_deleted", () => {
+      router.push("/rooms");
+    });
 
     return () => {
-      isMounted = false;
-      if (newSocket) {
-        newSocket.emit("room_user_leave", { roomId: params.id, userId: currentUser.id });
-        newSocket.disconnect();
-      }
+      setPlaying(false);
+      socket.off("room_action");
+      socket.off("receive_room_message");
+      socket.off("room_update");
+      socket.off("room_deleted");
     };
-  }, [currentUser, params.id, router]);
+  }, [socket, currentUser, router, setPlaying]);
+
+  // 4. Respond to Global Sync Time
+  useEffect(() => {
+    if (syncTime !== null && playerRef.current) {
+      // Small buffer to avoid constant seeking
+      if (Math.abs(lastPlayed.current - syncTime) > 2) {
+         isSeeking.current = true;
+         // ReactPlayer seekTo uses seconds
+         if (playerRef.current.seekTo) {
+           playerRef.current.seekTo(syncTime);
+         } else if (playerRef.current.currentTime !== undefined) {
+           playerRef.current.currentTime = syncTime;
+         }
+         setTimeout(() => { 
+           isSeeking.current = false; 
+           lastPlayed.current = syncTime;
+         }, 1000);
+      }
+    }
+  }, [syncTime]);
 
   // Handle Chat Scroll
   useEffect(() => {
@@ -292,6 +279,12 @@ export default function ActiveRoomPage(props: { params: Promise<{ id: string }> 
     } catch (e) { console.error(e); }
   };
 
+  const handleExitRoom = async () => {
+    if (!confirm("Are you sure you want to leave the party?")) return;
+    await leaveRoom();
+    router.push("/rooms");
+  };
+
   const handleRoleChange = async (targetUserId: string, newRole: string) => {
     const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
     const token = localStorage.getItem("token");
@@ -416,6 +409,9 @@ export default function ActiveRoomPage(props: { params: Promise<{ id: string }> 
         }
         .rp-send { background: #3b82f6; color: #fff; border:none; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
         .rp-send:hover { background: #2563eb; transform: scale(1.05); }
+
+        .finish-btn:hover { background: rgba(16,185,129,0.2) !important; transform: translateY(-1px); }
+        .finish-btn:active { transform: translateY(0); }
       `}</style>
 
       <div className="rp-container">
@@ -430,17 +426,45 @@ export default function ActiveRoomPage(props: { params: Promise<{ id: string }> 
               <div style={{ fontSize: "12px", color: "#888", marginTop: "4px", display: "flex", gap: "8px", alignItems: "center" }}>
                 <span style={{ color: isVideo ? "#ef4444" : "#10b981", fontWeight: 600 }}>{isVideo ? 'WATCH PARTY' : 'LISTEN TOGETHER'}</span>
                 • {participants.size + 1} {participants.size + 1 === 1 ? 'person' : 'people'} listening
+                {room.total_approved && room.total_approved > 0 && (
+                  <> • <span style={{ color: "#3b82f6", fontWeight: 600 }}>{room.done_count}/{room.total_approved} finished</span></>
+                )}
               </div>
             </div>
-            {room.host_id === currentUser?.id && (
+            
+            <div style={{ marginLeft: "auto", display: "flex", gap: "10px" }}>
               <button
-                onClick={deleteRoom}
-                title="Delete Room"
-                style={{ marginLeft: "auto", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444", width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.2s" }}
+                onClick={handleExitRoom}
+                className="finish-btn"
+                style={{
+                  background: "rgba(239, 68, 68, 0.1)",
+                  border: "1px solid rgba(239, 68, 68, 0.3)",
+                  color: "#ef4444",
+                  padding: "8px 16px",
+                  borderRadius: "20px",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  transition: "all 0.2s"
+                }}
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                Leave Party
               </button>
-            )}
+
+              {room.host_id === currentUser?.id && (
+                <button
+                  onClick={deleteRoom}
+                  title="Delete Room"
+                  style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444", width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.2s" }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                </button>
+              )}
+            </div>
           </header>
 
           <div className="rp-media-area">
@@ -569,7 +593,7 @@ export default function ActiveRoomPage(props: { params: Promise<{ id: string }> 
             {activeTab === 'QUEUE' && (
               <>
                 <div style={{ flex: 1, padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {(room.queue || []).map(q => (
+                  {(room.queue || []).map((q: any) => (
                     <div key={q.id} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", padding: "12px", borderRadius: "12px" }}>
                       <div style={{ fontSize: "13px", color: "#eee", marginBottom: "8px", wordBreak: "break-all" }}>
                         {q.title}

@@ -21,8 +21,11 @@ type Activity = {
   joined?: boolean;
   submission_count?: number;
   participant_previews?: { name: string; profile_pic: string }[] | null;
-  max_participants?: number;
   host_id?: string;
+  is_official?: boolean;
+  hosted_by_name?: string;
+  college_name?: string;
+  society_name?: string;
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -455,7 +458,13 @@ export default function ActivityCard({
           <div className="ac-host-row">
             <img src={hostAvatar} alt="" className="ac-host-avatar" />
             <span className="ac-host-name">
-              by <strong>{activity.host_name}</strong>
+              by <strong>
+                {activity.is_official 
+                  ? (activity.society_name ? `${activity.society_name}, ${activity.college_name}` : activity.college_name)
+                  : (activity.hosted_by_name || activity.host_name)
+                }
+              </strong>
+              {activity.is_official && <span style={{ marginLeft: '4px', fontSize: '10px' }}>🏛️</span>}
             </span>
           </div>
 
@@ -463,9 +472,6 @@ export default function ActivityCard({
           <div className="ac-rsvp-counts">
             <span className="ac-rsvp-stat">
               <strong>{activity.going_count || 0}</strong> going
-            </span>
-            <span className="ac-rsvp-stat">
-              <strong>{activity.interested_count || 0}</strong> interested
             </span>
           </div>
 
@@ -493,29 +499,29 @@ export default function ActivityCard({
 
             {/* Action buttons */}
             <div className="ac-actions">
-              <button
-                className={`ac-btn ac-btn-going ${activity.my_rsvp === "going" ? "active" : ""}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRsvp(activity.my_rsvp === "going" ? "not_going" : "going");
-                }}
-                disabled={rsvpLoading}
-              >
-                {activity.my_rsvp === "going" ? "✓ Going" : "Going"}
-              </button>
-              <button
-                className={`ac-btn ac-btn-interested ${activity.my_rsvp === "interested" ? "active" : ""}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRsvp(activity.my_rsvp === "interested" ? "not_going" : "interested");
-                }}
-                disabled={rsvpLoading}
-              >
-                {activity.my_rsvp === "interested" ? "✓ Interested" : "★"}
-              </button>
+              {timeStatus.label !== "Past" && (
+                <button
+                  className={`ac-btn ac-btn-going ${activity.my_rsvp === "going" ? "active" : ""}`}
+                  style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    background: activity.my_rsvp === "going" ? "rgba(52, 211, 153, 0.2)" : "rgba(255, 255, 255, 0.05)",
+                    color: activity.my_rsvp === "going" ? "#34d399" : "#fff",
+                    border: `1px solid ${activity.my_rsvp === "going" ? "rgba(52, 211, 153, 0.4)" : "rgba(255, 255, 255, 0.1)"}`,
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRsvp(activity.my_rsvp === "going" ? "not_going" : "going");
+                  }}
+                  disabled={rsvpLoading}
+                >
+                  {activity.my_rsvp === "going" ? "Joined" : "Join"}
+                </button>
+              )}
               <Link
                 href={`/activities/${activity.id}`}
                 className="ac-btn ac-btn-view"
+                style={timeStatus.label === "Past" ? { flex: 1, justifyContent: "center" } : {}}
                 onClick={(e) => e.stopPropagation()}
               >
                 View

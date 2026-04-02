@@ -25,9 +25,9 @@ export default function Navbar() {
         console.error("Error parsing user");
       }
     };
-    
+
     checkUser();
-    
+
     // Custom event listener for instant auth state updates without route changes
     window.addEventListener("auth-change", checkUser);
     return () => window.removeEventListener("auth-change", checkUser);
@@ -179,21 +179,21 @@ export default function Navbar() {
 
         .nav-logo {
           font-family: 'Syne', sans-serif;
-          font-size: 18px;
+          font-size: 22px;
           font-weight: 800;
-          color: #fff;
+          color: #ffffff; /* White Loom */
           text-decoration: none;
-          letter-spacing: -0.02em;
+          letter-spacing: -0.04em;
           display: flex;
           align-items: center;
-          gap: 8px;
         }
 
         .nav-logo span {
-          background: linear-gradient(135deg, #38bdf8 0%, #3b82f6 100%);
+          background: linear-gradient(135deg, #38bdf8 0%, #3b82f6 100%); /* Blue us */
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
+          margin-left: -1px; /* Ensure no gap */
         }
 
         .nav-links {
@@ -316,7 +316,7 @@ export default function Navbar() {
       <div className={`nav-wrapper ${scrolled ? "scrolled" : ""}`}>
         <div className="nav-container">
           <Link href="/" className="nav-logo">
-            Loo<span>mus</span>
+            Loom<span>us</span>
           </Link>
 
           <div className="nav-links">
@@ -387,12 +387,35 @@ export default function Navbar() {
                             {notifications.map(n => {
                               const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
                               const avatar = n.profile_pic ? (n.profile_pic.startsWith("/uploads") ? `${API}${n.profile_pic}` : n.profile_pic) : `https://ui-avatars.com/api/?name=${n.name}&background=0D1117&color=fff`;
+                              
+                              let message = "interacted with you.";
+                              let link = `/profile/${n.username}`;
+                              const meta = typeof n.metadata === 'string' ? JSON.parse(n.metadata) : n.metadata;
+
+                              if (n.type === 'friend_accepted') message = "accepted your request!";
+                              if (n.type === 'game_invite') {
+                                message = `invited you to play ${meta?.game_type === 'gtl' ? 'Guess the Lie' : 'DM Roulette'}!`;
+                                link = meta?.game_type === 'gtl' ? `/play/guess-the-lie/${meta.game_id}` : `/play/roulette/${meta.game_id}`;
+                              }
+                              if (n.type === 'room_invite') {
+                                message = "invited you to a room!";
+                                link = `/rooms/${meta?.room_id}`;
+                              }
+                              if (n.type === 'room_approved') {
+                                message = "approved your room request!";
+                                link = `/rooms/${meta?.room_id}`;
+                              }
+                              if (n.type === 'activity_invite') {
+                                message = "invited you to an activity!";
+                                link = `/activities/${meta?.activity_id}`;
+                              }
+
                               return (
                                 <div key={n.id} style={{ display: "flex", gap: "12px", alignItems: "center", padding: "10px", borderRadius: "12px", background: "rgba(255,255,255,0.02)", marginBottom: "4px" }}>
                                   <img src={avatar} alt="" style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover", border: "1px solid rgba(255,255,255,0.05)", flexShrink: 0 }} />
                                   <div style={{ flex: 1, fontSize: "13px", color: "#ccc", lineHeight: "1.4" }}>
-                                    <Link href={`/profile/${n.username}`} onClick={() => setShowDropdown(false)} style={{ color: "#fff", fontWeight: 600, textDecoration: "none" }}>{n.name}</Link>
-                                    {n.type === 'friend_accepted' ? " accepted your request!" : " interacted with you."}
+                                    <Link href={link} onClick={() => { markNotifRead(n.id); setShowDropdown(false); }} style={{ color: "#fff", fontWeight: 600, textDecoration: "none" }}>{n.name}</Link>
+                                    {" "}{message}
                                   </div>
                                   <button onClick={() => markNotifRead(n.id)} style={{ padding: "6px", background: "transparent", border: "none", color: "#555", cursor: "pointer", fontSize: "18px", transition: "color 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.color = "#fff"} onMouseLeave={(e) => e.currentTarget.style.color = "#555"}>×</button>
                                 </div>

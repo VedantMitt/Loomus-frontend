@@ -3,6 +3,9 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import ActivityCard from "@/components/ActivityCard";
+import SearchableSelector from "@/components/SearchableSelector";
+import { INDIAN_CITIES } from "@/constants/cities";
+import { INDIAN_COLLEGES } from "@/constants/colleges";
 
 type Activity = {
   id: string;
@@ -24,6 +27,9 @@ type Activity = {
   participant_previews?: { name: string; profile_pic: string }[] | null;
   max_participants?: number;
   host_id?: string;
+  mode?: string;
+  is_free?: boolean;
+  price?: number;
 };
 
 const CATEGORIES = [
@@ -38,6 +44,27 @@ const CATEGORIES = [
   { key: "other", label: "Other", icon: "✨" },
 ];
 
+const STATUS_OPTIONS = [
+  { key: "all", label: "All" },
+  { key: "upcoming", label: "Upcoming" },
+  { key: "live", label: "Live" },
+  { key: "expired", label: "Expired" },
+];
+
+const MODE_OPTIONS = [
+  { key: "all", label: "All" },
+  { key: "online", label: "Online" },
+  { key: "offline", label: "Offline" },
+];
+
+const PRICE_OPTIONS = [
+  { key: "all", label: "All" },
+  { key: "free", label: "Free" },
+  { key: "paid", label: "Paid" },
+];
+
+
+
 export default function ActivitiesPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,6 +72,12 @@ export default function ActivitiesPage() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [activeTab, setActiveTab] = useState<"all" | "my">("all");
+  const [activeStatus, setActiveStatus] = useState("all");
+  const [activeMode, setActiveMode] = useState("all");
+  const [activePrice, setActivePrice] = useState("all");
+  const [citySearch, setCitySearch] = useState("");
+  const [collegeSearch, setCollegeSearch] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
 
   const fetchActivities = useCallback(async () => {
     const token = localStorage.getItem("token");
@@ -61,6 +94,12 @@ export default function ActivitiesPage() {
       if (activeCategory !== "all") params.set("type", activeCategory);
       if (search.trim()) params.set("search", search.trim());
       if (activeTab === "my") params.set("tab", "my");
+      if (activeStatus !== "all") params.set("status", activeStatus);
+      if (activeMode !== "all") params.set("mode", activeMode);
+      if (activePrice === "free") params.set("is_free", "true");
+      if (activePrice === "paid") params.set("is_free", "false");
+      if (citySearch.trim()) params.set("city", citySearch.trim());
+      if (collegeSearch.trim()) params.set("college", collegeSearch.trim());
 
       const res = await fetch(`${API}/activities?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -75,12 +114,14 @@ export default function ActivitiesPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeCategory, activeTab, search]);
+  }, [activeCategory, activeTab, search, activeStatus, activeMode, activePrice, citySearch, collegeSearch]);
 
   useEffect(() => {
     const timeout = setTimeout(() => fetchActivities(), 300);
     return () => clearTimeout(timeout);
   }, [fetchActivities]);
+
+
 
   const handleRsvpChange = (activityId: string, data: any) => {
     setActivities((prev) =>
@@ -108,6 +149,8 @@ export default function ActivitiesPage() {
     const d = new Date(a.date);
     return d.getTime() <= now.getTime() - 24 * 60 * 60 * 1000;
   });
+
+  const hasActiveFilters = activeStatus !== "all" || activeMode !== "all" || activePrice !== "all" || citySearch.trim() !== "";
 
   return (
     <div>
@@ -210,6 +253,109 @@ export default function ActivitiesPage() {
           color: #f472b6;
         }
 
+        /* Filter Toggle Button */
+        .act-filter-toggle {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          margin: 0 auto 20px;
+          padding: 10px 20px;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 12px;
+          color: #aaa;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.25s;
+          font-family: 'DM Sans', sans-serif;
+          width: fit-content;
+        }
+        .act-filter-toggle:hover {
+          background: rgba(255,255,255,0.08);
+          color: #fff;
+        }
+        .act-filter-toggle.has-active {
+          background: rgba(244,114,182,0.1);
+          border-color: rgba(244,114,182,0.3);
+          color: #f472b6;
+        }
+
+        /* Filter Panel */
+        .act-filters-panel {
+          max-width: 700px;
+          margin: 0 auto 28px;
+          background: rgba(255,255,255,0.02);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 16px;
+          padding: 20px 24px;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 20px;
+          animation: filterSlideIn 0.3s ease;
+        }
+        @keyframes filterSlideIn {
+          from { opacity: 0; transform: translateY(-8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .act-filter-group {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          min-width: 140px;
+        }
+        .act-filter-label {
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          color: #666;
+        }
+        .act-filter-chips {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+        .act-filter-chip {
+          padding: 5px 12px;
+          border-radius: 8px;
+          font-size: 12px;
+          font-weight: 600;
+          border: 1px solid rgba(255,255,255,0.08);
+          background: rgba(255,255,255,0.03);
+          color: #888;
+          cursor: pointer;
+          transition: all 0.2s;
+          font-family: 'DM Sans', sans-serif;
+        }
+        .act-filter-chip:hover {
+          background: rgba(167,139,250,0.08);
+          border-color: rgba(167,139,250,0.2);
+          color: #a78bfa;
+        }
+        .act-filter-chip.active {
+          background: rgba(167,139,250,0.15);
+          border-color: rgba(167,139,250,0.35);
+          color: #a78bfa;
+        }
+        .act-city-input {
+          padding: 8px 12px;
+          border-radius: 8px;
+          border: 1px solid rgba(255,255,255,0.08);
+          background: rgba(255,255,255,0.03);
+          color: #eee;
+          font-size: 13px;
+          font-family: 'DM Sans', sans-serif;
+          outline: none;
+          transition: border 0.2s;
+          width: 160px;
+        }
+        .act-city-input:focus {
+          border-color: rgba(167,139,250,0.4);
+        }
+        .act-city-input::placeholder { color: #444; }
+
         /* Tab Toggle */
         .act-tabs {
           display: flex;
@@ -270,7 +416,7 @@ export default function ActivitiesPage() {
         }
 
         /* Horizontal Scroll Row */
-        .act-grid {
+        .act-grid { 
           display: flex;
           overflow-x: auto;
           gap: 20px;
@@ -279,6 +425,8 @@ export default function ActivitiesPage() {
           scroll-snap-type: x mandatory;
           -webkit-overflow-scrolling: touch;
         }
+
+
         
         .act-grid::-webkit-scrollbar {
           height: 6px;
@@ -384,12 +532,21 @@ export default function ActivitiesPage() {
           margin-bottom: 20px;
           font-weight: 500;
         }
+
+        @media (max-width: 640px) {
+          .act-filters-panel {
+            flex-direction: column;
+            gap: 16px;
+          }
+          .act-filter-group { min-width: auto; }
+          .act-city-input { width: 100%; }
+        }
       `}</style>
 
       <main className="act-page">
         {/* Hero */}
         <div className="act-hero">
-          <h1 className="act-title">Campus Activities</h1>
+          <h1 className="act-title">Activities</h1>
           <p className="act-subtitle">
             Events, competitions, and hangouts — all happening around you
           </p>
@@ -419,6 +576,80 @@ export default function ActivitiesPage() {
             </button>
           ))}
         </div>
+
+        {/* Filter Toggle */}
+        <button
+          className={`act-filter-toggle ${hasActiveFilters ? "has-active" : ""}`}
+          onClick={() => setShowFilters(!showFilters)}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="4" y1="6" x2="20" y2="6"></line>
+            <line x1="8" y1="12" x2="20" y2="12"></line>
+            <line x1="12" y1="18" x2="20" y2="18"></line>
+          </svg>
+          {showFilters ? "Hide Filters" : "Browse Filters"}
+          {hasActiveFilters && <span style={{ background: "#f472b6", color: "#fff", borderRadius: "99px", padding: "1px 6px", fontSize: "10px", fontWeight: 700 }}>ON</span>}
+        </button>
+
+        {/* Filter Panel */}
+        {showFilters && (
+          <div className="act-filters-panel">
+            <div className="act-filter-group">
+              <span className="act-filter-label">Status</span>
+              <div className="act-filter-chips">
+                {STATUS_OPTIONS.map(s => (
+                  <button key={s.key} className={`act-filter-chip ${activeStatus === s.key ? "active" : ""}`} onClick={() => setActiveStatus(s.key)}>
+                    {s.key === "live" && "🔴 "}{s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="act-filter-group">
+              <span className="act-filter-label">Mode</span>
+              <div className="act-filter-chips">
+                {MODE_OPTIONS.map(m => (
+                  <button key={m.key} className={`act-filter-chip ${activeMode === m.key ? "active" : ""}`} onClick={() => setActiveMode(m.key)}>
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="act-filter-group">
+              <span className="act-filter-label">Price</span>
+              <div className="act-filter-chips">
+                {PRICE_OPTIONS.map(p => (
+                  <button key={p.key} className={`act-filter-chip ${activePrice === p.key ? "active" : ""}`} onClick={() => setActivePrice(p.key)}>
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '16px' }}>
+              <div className="act-filter-group">
+                <span className="act-filter-label">City</span>
+                <SearchableSelector 
+                  value={citySearch} 
+                  onChange={setCitySearch} 
+                  options={INDIAN_CITIES}
+                  placeholder="All Regions"
+                  icon="📍"
+                  typeIcon="📍"
+                />
+              </div>
+              <div className="act-filter-group">
+                <span className="act-filter-label">College</span>
+                <SearchableSelector 
+                  value={collegeSearch} 
+                  onChange={setCollegeSearch} 
+                  options={INDIAN_COLLEGES}
+                  placeholder="All Colleges"
+                  icon="🏛️"
+                  typeIcon="🏛️"
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tab toggle */}
         <div className="act-tabs">
@@ -463,7 +694,7 @@ export default function ActivitiesPage() {
             <div className="act-empty-icon">🎪</div>
             <p className="act-empty-text">No activities found</p>
             <p className="act-empty-sub">
-              {search || activeCategory !== "all"
+              {search || activeCategory !== "all" || hasActiveFilters
                 ? "Try adjusting your search or filters"
                 : activeTab === "my"
                 ? "You haven't joined any events yet"

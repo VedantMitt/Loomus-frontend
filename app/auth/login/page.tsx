@@ -26,6 +26,8 @@ export default function AuthPage() {
   const [resetOtp, setResetOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
+  // Onboarding fields removed
+
   // Register fields
   const [regName, setRegName] = useState("");
   const [regEmail, setRegEmail] = useState("");
@@ -51,13 +53,21 @@ export default function AuthPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
+      if (data.emailWarning) {
+        alert(data.emailWarning);
+      }
+
       if (data.needsCompletion) {
         setProfileCompletion({ id: data.user.id });
         setScreen("register"); // Redirect to the "Complete Profile" screen (re-using register screen)
       } else {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
-        router.push(`/profile/${data.user.username}`);
+        if (data.isNewUser) {
+          router.push("/onboarding");
+        } else {
+          router.push(`/profile/${data.user.username}`);
+        }
       }
     } catch (err: any) {
       setError(err.message);
@@ -82,7 +92,7 @@ export default function AuthPage() {
       if (data.token) {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
-        router.push(`/profile/${data.user.username}`);
+        router.push("/onboarding");
       }
     } catch (err: any) {
       setError(err.message);
@@ -158,13 +168,15 @@ export default function AuthPage() {
       if (!res.ok) throw new Error(data.error);
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      router.push(`/profile/${data.user.username}`);
+      router.push("/onboarding");
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  // Onboarding functions moved to /onboarding/page.tsx
 
   return (
     <div
@@ -322,7 +334,7 @@ export default function AuthPage() {
               letterSpacing: "-0.02em",
             }}
           >
-            Loo<span style={{ color: "#3b82f6" }}>mus</span>
+            Loom<span style={{ color: "#3b82f6" }}>us</span>
           </div>
           <p style={{ color: "#444", fontSize: "13px", marginTop: "5px" }}>
             {screen === "otp"
@@ -334,7 +346,6 @@ export default function AuthPage() {
         </div>
 
         <div className="auth-card">
-          {/* ── OTP SCREEN ── */}
           {screen === "otp" ? (
             <>
               <p

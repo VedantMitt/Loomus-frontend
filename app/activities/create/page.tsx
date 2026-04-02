@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { uploadSubmission } from "@/lib/uploadSubmission";
 import Link from "next/link";
+import CitySelector from "@/components/CitySelector";
 
 const CATEGORIES = [
   "Party", "Music", "Tech", "Sports", "Dating", "Academic", "Cultural", "Other"
@@ -23,6 +24,14 @@ export default function CreateActivityPage() {
   
   const [format, setFormat] = useState("Event");
   const [socialLinks, setSocialLinks] = useState([{ name: "", url: "" }]);
+  const [mode, setMode] = useState("offline");
+  const [isFree, setIsFree] = useState(true);
+  const [price, setPrice] = useState<number | "">("");
+  const [selectedCity, setSelectedCity] = useState("");
+  const [isOfficial, setIsOfficial] = useState(false);
+  const [hostedByName, setHostedByName] = useState("");
+  const [collegeName, setCollegeName] = useState("");
+  const [societyName, setSocietyName] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +43,13 @@ export default function CreateActivityPage() {
     if (!title.trim()) return setError("Please enter an event title");
     if (!type.trim()) return setError("Please select a category");
     if (!date) return setError("Please provide a valid date and time. (Make sure both are fully entered!)");
-    if (!location.trim()) return setError("Please enter a location");
+    if (!location.trim()) return setError("Please enter a specific venue or address");
+    if ((mode === 'offline' || mode === 'hybrid') && !selectedCity) {
+      return setError("Please select a city for your event");
+    }
+    if (isOfficial && !collegeName.trim()) {
+      return setError("Please enter the college name for an official event");
+    }
 
     try {
       setSubmitting(true);
@@ -47,17 +62,28 @@ export default function CreateActivityPage() {
       }
 
       const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const finalLocation = (mode === 'offline' || mode === 'hybrid') 
+        ? (selectedCity ? `${selectedCity}: ${location}` : location)
+        : location;
+
       const payload = {
         title,
         type,
         date,
-        location,
+        location: finalLocation,
         description,
         banner: bannerUrl,
         max_participants: maxParticipants !== "" ? Number(maxParticipants) : null,
         allow_submissions: allowSubmissions,
         format,
-        social_links: socialLinks.filter(l => l.name.trim() && l.url.trim())
+        mode,
+        is_free: isFree,
+        price: isFree ? 0 : (price !== "" ? Number(price) : 0),
+        social_links: socialLinks.filter(l => l.name.trim() && l.url.trim()),
+        is_official: isOfficial,
+        hosted_by_name: isOfficial ? "" : hostedByName,
+        college_name: isOfficial ? collegeName : "",
+        society_name: isOfficial ? societyName : ""
       };
 
       const res = await fetch(`${API}/activities`, {
@@ -455,11 +481,13 @@ export default function CreateActivityPage() {
           <div className="cac-row">
             <div className="cac-col">
               <div className="cac-form-group">
-                <label className="cac-label">Location *</label>
+                <label className="cac-label">
+                  {(mode === 'offline' || mode === 'hybrid') ? "Venue / Address *" : "Location / URL *"}
+                </label>
                 <input
                   type="text"
                   className="cac-input"
-                  placeholder="e.g. Main Auditorium / Zoom"
+                  placeholder={(mode === 'offline' || mode === 'hybrid') ? "e.g. Main Auditorium" : "e.g. Zoom Link / Discord"}
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                 />
@@ -531,6 +559,116 @@ export default function CreateActivityPage() {
             >
               + Add Link
             </button>
+          </div>
+
+          {/* Mode */}
+          <div className="cac-form-group">
+            <label className="cac-label">Mode</label>
+            <div className="cac-row">
+              {['offline', 'online', 'hybrid'].map(m => (
+                <div 
+                  key={m}
+                  className={`cac-format-btn ${mode === m ? 'active' : ''}`}
+                  onClick={() => setMode(m)}
+                >
+                  {m === 'offline' ? '📍 Offline' : m === 'online' ? '💻 Online' : '🔀 Hybrid'}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Conditional City Dropdown */}
+          {(mode === 'offline' || mode === 'hybrid') && (
+            <div className="cac-form-group" style={{ animation: 'dropReveal 0.4s ease' }}>
+              <label className="cac-label">Select City *</label>
+              <CitySelector 
+                value={selectedCity} 
+                onChange={setSelectedCity} 
+                placeholder="Select city where event is happening"
+              />
+            </div>
+          )}
+
+          {/* Host Information */}
+          <div className="cac-form-group">
+            <label className="cac-label">Host Information</label>
+            <div className="cac-row" style={{ marginBottom: '16px' }}>
+              <div 
+                className={`cac-format-btn ${!isOfficial ? 'active' : ''}`}
+                style={{ flex: 1 }}
+                onClick={() => setIsOfficial(false)}
+              >
+                👤 Unofficial
+              </div>
+              <div 
+                className={`cac-format-btn ${isOfficial ? 'active' : ''}`}
+                style={{ flex: 1 }}
+                onClick={() => setIsOfficial(true)}
+              >
+                🏛️ Official
+              </div>
+            </div>
+
+            {!isOfficial ? (
+              <div style={{ animation: 'dropReveal 0.3s ease' }}>
+                <label className="cac-label" style={{ fontSize: '13px', opacity: 0.7 }}>Hosted By (Personal / Group Name)</label>
+                <input
+                  type="text"
+                  className="cac-input"
+                  placeholder="e.g. Your Name, Friends Group, etc."
+                  value={hostedByName}
+                  onChange={(e) => setHostedByName(e.target.value)}
+                />
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', animation: 'dropReveal 0.3s ease' }}>
+                <div>
+                  <label className="cac-label" style={{ fontSize: '13px', opacity: 0.7 }}>College Name *</label>
+                  <input
+                    type="text"
+                    className="cac-input"
+                    placeholder="e.g. IIT Delhi"
+                    value={collegeName}
+                    onChange={(e) => setCollegeName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="cac-label" style={{ fontSize: '13px', opacity: 0.7 }}>Society Name (Optional)</label>
+                  <input
+                    type="text"
+                    className="cac-input"
+                    placeholder="e.g. DevClub"
+                    value={societyName}
+                    onChange={(e) => setSocietyName(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Pricing */}
+          <div className="cac-form-group">
+            <label className="cac-label">Pricing</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#fff', fontSize: '14px' }}>
+                <input type="radio" name="pricing" checked={isFree} onChange={() => { setIsFree(true); setPrice(''); }} />
+                Free
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#fff', fontSize: '14px' }}>
+                <input type="radio" name="pricing" checked={!isFree} onChange={() => setIsFree(false)} />
+                Paid
+              </label>
+            </div>
+            {!isFree && (
+              <input
+                type="number"
+                className="cac-input"
+                placeholder="Price (₹)"
+                min="1"
+                value={price}
+                onChange={(e) => setPrice(e.target.value ? Number(e.target.value) : "")}
+              />
+            )}
           </div>
 
           <label className="cac-checkbox-wrapper">
