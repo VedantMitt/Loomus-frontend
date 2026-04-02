@@ -21,8 +21,6 @@ type RoomContextType = {
   activeRoom: Room | null;
   joinRoom: (room: Room) => void;
   leaveRoom: () => Promise<void>;
-  isMinimized: boolean;
-  setIsMinimized: (val: boolean) => void;
   refreshActiveRoom: () => Promise<void>;
   socket: Socket | null;
   playing: boolean;
@@ -35,7 +33,6 @@ const RoomContext = createContext<RoomContextType | undefined>(undefined);
 
 export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeRoom, setActiveRoom] = useState<Room | null>(null);
-  const [isMinimized, setIsMinimized] = useState(false);
   const [socket, setSocket] = useState<Socket | null>(null);
   
   // Global Media Sync State
@@ -92,7 +89,6 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const joinRoom = useCallback((room: Room) => {
     setActiveRoom(room);
     localStorage.setItem("loomus_active_room", JSON.stringify(room));
-    setIsMinimized(false);
     // Fetch latest room data once socket is ready
     setTimeout(refreshActiveRoom, 500); 
   }, [refreshActiveRoom]);
@@ -214,8 +210,6 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
         activeRoom, 
         joinRoom, 
         leaveRoom, 
-        isMinimized, 
-        setIsMinimized, 
         refreshActiveRoom, 
         socket,
         playing,

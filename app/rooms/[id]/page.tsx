@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, use } from "react";
 import { useRouter } from "next/navigation";
 import { useRoom } from "@/context/RoomContext";
 import ReactPlayer from "react-player";
+const Player = ReactPlayer as any;
 import Link from "next/link";
 
 type UserAction = {
@@ -130,18 +131,14 @@ export default function ActiveRoomPage(props: { params: Promise<{ id: string }> 
   // 4. Respond to Global Sync Time
   useEffect(() => {
     if (syncTime !== null && playerRef.current) {
-      // Small buffer to avoid constant seeking
-      if (Math.abs(lastPlayed.current - syncTime) > 2) {
+      const currentTime = playerRef.current.getCurrentTime ? playerRef.current.getCurrentTime() : lastPlayed.current;
+      // Small buffer (2s) to avoid constant seeking
+      if (Math.abs(currentTime - syncTime) > 2.5) {
          isSeeking.current = true;
-         // ReactPlayer seekTo uses seconds
-         if (playerRef.current.seekTo) {
-           playerRef.current.seekTo(syncTime);
-         } else if (playerRef.current.currentTime !== undefined) {
-           playerRef.current.currentTime = syncTime;
-         }
+         playerRef.current.seekTo(syncTime, 'seconds');
+         lastPlayed.current = syncTime;
          setTimeout(() => { 
            isSeeking.current = false; 
-           lastPlayed.current = syncTime;
          }, 1000);
       }
     }
@@ -197,16 +194,18 @@ export default function ActiveRoomPage(props: { params: Promise<{ id: string }> 
 
   const handleSeek = (seconds: number) => {
     if (!socket || !room) return;
+    setSyncTime(seconds); // Update local context too
     socket.emit("sync_seek", { roomId: room.id, currentTime: seconds });
   };
 
-  const handleTimeUpdate = (e: any) => {
-    const time = e?.target?.currentTime ?? 0;
+  const handleTimeUpdate = (state: any) => {
+    const time = state.playedSeconds || 0;
     if (isSeeking.current) {
       lastPlayed.current = time;
       return;
     }
-    if (Math.abs(time - lastPlayed.current) > 2) {
+    // If the user manually jumps (more than 3s difference), broadcast seek
+    if (Math.abs(time - lastPlayed.current) > 3) {
       handleSeek(time);
     }
     lastPlayed.current = time;
@@ -472,16 +471,16 @@ export default function ActiveRoomPage(props: { params: Promise<{ id: string }> 
               isVideo ? (
                 <div style={{ width: "100%", maxWidth: "900px", aspectRatio: "16/9", borderRadius: "16px", overflow: "hidden", background: "#000", boxShadow: "0 20px 50px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.05)" }}>
                   {isClient && (
-                    <ReactPlayer
+                    <Player
                       ref={playerRef}
-                      src={room.media_url}
+                      url={room.media_url}
                       width="100%"
                       height="100%"
                       playing={playing}
                       controls={canManage}
                       onPlay={handlePlay}
                       onPause={handlePause}
-                      onTimeUpdate={handleTimeUpdate}
+                      onProgress={(state: any) => handleTimeUpdate(state)}
                     />
                   )}
                 </div>
