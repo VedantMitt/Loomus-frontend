@@ -456,15 +456,15 @@ export default function ActivityCard({
           </div>
 
           <div className="ac-host-row">
-            <img src={hostAvatar} alt="" className="ac-host-avatar" />
             <span className="ac-host-name">
-              by <strong>
+              <span style={{ color: 'rgba(255,255,255,0.4)', marginRight: '4px' }}>By</span>
+              <strong>
                 {activity.is_official 
                   ? (activity.society_name ? `${activity.society_name}, ${activity.college_name}` : activity.college_name)
                   : (activity.hosted_by_name || activity.host_name)
                 }
               </strong>
-              {activity.is_official && <span style={{ marginLeft: '4px', fontSize: '10px' }}>🏛️</span>}
+              {activity.is_official && <span style={{ marginLeft: '4px', fontSize: '10px', opacity: 0.8 }}>🏛️</span>}
             </span>
           </div>
 

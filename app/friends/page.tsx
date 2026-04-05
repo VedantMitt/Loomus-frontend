@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import FriendCard from "@/components/FriendCard";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import NebulaBackground from "@/components/NebulaBackground";
+import StatusBar from "@/components/StatusBar";
 
 type Friend = {
   id: string;
@@ -11,6 +13,8 @@ type Friend = {
   username: string;
   profile_pic?: string;
   online: boolean;
+  current_status?: string;
+  status_updated_at?: string;
 };
 
 type PendingRequest = {
@@ -41,6 +45,7 @@ export default function FriendsPage() {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [requests, setRequests] = useState<PendingRequest[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   
   const [loadingFriends, setLoadingFriends] = useState(true);
   const [loadingRequests, setLoadingRequests] = useState(true);
@@ -113,7 +118,26 @@ export default function FriendsPage() {
     fetchFriends();
     fetchRequests();
     fetchNotifications();
+    
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+    }
   }, [fetchFriends, fetchRequests, fetchNotifications]);
+
+  const handleStatusUpdate = (newStatus: string) => {
+    if (currentUser) {
+      const updatedUser = { 
+        ...currentUser, 
+        current_status: newStatus,
+        status_updated_at: new Date().toISOString()
+      };
+      setCurrentUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      // Re-fetch friends to see if anyone else's status changed (though unlikely to be needed immediately)
+      fetchFriends();
+    }
+  };
 
   const acceptRequest = async (userId: string) => {
     try {
@@ -124,7 +148,6 @@ export default function FriendsPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
-        // Refresh both lists
         fetchRequests();
         fetchFriends();
         setActiveTab("friends");
@@ -150,57 +173,52 @@ export default function FriendsPage() {
     }
   };
 
-  const markNotifRead = async (id: string) => {
-    try {
-      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API}/notifications/${id}/read`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        fetchNotifications();
-      }
-    } catch (err) {
-      console.error("Error marking notification read", err);
-    }
-  };
-
   return (
-    <>
-      <style>{`
+    <div style={{ position: "relative", minHeight: "100vh", overflowX: "hidden" }}>
+      <NebulaBackground orb1="#34d399" orb2="#0ea5e9" orb3="#a855f7" orb4="#6366f1" />
+
+      <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap');
 
-        .friends-page {
+        .friends-container {
           max-width: 900px;
           margin: 0 auto;
-          padding: 40px 20px 80px;
+          padding: 60px 24px 100px;
           font-family: 'DM Sans', sans-serif;
+          position: relative;
+          z-index: 10;
         }
 
         .fp-hero {
           text-align: center;
-          margin-bottom: 40px;
+          margin-bottom: 48px;
         }
 
         .fp-title {
           font-family: 'Syne', sans-serif;
-          font-size: 38px;
+          font-size: 44px;
           font-weight: 800;
-          background: linear-gradient(135deg, #f0f0f0 0%, #34d399 50%, #0284c7 100%);
+          background: linear-gradient(135deg, #fff 0%, #34d399 50%, #0ea5e9 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
           margin: 0;
+          letter-spacing: -0.04em;
         }
 
         .fp-tabs {
           display: flex;
           justify-content: center;
-          gap: 16px;
-          margin-bottom: 32px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-          padding-bottom: 20px;
+          gap: 12px;
+          margin-bottom: 40px;
+          background: rgba(255, 255, 255, 0.04);
+          padding: 6px;
+          border-radius: 18px;
+          width: fit-content;
+          margin-left: auto;
+          margin-right: auto;
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .fp-tab {
@@ -208,255 +226,145 @@ export default function FriendsPage() {
           background: transparent;
           border: none;
           color: #888;
-          font-size: 15px;
-          font-weight: 600;
+          font-size: 14px;
+          font-weight: 700;
           cursor: pointer;
-          position: relative;
-          transition: all 0.3s ease;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
           border-radius: 12px;
         }
 
         .fp-tab:hover {
           color: #fff;
-          background: rgba(255, 255, 255, 0.03);
         }
 
         .fp-tab.active {
           color: #fff;
-          background: rgba(99, 102, 241, 0.1);
-        }
-
-        .fp-tab.active::after {
-          content: "";
-          position: absolute;
-          bottom: -21px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 40px;
-          height: 3px;
-          background: linear-gradient(90deg, #a5b4fc, #c084fc);
-          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.1);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
         .fp-badge {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
           background: #ef4444;
           color: white;
-          font-size: 11px;
-          font-weight: 700;
-          padding: 2px 8px;
-          border-radius: 999px;
+          font-size: 10px;
+          font-weight: 800;
+          padding: 2px 6px;
+          border-radius: 99px;
           margin-left: 8px;
         }
 
-        .fp-grid {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 16px;
-        }
-
-        .fp-empty {
-          text-align: center;
-          padding: 60px 20px;
-          color: #666;
-          background: rgba(255, 255, 255, 0.01);
-          border: 1px dashed rgba(255, 255, 255, 0.1);
-          border-radius: 20px;
-        }
-        
-        .fp-empty-icon { font-size: 48px; margin-bottom: 16px; }
-        .fp-empty-text { font-size: 18px; font-weight: 600; color: #eee; }
-        .fp-empty-sub { font-size: 14px; margin-top: 8px; max-width: 400px; margin-left: auto; margin-right: auto; }
-
-        .fp-discover-btn {
-          display: inline-block;
-          margin-top: 24px;
-          padding: 12px 28px;
-          background: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%);
-          color: white;
-          font-weight: 600;
-          font-size: 14px;
-          border-radius: 12px;
-          text-decoration: none;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .fp-discover-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 20px rgba(147, 51, 234, 0.3);
-        }
-
-        /* Requests specific */
         .req-card {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 20px;
+          padding: 28px;
           background: rgba(255, 255, 255, 0.03);
+          backdrop-filter: blur(20px);
           border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 16px;
+          border-radius: 28px;
+          margin-bottom: 20px;
+          transition: all 0.3s;
         }
-        
-        /* Notifications specific */
-        .notif-card {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 16px 20px;
-          background: rgba(59, 130, 246, 0.05);
-          border: 1px solid rgba(59, 130, 246, 0.15);
-          border-radius: 16px;
-          margin-bottom: 12px;
+        .req-card:hover {
+          border-color: rgba(52, 211, 153, 0.3);
+          background: rgba(255, 255, 255, 0.05);
         }
-        .notif-btn {
-          padding: 6px 16px;
-          border-radius: 10px;
-          font-size: 13px;
-          font-weight: 600;
-          cursor: pointer;
-          border: 1px solid rgba(255,255,255,0.1);
-          background: rgba(255,255,255,0.05);
-          color: #fff;
-          transition: all 0.2s;
-        }
-        .notif-btn:hover { background: rgba(255,255,255,0.1); }
-        .req-info {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-        }
+
         .req-avatar {
-          width: 56px; height: 56px;
-          border-radius: 50%;
-          border: 2px solid rgba(255,255,255,0.1);
+          width: 64px; height: 64px;
+          border-radius: 18px;
+          border: 1px solid rgba(255,255,255,0.1);
           object-fit: cover;
         }
-        .req-actions {
-          display: flex;
-          gap: 12px;
-        }
+
         .req-btn {
-          padding: 8px 20px;
-          border-radius: 10px;
-          font-size: 13px;
-          font-weight: 600;
+          padding: 12px 24px;
+          border-radius: 14px;
+          font-size: 14px;
+          font-weight: 700;
           cursor: pointer;
           border: none;
-          transition: all 0.2s ease;
+          transition: all 0.3s;
         }
         .req-btn-accept {
-          background: rgba(52, 211, 153, 0.15);
-          color: #34d399;
-          border: 1px solid rgba(52, 211, 153, 0.2);
+          background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+          color: #fff;
+          box-shadow: 0 8px 20px rgba(16, 185, 129, 0.2);
         }
-        .req-btn-accept:hover { background: rgba(52, 211, 153, 0.25); }
         .req-btn-reject {
           background: rgba(255, 255, 255, 0.05);
-          color: #ccc;
+          color: #888;
           border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .req-btn-reject:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
         
-        .req-name-link { text-decoration: none; color: inherit; }
-        .req-name-link:hover { text-decoration: underline; }
-
-        @media (max-width: 640px) {
-          .req-card { flex-direction: column; align-items: stretch; gap: 20px; }
-          .req-actions { justify-content: stretch; }
-          .req-btn { flex: 1; text-align: center; }
+        .fp-empty {
+          text-align: center;
+          padding: 100px 40px;
+          background: rgba(255,255,255,0.02);
+          border-radius: 40px;
+          border: 1px dashed rgba(255,255,255,0.1);
         }
       `}</style>
 
-      <main className="friends-page">
-        {/* Hero */}
+      <main className="friends-container">
         <div className="fp-hero">
           <h1 className="fp-title">Your Circle</h1>
         </div>
 
-        {/* Tabs */}
         <div className="fp-tabs">
-          <button
-            className={`fp-tab ${activeTab === "friends" ? "active" : ""}`}
-            onClick={() => setActiveTab("friends")}
-          >
-            My Friends
-          </button>
-          <button
-            className={`fp-tab ${activeTab === "requests" ? "active" : ""}`}
-            onClick={() => setActiveTab("requests")}
-          >
-            Friend Requests
-            {requests.length > 0 && (
-              <span className="fp-badge">{requests.length}</span>
-            )}
+          <button className={`fp-tab ${activeTab === "friends" ? "active" : ""}`} onClick={() => setActiveTab("friends")}>Friends</button>
+          <button className={`fp-tab ${activeTab === "requests" ? "active" : ""}`} onClick={() => setActiveTab("requests")}>
+            Requests {requests.length > 0 && <span className="fp-badge">{requests.length}</span>}
           </button>
         </div>
 
-        {/* Tab Content */}
         {activeTab === "friends" ? (
-          /* FRIENDS TAB */
-          loadingFriends ? (
-            <div className="fp-empty">Loading friends...</div>
-          ) : friends.length > 0 ? (
-            <div className="fp-grid">
-              {friends.map((f) => (
-                <FriendCard key={f.id} friend={f} onRemove={fetchFriends} />
-              ))}
-            </div>
-          ) : (
-            <div className="fp-empty">
-              <div className="fp-empty-icon">🤝</div>
-              <h3 className="fp-empty-text">No friends yet</h3>
-              <p className="fp-empty-sub">
-                Your circle is empty! Browse the platform and connect with classmates.
-              </p>
-              <Link href="/discover" className="fp-discover-btn">
-                Discover People
-              </Link>
-            </div>
-          )
+          <>
+            <StatusBar 
+              friends={friends} 
+              currentUser={currentUser} 
+              onStatusUpdate={handleStatusUpdate} 
+            />
+            {loadingFriends ? (
+              <div className="fp-empty">Loading circle...</div>
+            ) : friends.length > 0 ? (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20 }}>
+                {friends.map((f) => (
+                  <FriendCard key={f.id} friend={f} onRemove={fetchFriends} />
+                ))}
+              </div>
+            ) : (
+              <div className="fp-empty">
+                <div style={{ fontSize: 48, marginBottom: 20 }}>🤝</div>
+                <h2 style={{ color: "#eee", fontSize: 24, fontWeight: 800 }}>No friends yet</h2>
+                <p style={{ color: "#666", maxWidth: 400, margin: "12px auto 24px" }}>Start exploring the campus and build your dream team!</p>
+                <Link href="/discover" style={{ display: "inline-block", padding: "14px 32px", background: "#34d399", color: "#fff", borderRadius: 16, fontWeight: 800, textDecoration: "none", boxShadow: "0 10px 25px rgba(52, 211, 153, 0.25)" }}>Discover People</Link>
+              </div>
+            )}
+          </>
         ) : (
-          /* REQUESTS TAB */
           loadingRequests ? (
-            <div className="fp-empty">Loading requests...</div>
+            <div className="fp-empty">Checking incoming...</div>
           ) : requests.length > 0 ? (
-            <div className="fp-grid">
+            <div>
               {requests.map((req) => {
                 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
                 const avatar = req.profile_pic
-                  ? req.profile_pic.startsWith("/uploads")
-                    ? `${API}${req.profile_pic}`
-                    : req.profile_pic
+                  ? req.profile_pic.startsWith("/uploads") ? `${API}${req.profile_pic}` : req.profile_pic
                   : `https://ui-avatars.com/api/?name=${encodeURIComponent(req.name)}&background=0D1117&color=fff&size=200`;
 
                 return (
                   <div key={req.id} className="req-card">
-                    <div className="req-info">
-                      <Link href={`/profile/${req.username}`}>
-                        <img src={avatar} alt={req.name} className="req-avatar" />
-                      </Link>
+                    <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
+                      <Link href={`/profile/${req.username}`}><img src={avatar} className="req-avatar" alt="" /></Link>
                       <div>
-                        <div style={{ fontSize: "16px", fontWeight: 600, color: "#eee" }}>
-                          <Link href={`/profile/${req.username}`} className="req-name-link">
-                            {req.name}
-                          </Link>
-                        </div>
-                        <div style={{ fontSize: "13px", color: "#888", marginTop: "2px" }}>
-                          @{req.username} • {req.college}{req.year ? ` '${req.year.toString().slice(-2)}` : ""}
-                        </div>
-                        <div style={{ fontSize: "12px", color: "#666", marginTop: "6px" }}>
-                          Requested {new Date(req.created_at).toLocaleDateString()}
-                        </div>
+                        <Link href={`/profile/${req.username}`} style={{ textDecoration: "none", color: "#fff", fontSize: 18, fontWeight: 800 }}>{req.name}</Link>
+                        <div style={{ color: "#666", fontSize: 13, marginTop: 4 }}>@{req.username} • {req.college}</div>
                       </div>
                     </div>
-                    <div className="req-actions">
-                      <button className="req-btn req-btn-reject" onClick={() => rejectRequest(req.id)}>
-                        Ignore
-                      </button>
-                      <button className="req-btn req-btn-accept" onClick={() => acceptRequest(req.id)}>
-                        Accept
-                      </button>
+                    <div style={{ display: "flex", gap: 12 }}>
+                      <button className="req-btn req-btn-reject" onClick={() => rejectRequest(req.id)}>Ignore</button>
+                      <button className="req-btn req-btn-accept" onClick={() => acceptRequest(req.id)}>Accept</button>
                     </div>
                   </div>
                 );
@@ -464,15 +372,13 @@ export default function FriendsPage() {
             </div>
           ) : (
             <div className="fp-empty">
-              <div className="fp-empty-icon">📫</div>
-              <h3 className="fp-empty-text">No pending requests</h3>
-              <p className="fp-empty-sub">
-                You're all caught up! No incoming connection requests right now.
-              </p>
+              <div style={{ fontSize: 48, marginBottom: 20 }}>📬</div>
+              <h2 style={{ color: "#eee", fontSize: 24, fontWeight: 800 }}>Clean Inbox</h2>
+              <p style={{ color: "#666" }}>No pending requests at the moment.</p>
             </div>
           )
         )}
       </main>
-    </>
+    </div>
   );
 }

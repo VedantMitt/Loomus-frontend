@@ -1,8 +1,9 @@
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import MobileNav from "@/components/MobileNav";
-import { GoogleOAuthProvider } from "@react-oauth/google";
 import { RoomProvider } from "@/context/RoomContext";
+
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {

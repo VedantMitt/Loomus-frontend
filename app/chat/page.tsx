@@ -43,6 +43,9 @@ function ChatContent() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  // Roulette context
+  const [roulettePairs, setRoulettePairs] = useState<any[]>([]);
+
   // Mobile: toggle between sidebar and chat view
   const [mobileShowChat, setMobileShowChat] = useState(false);
 
@@ -105,8 +108,25 @@ function ChatContent() {
     }
   };
 
+  const fetchRouletteContext = async () => {
+    try {
+      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/play/roulette/my-pairs`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setRoulettePairs(await res.json());
+      }
+    } catch (err) {
+      console.error("Failed to fetch roulette context", err);
+    }
+  };
+
+
   useEffect(() => {
     fetchConversations();
+    fetchRouletteContext();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initConvId]);
 
@@ -678,6 +698,42 @@ function ChatContent() {
                 </div>
               </header>
 
+              {/* Roulette Banner */}
+              {activeConv && roulettePairs.some(p => p.user1_id === activeConv.other_user_id || p.user2_id === activeConv.other_user_id) && (
+                <div style={{
+                  background: "linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.15))",
+                  borderBottom: "1px solid rgba(245, 158, 11, 0.2)",
+                  padding: "10px 24px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  animation: "fadeIn 0.5s ease"
+                }}>
+                  <style>{`
+                    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+                  `}</style>
+                  <span style={{ fontSize: "20px" }}>🎰</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: "13px", fontWeight: 700, color: "#f59e0b" }}>DM Roulette Pairing</div>
+                    <div style={{ fontSize: "12px", color: "rgba(245, 158, 11, 0.8)", marginTop: "2px" }}>
+                      You were matched via DM Roulette! Talk for 24 hours to keep the connection alive.
+                    </div>
+                  </div>
+                  <div style={{
+                    padding: "4px 10px",
+                    background: "rgba(245, 158, 11, 0.1)",
+                    border: "1px solid rgba(245, 158, 11, 0.3)",
+                    borderRadius: "6px",
+                    fontSize: "10px",
+                    fontWeight: 800,
+                    color: "#f59e0b"
+                  }}>
+                    ACTIVE
+                  </div>
+                </div>
+              )}
+
+
               <div className="msg-list">
                 {loadingChat ? (
                   <div className="empty-state">Loading messages...</div>
@@ -707,7 +763,21 @@ function ChatContent() {
                         )}
                         <div className="msg-bubble">
                           {msg.content}
-                          <div className="msg-time">
+                          <div className="msg-time" style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "6px" }}>
+                            {(() => {
+                              if (!activeConv || !roulettePairs.length) return null;
+                              const msgTime = new Date(msg.created_at).getTime();
+                              const pair = roulettePairs.find(p => p.user1_id === activeConv.other_user_id || p.user2_id === activeConv.other_user_id);
+                              if (pair) {
+                                // Default connection is 24h. We check if msg falls in that window.
+                                const pairEnd = new Date(pair.expires_at).getTime();
+                                const pairStart = pair.created_at ? new Date(pair.created_at).getTime() : (pairEnd - 24 * 60 * 60 * 1000);
+                                if (msgTime >= pairStart && msgTime <= pairEnd) {
+                                  return <span style={{ fontSize: "9px", color: "#f59e0b", padding: "1px 4px", background: "rgba(245, 158, 11, 0.1)", borderRadius: "4px", fontWeight: 700 }}>🎰 ROULETTE</span>;
+                                }
+                              }
+                              return null;
+                            })()}
                             {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </div>
                         </div>

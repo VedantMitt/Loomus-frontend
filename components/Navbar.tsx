@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 
 export default function Navbar() {
@@ -14,17 +14,40 @@ export default function Navbar() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isInvisible, setIsInvisible] = useState(false);
 
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on click outside
   useEffect(() => {
-    const checkUser = () => {
-      try {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) setUser(JSON.parse(storedUser));
-        else setUser(null);
-      } catch (err) {
-        console.error("Error parsing user");
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
       }
     };
+    if (showDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showDropdown]);
+
+  useEffect(() => {
+     const checkUser = () => {
+       try {
+         const storedUser = localStorage.getItem("user");
+         if (storedUser) {
+           const parsed = JSON.parse(storedUser);
+           setUser(parsed);
+           setIsInvisible(!!parsed.is_invisible);
+         } else {
+           setUser(null);
+         }
+       } catch (err) {
+         console.error("Error parsing user");
+       }
+     };
 
     checkUser();
 
@@ -92,7 +115,7 @@ export default function Navbar() {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` }
       });
-      setNotifications(prev => prev.filter(n => n.id !== id));
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
     } catch (err) {
       console.error(err);
     }
@@ -141,18 +164,19 @@ export default function Navbar() {
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Syne:wght@700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
 
         .nav-wrapper {
           position: fixed;
           top: 0;
           left: 0;
           right: 0;
-          z-index: 50;
-          padding: 16px 24px;
+          z-index: 1000;
+          padding: 24px 24px;
           display: flex;
           justify-content: center;
           pointer-events: none;
-          transition: padding 0.3s ease;
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .nav-wrapper.scrolled {
@@ -165,151 +189,197 @@ export default function Navbar() {
           align-items: center;
           justify-content: space-between;
           width: 100%;
-          max-width: 1200px;
-          background: rgba(15, 15, 15, 0.65);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 24px;
-          padding: 12px 24px;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-          transition: all 0.3s ease;
-          font-family: 'DM Sans', sans-serif;
+          max-width: 1100px;
+          background: rgba(10, 10, 12, 0.35);
+          backdrop-filter: blur(32px);
+          -webkit-backdrop-filter: blur(32px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 28px;
+          padding: 10px 24px;
+          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          font-family: 'Outfit', sans-serif;
         }
 
         .nav-logo {
           font-family: 'Syne', sans-serif;
-          font-size: 22px;
+          font-size: 24px;
           font-weight: 800;
-          color: #ffffff; /* White Loom */
+          color: #fff;
           text-decoration: none;
-          letter-spacing: -0.04em;
+          letter-spacing: -0.05em;
           display: flex;
           align-items: center;
+          transition: transform 0.3s ease;
         }
+        .nav-logo:hover { transform: scale(1.05); }
 
         .nav-logo span {
-          background: linear-gradient(135deg, #38bdf8 0%, #3b82f6 100%); /* Blue us */
+          background: linear-gradient(135deg, #f472b6 0%, #c084fc 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
-          margin-left: -1px; /* Ensure no gap */
+          margin-left: 0.5px;
         }
 
         .nav-links {
           display: none;
+          align-items: center;
+          gap: 24px;
         }
         @media (min-width: 768px) {
-          .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-          }
+          .nav-links { display: flex; }
         }
 
         .nav-link {
-          color: #999;
+          color: rgba(255, 255, 255, 0.5);
           font-size: 14px;
-          font-weight: 500;
-          text-decoration: none;
-          transition: color 0.2s ease;
-          position: relative;
-        }
-
-        .nav-link:hover {
-          color: #fff;
-        }
-
-        .nav-link.active {
-          color: #fff;
           font-weight: 600;
+          text-decoration: none;
+          transition: all 0.3s ease;
+          position: relative;
+          padding: 8px 4px;
+        }
+        .nav-link:hover { color: #fff; }
+        .nav-link.active { color: #fff; }
+        
+        .nav-link::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 50%;
+          width: 0;
+          height: 2px;
+          background: linear-gradient(90deg, transparent, #f472b6, transparent);
+          transition: all 0.3s ease;
+          transform: translateX(-50%);
+          opacity: 0;
+        }
+        .nav-link:hover::after, .nav-link.active::after {
+          width: 20px;
+          opacity: 1;
         }
 
         .nav-actions {
           display: flex;
           align-items: center;
-          gap: 16px;
+          gap: 12px;
         }
 
-        .nav-btn {
-          font-size: 13px;
-          font-weight: 600;
-          color: #ccc;
-          background: transparent;
-          border: none;
-          cursor: pointer;
-          transition: color 0.2s ease;
-        }
-        .nav-btn:hover { color: #fff; }
-
-        .nav-profile {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 6px 14px 6px 6px;
-          background: rgba(255, 255, 255, 0.06);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 999px;
-          color: #fff;
-          font-size: 13px;
-          font-weight: 600;
-          text-decoration: none;
-          transition: all 0.2s ease;
-        }
-        .nav-profile:hover {
-          background: rgba(255, 255, 255, 0.1);
-          border-color: rgba(255, 255, 255, 0.15);
-        }
-
-        .nav-avatar {
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #a5b4fc 0%, #c084fc 100%);
+        .nav-action-btn {
+          width: 42px;
+          height: 42px;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 10px;
-          font-weight: 700;
-          color: #000;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 14px;
+          color: rgba(255, 255, 255, 0.6);
+          cursor: pointer;
+          transition: all 0.3s ease;
+          position: relative;
+        }
+        .nav-action-btn:hover {
+          background: rgba(255, 255, 255, 0.1);
+          border-color: rgba(255, 255, 255, 0.2);
+          color: #fff;
+          transform: translateY(-2px);
         }
 
-        .nav-notification-dot {
+        .nav-profile-pill {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 6px 14px 6px 6px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          border-radius: 999px;
+          color: #fff;
+          font-size: 13px;
+          font-weight: 700;
+          text-decoration: none;
+          transition: all 0.3s ease;
+        }
+        .nav-profile-pill:hover {
+          background: rgba(255, 255, 255, 0.1);
+          border-color: rgba(255, 255, 255, 0.2);
+          transform: translateX(4px);
+        }
+
+        .nav-avatar-circle {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #f472b6 0%, #c084fc 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          font-weight: 800;
+          color: #fff;
+          box-shadow: 0 4px 10px rgba(244, 114, 182, 0.3);
+        }
+
+        .nav-logout-btn {
+          padding: 8px 16px;
+          border-radius: 14px;
+          font-size: 12px;
+          font-weight: 700;
+          color: rgba(255, 100, 100, 0.7);
+          background: rgba(255, 100, 100, 0.05);
+          border: 1px solid rgba(255, 100, 100, 0.15);
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        .nav-logout-btn:hover {
+          background: rgba(255, 100, 100, 0.15);
+          border-color: rgba(255, 100, 100, 0.3);
+          color: #ff6b6b;
+        }
+
+        .notif-dot {
           position: absolute;
-          top: -4px;
-          right: -10px;
+          top: 8px;
+          right: 8px;
           width: 8px;
           height: 8px;
-          background-color: #ef4444;
+          background: #f472b6;
           border-radius: 50%;
-          box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
-          animation: pulse-dot 2s infinite;
+          box-shadow: 0 0 10px #f472b6;
+          border: 2px solid #000;
         }
 
-        @keyframes pulse-dot {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.6; transform: scale(1.1); }
+        .notif-panel {
+          position: absolute;
+          top: 100%;
+          right: 0;
+          margin-top: 16px;
+          width: 340px;
+          background: #121216;
+          backdrop-filter: blur(40px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 20px;
+          padding: 16px;
+          box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+          z-index: 1000;
+          max-height: 400px;
+          overflow-y: auto;
+          animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        /* Spacer to prevent content from hiding behind fixed nav */
-        .nav-spacer {
-          height: 90px;
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Mobile: hide profile pill, logout, username text */
+        .nav-spacer { height: 100px; }
+
         @media (max-width: 767px) {
-          .nav-profile, .nav-btn { display: none !important; }
-          .nav-container { padding: 10px 16px; border-radius: 16px; }
-          .nav-wrapper { padding: 10px 12px; }
-          .nav-spacer { height: 70px; }
-          .notif-dropdown-mobile {
-            position: fixed !important;
-            top: 60px !important;
-            left: 12px !important;
-            right: 12px !important;
-            width: auto !important;
-            max-height: calc(100vh - 160px) !important;
-          }
+          .nav-wrapper { padding: 12px; }
+          .nav-container { border-radius: 20px; padding: 8px 16px; }
+          .nav-profile-pill, .nav-logout-btn, .nav-action-btn-text { display: none !important; }
+          .notif-panel { position: fixed; top: 80px; left: 12px; right: 12px; width: auto; }
         }
       `}</style>
 
@@ -318,7 +388,7 @@ export default function Navbar() {
           <Link href="/" className="nav-logo">
             Loom<span>us</span>
           </Link>
-
+ 
           <div className="nav-links">
             {navLinks.map((link) => (
               <Link
@@ -328,124 +398,199 @@ export default function Navbar() {
               >
                 {link.name}
                 {link.name === "Friends" && hasPendingRequests && (
-                  <div className="nav-notification-dot" />
+                  <div className="notif-dot" style={{ top: 0, right: 0 }} />
                 )}
               </Link>
             ))}
           </div>
-
+ 
           <div className="nav-actions">
             {user ? (
               <>
-                <div style={{ display: "flex", alignItems: "center", gap: "20px", marginRight: "12px" }}>
-                  <Link href="/chat" style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", opacity: 0.8, transition: "opacity 0.2s", color: "#ccc" }} onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.color = "#fff"; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.8"; e.currentTarget.style.color = "#ccc"; }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="22" y1="2" x2="11" y2="13"></line>
-                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                    </svg>
-                    {hasUnreadDMs && (
-                      <div className="nav-notification-dot" style={{ top: "-2px", right: "-4px" }} />
-                    )}
-                  </Link>
-
-                  <div style={{ position: "relative" }}>
-                    <button onClick={() => setShowDropdown(!showDropdown)} style={{ background: "transparent", border: "none", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", cursor: "pointer", opacity: 0.8, transition: "opacity 0.2s", color: "#ccc" }} onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.color = "#fff"; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.8"; e.currentTarget.style.color = "#ccc"; }}>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-                        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-                      </svg>
-                      {notifications.length > 0 && (
-                        <div className="nav-notification-dot" style={{ top: "-2px", right: "-4px" }} />
-                      )}
-                    </button>
-
-                    {showDropdown && (
-                      <div className="notif-dropdown-mobile" style={{ position: "absolute", top: "100%", right: "-60px", marginTop: "16px", width: "340px", background: "rgba(15,15,15,0.95)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "16px", padding: "12px", boxShadow: "0 10px 40px rgba(0,0,0,0.5)", zIndex: 100, maxHeight: "400px", overflowY: "auto" }}>
-                        <h4 style={{ color: "#fff", margin: "0 0 12px 8px", fontSize: "15px", fontWeight: 700 }}>Activity</h4>
-                        {pendingRequests.length === 0 && notifications.length === 0 ? (
-                          <div style={{ padding: "20px", textAlign: "center", color: "#666", fontSize: "13px" }}>No new activity</div>
-                        ) : (
-                          <>
-                            {pendingRequests.map(req => {
-                              const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-                              const avatar = req.profile_pic ? (req.profile_pic.startsWith("/uploads") ? `${API}${req.profile_pic}` : req.profile_pic) : `https://ui-avatars.com/api/?name=${req.name}&background=0D1117&color=fff`;
-                              return (
-                                <div key={req.id} style={{ display: "flex", gap: "12px", alignItems: "center", padding: "10px", borderRadius: "12px", background: "rgba(59, 130, 246, 0.05)", marginBottom: "8px", border: "1px solid rgba(59, 130, 246, 0.15)" }}>
-                                  <img src={avatar} alt="" style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover", border: "1px solid rgba(255,255,255,0.1)", flexShrink: 0 }} />
-                                  <div style={{ flex: 1, fontSize: "13px", color: "#ccc", lineHeight: "1.3" }}>
-                                    <Link href={`/profile/${req.username}`} onClick={() => setShowDropdown(false)} style={{ color: "#fff", fontWeight: 600, textDecoration: "none" }}>{req.name}</Link>
-                                    <div style={{ fontSize: "12px", color: "#888", marginTop: "2px" }}>Requests to follow you</div>
-                                  </div>
-                                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                                    <button onClick={(e) => handleAcceptRequest(req.id, e)} style={{ padding: "5px 10px", background: "#3b82f6", color: "#fff", border: "none", borderRadius: "6px", fontSize: "11px", fontWeight: 600, cursor: "pointer", transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = "#2563eb"} onMouseLeave={(e) => e.currentTarget.style.background = "#3b82f6"}>Accept</button>
-                                    <button onClick={(e) => handleRejectRequest(req.id, e)} style={{ padding: "5px 10px", background: "rgba(255,255,255,0.08)", color: "#ccc", border: "none", borderRadius: "6px", fontSize: "11px", fontWeight: 600, cursor: "pointer", transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.15)"} onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}>Ignore</button>
-                                  </div>
-                                </div>
-                              );
-                            })}
-
-                            {notifications.map(n => {
-                              const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-                              const avatar = n.profile_pic ? (n.profile_pic.startsWith("/uploads") ? `${API}${n.profile_pic}` : n.profile_pic) : `https://ui-avatars.com/api/?name=${n.name}&background=0D1117&color=fff`;
-                              
-                              let message = "interacted with you.";
-                              let link = `/profile/${n.username}`;
-                              const meta = typeof n.metadata === 'string' ? JSON.parse(n.metadata) : n.metadata;
-
-                              if (n.type === 'friend_accepted') message = "accepted your request!";
-                              if (n.type === 'game_invite') {
-                                message = `invited you to play ${meta?.game_type === 'gtl' ? 'Guess the Lie' : 'DM Roulette'}!`;
-                                link = meta?.game_type === 'gtl' ? `/play/guess-the-lie/${meta.game_id}` : `/play/roulette/${meta.game_id}`;
-                              }
-                              if (n.type === 'room_invite') {
-                                message = "invited you to a room!";
-                                link = `/rooms/${meta?.room_id}`;
-                              }
-                              if (n.type === 'room_approved') {
-                                message = "approved your room request!";
-                                link = `/rooms/${meta?.room_id}`;
-                              }
-                              if (n.type === 'activity_invite') {
-                                message = "invited you to an activity!";
-                                link = `/activities/${meta?.activity_id}`;
-                              }
-
-                              return (
-                                <div key={n.id} style={{ display: "flex", gap: "12px", alignItems: "center", padding: "10px", borderRadius: "12px", background: "rgba(255,255,255,0.02)", marginBottom: "4px" }}>
-                                  <img src={avatar} alt="" style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover", border: "1px solid rgba(255,255,255,0.05)", flexShrink: 0 }} />
-                                  <div style={{ flex: 1, fontSize: "13px", color: "#ccc", lineHeight: "1.4" }}>
-                                    <Link href={link} onClick={() => { markNotifRead(n.id); setShowDropdown(false); }} style={{ color: "#fff", fontWeight: 600, textDecoration: "none" }}>{n.name}</Link>
-                                    {" "}{message}
-                                  </div>
-                                  <button onClick={() => markNotifRead(n.id)} style={{ padding: "6px", background: "transparent", border: "none", color: "#555", cursor: "pointer", fontSize: "18px", transition: "color 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.color = "#fff"} onMouseLeave={(e) => e.currentTarget.style.color = "#555"}>×</button>
-                                </div>
-                              );
-                            })}
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <Link href={`/profile/${user.username}`} className="nav-profile">
-                  <div className="nav-avatar">
-                    {user.name?.charAt(0).toUpperCase() || "U"}
-                  </div>
-                  {user.username}
+                <Link href="/chat" className="nav-action-btn">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                  </svg>
+                  {hasUnreadDMs && <div className="notif-dot" />}
                 </Link>
-                <button onClick={handleLogout} className="nav-btn">
-                  Logout
-                </button>
+ 
+                <div style={{ position: "relative" }} ref={dropdownRef}>
+                  <button className="nav-action-btn" onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDropdown(!showDropdown);
+                  }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                    </svg>
+                    {notifications.some(n => !n.is_read) && <div className="notif-dot" />}
+                  </button>
+ 
+                  {showDropdown && (
+                    <div className="notif-panel">
+                      <h4 style={{ color: "#fff", margin: "0 0 16px", fontSize: "16px", fontWeight: 800 }}>Activity</h4>
+                      {pendingRequests.length === 0 && notifications.length === 0 ? (
+                        <div style={{ padding: "32px", textAlign: "center", color: "#666", fontSize: "14px" }}>No new activity</div>
+                      ) : (
+                        <>
+                          {pendingRequests.map(req => {
+                            const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+                            const avatar = req.profile_pic ? (req.profile_pic.startsWith("/uploads") ? `${API}${req.profile_pic}` : req.profile_pic) : `https://ui-avatars.com/api/?name=${req.name}&background=0D1117&color=fff`;
+                            return (
+                              <div key={req.id} style={{ display: "flex", gap: "12px", alignItems: "center", padding: "12px", borderRadius: "16px", background: "rgba(59, 130, 246, 0.08)", marginBottom: "12px", border: "1px solid rgba(59, 130, 246, 0.2)" }}>
+                                <img src={avatar} alt="" style={{ width: "42px", height: "42px", borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(255,255,255,0.1)" }} />
+                                <div style={{ flex: 1, fontSize: "13px", color: "#ccc", lineHeight: "1.3" }}>
+                                  <Link href={`/profile/${req.username}`} onClick={() => setShowDropdown(false)} style={{ color: "#fff", fontWeight: 700, textDecoration: "none" }}>{req.name}</Link>
+                                  <div style={{ fontSize: "12px", color: "#888", marginTop: "2px" }}>Friend request</div>
+                                </div>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                  <button onClick={(e) => handleAcceptRequest(req.id, e)} style={{ padding: "6px 12px", background: "#f472b6", color: "#fff", border: "none", borderRadius: "8px", fontSize: "11px", fontWeight: 800, cursor: "pointer" }}>Accept</button>
+                                  <button onClick={(e) => handleRejectRequest(req.id, e)} style={{ padding: "6px 12px", background: "rgba(255,255,255,0.08)", color: "#ccc", border: "none", borderRadius: "8px", fontSize: "11px", fontWeight: 800, cursor: "pointer" }}>Ignore</button>
+                                </div>
+                              </div>
+                            );
+                          })}
+ 
+                          {notifications.map(n => {
+                            const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+                            const avatar = n.profile_pic ? (n.profile_pic.startsWith("/uploads") ? `${API}${n.profile_pic}` : n.profile_pic) : `https://ui-avatars.com/api/?name=${n.name}&background=0D1117&color=fff`;
+                            
+                            let message = "interacted with you.";
+                            let link = `/profile/${n.username}`;
+                            const meta = typeof n.metadata === 'string' ? JSON.parse(n.metadata) : n.metadata;
+ 
+                            if (n.type === 'friend_accepted') message = "accepted your request!";
+                            if (n.type === 'game_invite') {
+                              const gName = meta?.game_name || (meta?.game_type === 'gtl' ? 'Guess the Lie' : 'DM Roulette');
+                              message = `invited you to play ${gName}!`;
+                              link = meta?.game_type === 'gtl' 
+                                ? `/play/guess-the-lie?game=${meta.game_id}` 
+                                : `/play/roulette?pool=${meta.game_id}`;
+                            }
+                            if (n.type === 'room_invite') {
+                              message = "invited you to a room!";
+                              link = `/rooms/${meta?.room_id}`;
+                            }
+                            if (n.type === 'room_approved') {
+                              message = "approved your room request!";
+                              link = `/rooms/${meta?.room_id}`;
+                            }
+                            if (n.type === 'activity_invite') {
+                              message = "invited you to an activity!";
+                              link = `/activities/${meta?.activity_id}`;
+                            }
+                            if (n.type === 'activity_announcement') {
+                              message = `posted an announcement in ${meta?.title || 'an activity'}!`;
+                              link = `/activities/${meta?.activity_id}?tab=announcements`;
+                            }
+ 
+                             return (
+                               <div key={n.id} style={{ display: "flex", gap: "12px", alignItems: "center", padding: "12px", borderRadius: "16px", background: n.is_read ? "rgba(255,255,255,0.02)" : (n.type === 'game_invite' ? "rgba(6, 182, 212, 0.08)" : (n.type === 'room_invite' ? "rgba(6, 182, 212, 0.08)" : "rgba(244, 114, 182, 0.08)")), marginBottom: "4px", border: n.is_read ? "1px solid rgba(255,255,255,0.05)" : (['game_invite', 'room_invite'].includes(n.type) ? "1px solid rgba(6, 182, 212, 0.2)" : "1px solid rgba(244, 114, 182, 0.2)"), opacity: n.is_read ? 0.6 : 1, transition: 'all 0.3s ease' }}>
+                                 <img src={avatar} alt="" style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover", border: "1px solid rgba(255,255,255,0.1)" }} />
+                                 <div style={{ flex: 1, fontSize: "13px", color: "#ccc", lineHeight: "1.4" }}>
+                                   <Link href={link} onClick={() => { markNotifRead(n.id); setShowDropdown(false); }} style={{ color: "inherit", textDecoration: "none" }}>
+                                      <span style={{ color: "#fff", fontWeight: 700 }}>{n.name}</span>
+                                      {" "}{message}
+                                      {(n.type === 'game_invite' || n.type === 'room_invite') && meta?.title && (
+                                        <div style={{ fontSize: "11px", color: "#666", marginTop: "2px" }}>{n.type === 'game_invite' ? 'Party' : 'Room'}: {meta.title}</div>
+                                      )}
+                                   </Link>
+                                 </div>
+                                 {(n.type === 'game_invite' || n.type === 'room_invite') && !n.is_read ? (
+                                   <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                                      <button 
+                                        onClick={() => { window.location.href = link; markNotifRead(n.id); setShowDropdown(false); }} 
+                                        style={{ padding: "5px 10px", background: n.type === 'game_invite' ? "#f472b6" : "#06b6d4", color: "#fff", border: "none", borderRadius: "8px", fontSize: "10px", fontWeight: 800, cursor: "pointer" }}
+                                      >
+                                        Join
+                                      </button>
+                                      <button 
+                                        onClick={(e) => { e.stopPropagation(); markNotifRead(n.id); }} 
+                                        style={{ padding: "5px 10px", background: "rgba(255,255,255,0.08)", color: "#ccc", border: "none", borderRadius: "8px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}
+                                      >
+                                        Ignore
+                                      </button>
+                                   </div>
+                                 ) : (
+                                   !n.is_read && (
+                                     <button onClick={() => markNotifRead(n.id)} style={{ padding: "6px", background: "transparent", border: "none", color: "#666", cursor: "pointer", fontSize: "18px" }}>×</button>
+                                   )
+                                 )}
+                               </div>
+                             );
+                          })}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+ 
+                 <Link href={`/profile/${user.username}`} className="nav-profile-pill">
+                   <div className="nav-avatar-circle" style={{ background: isInvisible ? "#333" : "linear-gradient(135deg, #f472b6 0%, #c084fc 100%)", boxShadow: isInvisible ? "none" : "0 4px 10px rgba(244, 114, 182, 0.3)" }}>
+                     {user.name?.charAt(0).toUpperCase() || "U"}
+                   </div>
+                   <span className="nav-action-btn-text" style={{ color: isInvisible ? "#888" : "#fff" }}>{user.username}</span>
+                 </Link>
+ 
+                 {/* Invisible Mode Toggle */}
+                 <button 
+                   onClick={async () => {
+                     try {
+                       const newVal = !isInvisible;
+                       const token = localStorage.getItem("token");
+                       const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+                       const res = await fetch(`${API}/users/${user.id}`, {
+                         method: "PUT",
+                         headers: {
+                           "Content-Type": "application/json",
+                           Authorization: `Bearer ${token}`
+                         },
+                         body: JSON.stringify({ is_invisible: newVal })
+                       });
+                       if (res.ok) {
+                         setIsInvisible(newVal);
+                         const updatedUser = { ...user, is_invisible: newVal };
+                         localStorage.setItem("user", JSON.stringify(updatedUser));
+                       }
+                     } catch (err) {
+                       console.error(err);
+                     }
+                   }}
+                   className="nav-action-btn"
+                   title={isInvisible ? "Invisible Mode (ON)" : "Invisible Mode (OFF)"}
+                   style={{ 
+                     background: isInvisible ? "rgba(244, 114, 182, 0.15)" : "rgba(255, 255, 255, 0.05)",
+                     borderColor: isInvisible ? "rgba(244, 114, 182, 0.3)" : "rgba(255, 255, 255, 0.1)",
+                     color: isInvisible ? "#f472b6" : "rgba(255, 255, 255, 0.6)"
+                   }}
+                 >
+                   {isInvisible ? (
+                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                       <line x1="1" y1="1" x2="23" y2="23"></line>
+                     </svg>
+                   ) : (
+                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                       <circle cx="12" cy="12" r="3"></circle>
+                     </svg>
+                   )}
+                 </button>
+ 
+                 <button onClick={handleLogout} className="nav-logout-btn">
+                   Logout
+                 </button>
               </>
             ) : (
-              <Link href="/auth/login" className="nav-profile" style={{ paddingLeft: "14px" }}>
+              <Link href="/auth/login" className="nav-profile-pill" style={{ paddingLeft: "14px" }}>
                 Login
               </Link>
             )}
           </div>
         </div>
       </div>
+
       <div className="nav-spacer" />
     </>
   );

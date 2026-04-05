@@ -133,12 +133,12 @@ export default function SearchableSelector({
           position: absolute;
           top: calc(100% + 8px);
           left: 0; right: 0;
-          background: rgba(18, 18, 22, 0.95);
-          backdrop-filter: blur(32px);
-          border: 1px solid rgba(255,255,255,0.12);
+          background: #121216;
+          backdrop-filter: blur(40px);
+          border: 1px solid rgba(255,255,255,0.15);
           border-radius: 20px;
-          box-shadow: 0 30px 60px -12px rgba(0,0,0,0.7);
-          z-index: 1000;
+          box-shadow: 0 40px 80px -12px rgba(0,0,0,0.8);
+          z-index: 9999;
           overflow: hidden;
           animation: ssReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }

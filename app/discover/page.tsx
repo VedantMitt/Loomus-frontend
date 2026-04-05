@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import UserCard from "@/components/UserCard";
 import Link from "next/link";
 import ActivityCard from "@/components/ActivityCard";
+import NebulaBackground from "@/components/NebulaBackground";
 
 type User = {
   id: string;
@@ -74,6 +75,34 @@ export default function DiscoverPage() {
   const [topGames, setTopGames] = useState<TopGame[]>([]);
   const [topRooms, setTopRooms] = useState<TopRoom[]>([]);
 
+  // --- Dynamic Subtitle Cycling ---
+  const taglines = [
+    "Your college life, woven together.",
+    "Find your crowd. Play your part.",
+    "Play. Watch. Connect. Belong"
+  ];
+  const [taglineIndex, setTaglineIndex] = useState(0);
+  const [visibleWordsCount, setVisibleWordsCount] = useState(0);
+  const subtitleWords = taglines[taglineIndex].split(" ");
+
+  useEffect(() => {
+    // 1. Reveal words one by one
+    if (visibleWordsCount < subtitleWords.length) {
+      const timer = setTimeout(() => {
+        setVisibleWordsCount(prev => prev + 1);
+      }, 180);
+      return () => clearTimeout(timer);
+    }
+
+    // 2. Lingering pause, then cycle back
+    const cycleTimer = setTimeout(() => {
+      setVisibleWordsCount(0);
+      setTaglineIndex(prev => (prev + 1) % taglines.length);
+    }, 4500); // 4.5 second pause before next tagline
+
+    return () => clearTimeout(cycleTimer);
+  }, [visibleWordsCount, taglineIndex, subtitleWords.length]);
+
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   // 🔎 Live Search Logic
@@ -109,7 +138,7 @@ export default function DiscoverPage() {
         const token = localStorage.getItem("token");
         const headers: any = token ? { Authorization: `Bearer ${token}` } : {};
 
-        // 1. Fetch Recommended Users (Static)
+        // 1. Fetch Recommended Users
         const userRes = await fetch(`${API}/users/discover`, { headers });
         if (userRes.ok) {
           const data = await userRes.json();
@@ -164,93 +193,121 @@ export default function DiscoverPage() {
   };
 
   return (
-    <div>
+    <div style={{ position: "relative", minHeight: "100vh", overflowX: "hidden" }}>
+      <NebulaBackground variant="discover" />
+
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap');
 
         .discover-page {
           max-width: 1200px;
           margin: 0 auto;
-          padding: 40px 20px 80px;
+          padding: 60px 24px 100px;
           font-family: 'DM Sans', sans-serif;
+          position: relative;
+          z-index: 10;
         }
 
         .discover-hero {
           text-align: center;
-          margin-bottom: 40px;
+          margin-bottom: 64px;
         }
         .discover-title {
           font-family: 'Syne', sans-serif;
-          font-size: 42px;
+          font-size: clamp(40px, 8vw, 76px);
           font-weight: 800;
           background: linear-gradient(135deg, #fff 0%, #a5b4fc 50%, #c084fc 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
           margin: 0;
+          letter-spacing: -0.045em;
+          line-height: 1.1;
+          filter: drop-shadow(0 0 30px rgba(99, 102, 241, 0.15));
         }
         .discover-subtitle {
-          color: #666;
-          font-size: 15px;
-          margin-top: 8px;
+          color: #888;
+          font-size: 17px;
+          margin-top: 14px;
+          min-height: 26px;
+          font-weight: 500;
+          letter-spacing: 0.04em;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 6px;
         }
+        .word {
+          opacity: 0;
+          transform: translateY(4px);
+          animation: wordFadeIn 0.4s forwards cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes wordFadeIn {
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .cursor {
+          width: 2px;
+          height: 1.25em;
+          background-color: #6366f1;
+          display: inline-block;
+          animation: blink 0.8s infinite;
+          margin-left: -2px;
+        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
         /* 🔎 Search Component */
         .search-container {
           position: relative;
-          max-width: 600px;
-          margin: 0 auto 48px;
+          max-width: 650px;
+          margin: 0 auto 80px;
           z-index: 100;
-        }
-        .search-input-wrap {
-          position: relative;
-          display: flex;
-          align-items: center;
         }
         .search-input {
           width: 100%;
-          background: rgba(22, 22, 26, 0.6);
-          backdrop-filter: blur(8px);
-          border: 1px solid rgba(255,255,255,0.06);
-          padding: 16px 20px 16px 48px;
-          border-radius: 16px;
+          background: rgba(255, 255, 255, 0.03);
+          backdrop-filter: blur(25px);
+          border: 1px solid rgba(255,255,255,0.08);
+          padding: 18px 24px 18px 60px;
+          border-radius: 24px;
           color: #fff;
           font-family: 'DM Sans', sans-serif;
           font-size: 16px;
           outline: none;
-          transition: all 0.3s;
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          box-shadow: 0 10px 40px rgba(0,0,0,0.3);
         }
         .search-input:focus {
           border-color: #6366f1;
-          background: rgba(26, 26, 32, 0.8);
-          box-shadow: 0 0 20px rgba(99, 102, 241, 0.1);
+          background: rgba(255, 255, 255, 0.05);
+          box-shadow: 0 15px 50px rgba(99, 102, 241, 0.15);
+          transform: translateY(-2px);
         }
         .search-icon {
           position: absolute;
-          left: 18px;
-          color: #555;
+          left: 20px;
+          color: #666;
+          pointer-events: none;
         }
         .search-clear {
           position: absolute;
-          right: 18px;
-          color: #555;
+          right: 20px;
+          color: #666;
           cursor: pointer;
-          transition: color 0.2s;
+          transition: 0.2s;
         }
         .search-clear:hover { color: #fff; }
 
-        /* 📋 Suggestions Dropdown */
         .search-dropdown {
           position: absolute;
-          top: calc(100% + 12px);
+          top: calc(100% + 14px);
           left: 0; right: 0;
-          background: rgba(13, 13, 17, 0.95);
-          backdrop-filter: blur(20px);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 18px;
-          box-shadow: 0 24px 48px -12px rgba(0,0,0,0.5);
+          background: rgba(13, 13, 17, 0.85);
+          backdrop-filter: blur(30px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 20px;
+          box-shadow: 0 25px 60px -12px rgba(0,0,0,0.7);
           overflow: hidden;
-          animation: dropSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          animation: dropSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
         @keyframes dropSlide {
           from { opacity: 0; transform: translateY(-10px); }
@@ -261,146 +318,148 @@ export default function DiscoverPage() {
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 12px 18px;
+          padding: 14px 20px;
           text-decoration: none;
-          transition: all 0.2s;
+          transition: background 0.2s;
           border-bottom: 1px solid rgba(255,255,255,0.03);
         }
-        .suggestion-item:last-child { border: none; }
-        .suggestion-item:hover {
-          background: rgba(255,255,255,0.04);
-        }
-        .sug-avatar {
-          width: 36px; height: 36px;
-          border-radius: 10px;
-          object-fit: cover;
-        }
-        .sug-name { font-size: 14px; font-weight: 600; color: #fff; }
-        .sug-user { font-size: 12px; color: #666; }
-        .sug-meta { font-size: 11px; color: #3b82f6; margin-top: 1px; }
-
-        .search-loading {
-          padding: 20px;
-          text-align: center;
-          color: #555;
-          font-size: 13px;
-        }
+        .suggestion-item:hover { background: rgba(255,255,255,0.05); }
 
         /* Discovery Sections */
-        .discover-section { margin-top: 48px; position: relative; }
+        .discover-section { margin-top: 72px; position: relative; }
         .section-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 20px;
+          margin-bottom: 24px;
         }
         .section-title {
           font-family: 'Syne', sans-serif;
-          font-size: 24px;
+          font-size: 26px;
           font-weight: 800;
           color: #fff;
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 14px;
           margin: 0;
-          letter-spacing: -0.02em;
+          letter-spacing: -0.03em;
         }
 
         .section-icon {
-          width: 32px;
-          height: 32px;
+          width: 36px;
+          height: 36px;
           display: flex;
           align-items: center;
           justify-content: center;
           border-radius: 10px;
           font-size: 18px;
+          background: rgba(255,255,255,0.05);
+          color: #fff;
         }
         .section-explore {
-          font-size: 13px;
-          font-weight: 600;
-          color: #6366f1;
+          font-size: 14px;
+          font-weight: 700;
+          color: #818cf8;
           text-decoration: none;
-          transition: transform 0.2s;
+          padding: 6px 14px;
+          border-radius: 99px;
+          background: rgba(99, 102, 241, 0.05);
+          transition: 0.3s;
         }
-        .section-explore:hover { transform: translateX(4px); }
+        .section-explore:hover { 
+          transform: translateX(6px); 
+          background: rgba(99, 102, 241, 0.15);
+          color: #fff;
+        }
 
         .horizontal-slider {
           display: flex;
           gap: 22px;
           overflow-x: auto;
           overflow-y: visible;
-          padding: 8px 4px 40px;
+          padding: 10px 4px 44px;
           scrollbar-width: none;
-          -ms-overflow-style: none;
           scroll-snap-type: x mandatory;
-          scroll-padding: 20px;
         }
         .horizontal-slider::-webkit-scrollbar { display: none; }
-        .slider-item { 
-          scroll-snap-align: start; 
-          flex-shrink: 0; 
-          transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-        }
-        .slider-item:active { transform: scale(0.98); }
+        .slider-item { scroll-snap-align: start; flex-shrink: 0; transition: transform 0.4s; }
+        .slider-item:hover { transform: translateY(-8px); }
 
-        /* Card Styles */
+        /* Card Stylings */
         .top-card {
-          width: 280px;
+          width: 290px;
           background: rgba(255,255,255,0.03);
-          backdrop-filter: blur(8px);
+          backdrop-filter: blur(20px);
           border: 1px solid rgba(255,255,255,0.06);
-          border-radius: 22px;
-          padding: 20px;
-          transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+          border-radius: 24px;
+          padding: 22px;
           text-decoration: none;
           display: block;
-          position: relative;
-          overflow: hidden;
+          transition: 0.4s;
+          box-shadow: inset 0 1px 1px rgba(255,255,255,0.05);
         }
-        .top-card:hover {
-          background: rgba(255,255,255,0.06);
-          border-color: rgba(255,255,255,0.12);
-          transform: translateY(-8px);
-          box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-        }
+        .top-card:hover { border-color: rgba(99, 102, 241, 0.4); background: rgba(255,255,255,0.05); }
 
         .card-visual {
           width: 100%;
-          height: 140px;
-          border-radius: 14px;
-          margin-bottom: 16px;
+          height: 150px;
+          border-radius: 16px;
+          margin-bottom: 18px;
           display: flex;
           align-items: center;
           justify-content: center;
+          background: rgba(0,0,0,0.2);
           position: relative;
           overflow: hidden;
-          background: rgba(0,0,0,0.2);
         }
+        .card-title { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+        .card-info { font-size: 13px; color: #888; display: flex; align-items: center; gap: 8px; }
 
-        /* Activity Card overrides for slider */
-        .slider-item .activity-card {
-          width: 350px;
+        /* ✅ Restored Premium Caught Up Card */
+        .caught-up-card {
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 60px 40px;
+          background: rgba(255,255,255,0.02);
+          backdrop-filter: blur(15px);
+          border-radius: 32px;
+          border: 1px dashed rgba(255, 255, 255, 0.1);
+          text-align: center;
         }
-        .card-title { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 6px; }
-        .card-info { font-size: 12px; color: #888; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-        .card-host { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); }
-        .host-img { width: 20px; height: 20px; border-radius: 50%; }
-        .host-name { font-size: 11px; color: #aaa; font-weight: 500; }
-        .badge-live { padding: 3px 8px; background: rgba(239, 68, 68, 0.15); color: #ef4444; font-size: 10px; font-weight: 700; border-radius: 6px; text-transform: uppercase; }
+        .check-circle {
+          width: 56px; height: 56px;
+          borderRadius: 50%;
+          background: rgba(16, 185, 129, 0.1);
+          color: #10b981;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 28px;
+          margin-bottom: 20px;
+          box-shadow: 0 0 30px rgba(16, 185, 129, 0.1);
+        }
       `}</style>
 
       <div className="discover-page">
         {/* Header Section */}
         <div className="discover-hero">
           <h1 className="discover-title">Discover</h1>
-          <p className="discover-subtitle">Beyond your campus gates.</p>
+          <p className="discover-subtitle">
+            {subtitleWords.slice(0, visibleWordsCount).map((word, i) => (
+              <span key={`${taglineIndex}-${i}`} className="word">{word}</span>
+            ))}
+            <span className="cursor" />
+          </p>
         </div>
 
         {/* 🔎 Search Bar + Floating Results */}
         <div className="search-container">
           <div className="search-input-wrap">
             <div className="search-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             </div>
             <input
               type="text"
@@ -422,22 +481,20 @@ export default function DiscoverPage() {
           {(search.trim() && (isSearching || searchSuggestions.length > 0)) && (
             <div className="search-dropdown">
               {isSearching && searchSuggestions.length === 0 ? (
-                <div className="search-loading">Searching Loomus...</div>
+                <div style={{ padding: 20, textAlign: "center", color: "#666", fontSize: 13 }}>Searching Loomus...</div>
               ) : searchSuggestions.length > 0 ? (
                 searchSuggestions.map((user: User) => (
                   <Link key={user.id} href={`/profile/${user.username}`} className="suggestion-item">
-                    <img src={getAvatar(user.profile_pic, user.name)} alt="" className="sug-avatar" />
+                    <img src={getAvatar(user.profile_pic, user.name)} alt="" style={{ width: 40, height: 40, borderRadius: 10, objectFit: "cover" }} />
                     <div>
-                      <div className="sug-name">{user.name}</div>
-                      <div className="sug-user">@{user.username}</div>
-                      <div className="sug-meta">
-                        {user.college}{user.year ? ` '${user.year.toString().slice(-2)}` : ""}
-                      </div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{user.name}</div>
+                      <div style={{ fontSize: 12, color: "#666" }}>@{user.username}</div>
+                      <div style={{ fontSize: 11, color: "#6366f1" }}>{user.college}</div>
                     </div>
                   </Link>
                 ))
               ) : (
-                !isSearching && <div className="search-loading">No users found for "{search}"</div>
+                !isSearching && <div style={{ padding: 20, textAlign: "center", color: "#666", fontSize: 13 }}>No users found for "{search}"</div>
               )}
             </div>
           )}
@@ -446,12 +503,12 @@ export default function DiscoverPage() {
         {/* --- 👤 RECOMMENDED USERS --- */}
         <div className="discover-section">
           <div className="section-header">
-            <h2 className="section-title">✨ SUGGESTED FOR YOU</h2>
+            <h2 className="section-title">✨ Suggestions For You</h2>
             <Link href="/discover/people" className="section-explore">See More →</Link>
           </div>
           <div className="horizontal-slider">
             {loading ? (
-              Array(4).fill(0).map((_, i) => <div key={i} className="slider-item" style={{ width: 300, height: 280, background: "#111", borderRadius: 20, opacity: 0.3 }} />)
+              Array(4).fill(0).map((_, i) => <div key={i} className="slider-item" style={{ width: 290, height: 280, background: "#111", borderRadius: 24, opacity: 0.3 }} />)
             ) : recommendedUsers.length > 0 ? (
               recommendedUsers.map((user: User, idx: number) => (
                 <div key={user.id} className="slider-item">
@@ -459,35 +516,10 @@ export default function DiscoverPage() {
                 </div>
               ))
             ) : (
-              <div
-                className="slider-item"
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "60px 0",
-                  background: "rgba(255,255,255,0.02)",
-                  borderRadius: 24,
-                  border: "1px dashed rgba(255,255,255,0.05)"
-                }}
-              >
-                <div style={{
-                  width: 48, height: 48,
-                  borderRadius: "50%",
-                  background: "rgba(16, 185, 129, 0.1)",
-                  color: "#10b981",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 16,
-                  fontSize: 24
-                }}>
-                  ✓
-                </div>
-                <h3 style={{ color: "#eee", fontSize: 18, fontWeight: 700, margin: 0 }}>You're all caught up!</h3>
-                <p style={{ color: "#666", fontSize: 14, marginTop: 6 }}>No more people to recommend right now.</p>
+              <div className="caught-up-card">
+                <div className="check-circle">✓</div>
+                <h3 style={{ color: "#eee", fontSize: 19, fontWeight: 700, margin: 0 }}>You're all caught up!</h3>
+                <p style={{ color: "#666", fontSize: 14, marginTop: 8 }}>No more people to recommend right now.</p>
               </div>
             )}
           </div>
@@ -497,8 +529,8 @@ export default function DiscoverPage() {
         <div className="discover-section">
           <div className="section-header">
             <h2 className="section-title">
-              <div className="section-icon" style={{ background: "rgba(244, 114, 182, 0.15)", color: "#f472b6" }}>🔥</div>
-              HOT EVENTS
+              <div className="section-icon" style={{ background: "rgba(244, 114, 182, 0.1)", color: "#f472b6" }}>🔥</div>
+              Hot Events
             </h2>
             <Link href="/activities" className="section-explore">Collection →</Link>
           </div>
@@ -515,25 +547,37 @@ export default function DiscoverPage() {
         <div className="discover-section">
           <div className="section-header">
             <h2 className="section-title">
-              <div className="section-icon" style={{ background: "rgba(52, 211, 153, 0.15)", color: "#34d399" }}>🎮</div>
-              PLAY
+              <div className="section-icon" style={{ background: "rgba(52, 211, 153, 0.1)", color: "#34d399" }}>🎮</div>
+              Play
             </h2>
             <Link href="/play" className="section-explore">Play More →</Link>
           </div>
           <div className="horizontal-slider">
-            {topGames.map((game: TopGame) => (
+            {[
+              { id: "roulette", name: "DM Roulette", emoji: "🎰", color: "#f59e0b", gradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", tag: "Talk for 24h", ready: true },
+              { id: "crush", name: "Secret Crush", emoji: "💘", color: "#ec4899", gradient: "linear-gradient(135deg, #ec4899 0%, #be185d 100%)", tag: "Match friends", ready: true },
+              { id: "guess-the-lie", name: "Guess the Lie", emoji: "🤥", color: "#06b6d4", gradient: "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)", tag: "2 truths, 1 lie", ready: true },
+              { id: "mafia", name: "Mafia", emoji: "🔫", color: "#ef4444", gradient: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)", tag: "Coming Soon", ready: false }
+            ].map((game) => (
               <div key={game.id} className="slider-item">
-                <Link href={`/play/${game.id}`} className="top-card" style={{ borderBottom: "4px solid rgba(52, 211, 153, 0.3)" }}>
-                  <div className="card-visual" style={{ background: "linear-gradient(135deg, #064e3b 0%, #065f46 100%)" }}>
-                    <span className="badge-live">{game.game_type}</span>
-                    <div style={{ position: "absolute", bottom: 8, right: 8, padding: "4px 8px", background: "rgba(0,0,0,0.6)", borderRadius: "8px", fontSize: "10px", color: "#34d399", fontWeight: 700 }}>LIVE</div>
+                <Link 
+                  href={game.ready ? `/play/${game.id}` : "#"} 
+                  className={`top-card ${!game.ready ? 'disabled' : ''}`}
+                  style={{ 
+                    borderBottom: `4px solid ${game.color}`,
+                    opacity: game.ready ? 1 : 0.6,
+                    cursor: game.ready ? "pointer" : "default"
+                  }}
+                  onClick={(e) => { if (!game.ready) e.preventDefault(); }}
+                >
+                  <div className="card-visual" style={{ background: game.gradient }}>
+                    <span style={{ fontSize: 44 }}>{game.emoji}</span>
+                    <div style={{ position: "absolute", bottom: 10, right: 10, padding: "3px 8px", background: "rgba(0,0,0,0.6)", borderRadius: "6px", fontSize: "10px", color: "#fff", fontWeight: 800 }}>
+                      {game.ready ? 'GAMES' : 'SOON'}
+                    </div>
                   </div>
                   <div className="card-title">{game.name}</div>
-                  <div className="card-info" style={{ color: "#34d399" }}>● {game.player_count} playing</div>
-                  <div className="card-host">
-                    <img src={getAvatar(game.host_pic, game.host_name)} className="host-img" alt="" />
-                    <span className="host-name">Host: {game.host_name}</span>
-                  </div>
+                  <div className="card-info" style={{ color: game.color }}>{game.tag}</div>
                 </Link>
               </div>
             ))}
@@ -544,8 +588,8 @@ export default function DiscoverPage() {
         <div className="discover-section">
           <div className="section-header">
             <h2 className="section-title">
-              <div className="section-icon" style={{ background: "rgba(99, 102, 241, 0.15)", color: "#818cf8" }}>🎧</div>
-              ROOMS
+              <div className="section-icon" style={{ background: "rgba(99, 102, 241, 0.1)", color: "#818cf8" }}>🎧</div>
+              Rooms
             </h2>
             <Link href="/rooms" className="section-explore">All Rooms →</Link>
           </div>
@@ -554,16 +598,10 @@ export default function DiscoverPage() {
               <div key={room.id} className="slider-item">
                 <Link href={`/rooms/${room.id}`} className="top-card" style={{ borderBottom: "4px solid rgba(129, 140, 248, 0.3)" }}>
                   <div className="card-visual" style={{ background: "linear-gradient(135deg, #312e81 0%, #3730a3 100%)" }}>
-                    <span style={{ fontSize: 40, filter: "drop-shadow(0 10px 10px rgba(0,0,0,0.3))" }}>
-                      {room.type === 'WATCH PARTY' ? '📺' : '💬'}
-                    </span>
+                    <span style={{ fontSize: 42 }}>{room.type === 'WATCH PARTY' ? '📺' : '💬'}</span>
                   </div>
                   <div className="card-title">{room.name}</div>
-                  <div className="card-info" style={{ color: "#818cf8" }}>{room.member_count} members online</div>
-                  <div className="card-host">
-                    <img src={getAvatar(room.host_profile_pic, room.host_name)} className="host-img" alt="" />
-                    <span className="host-name">Admin: {room.host_name}</span>
-                  </div>
+                  <div className="card-info" style={{ color: "#818cf8" }}>{room.member_count} online</div>
                 </Link>
               </div>
             ))}

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import ActivityCard from "@/components/ActivityCard";
 import SearchableSelector from "@/components/SearchableSelector";
+import NebulaBackground from "@/components/NebulaBackground";
 import { INDIAN_CITIES } from "@/constants/cities";
 import { INDIAN_COLLEGES } from "@/constants/colleges";
 
@@ -44,26 +45,23 @@ const CATEGORIES = [
   { key: "other", label: "Other", icon: "✨" },
 ];
 
-const STATUS_OPTIONS = [
-  { key: "all", label: "All" },
-  { key: "upcoming", label: "Upcoming" },
-  { key: "live", label: "Live" },
-  { key: "expired", label: "Expired" },
-];
-
-const MODE_OPTIONS = [
-  { key: "all", label: "All" },
+const MODES = [
+  { key: "all", label: "Any Mode" },
   { key: "online", label: "Online" },
   { key: "offline", label: "Offline" },
 ];
 
-const PRICE_OPTIONS = [
-  { key: "all", label: "All" },
+const PRICES = [
+  { key: "all", label: "Any Price" },
   { key: "free", label: "Free" },
   { key: "paid", label: "Paid" },
 ];
 
-
+const STATUSES = [
+  { key: "all", label: "Any Status" },
+  { key: "live", label: "Live Now" },
+  { key: "upcoming", label: "Upcoming" },
+];
 
 export default function ActivitiesPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -121,8 +119,6 @@ export default function ActivitiesPage() {
     return () => clearTimeout(timeout);
   }, [fetchActivities]);
 
-
-
   const handleRsvpChange = (activityId: string, data: any) => {
     setActivities((prev) =>
       prev.map((a) =>
@@ -138,7 +134,6 @@ export default function ActivitiesPage() {
     );
   };
 
-  // Group activities by status
   const now = new Date();
   const liveActivities = activities.filter((a) => {
     const d = new Date(a.date);
@@ -153,616 +148,369 @@ export default function ActivitiesPage() {
   const hasActiveFilters = activeStatus !== "all" || activeMode !== "all" || activePrice !== "all" || citySearch.trim() !== "";
 
   return (
-    <div>
-      <style>{`
+    <div style={{ position: "relative", minHeight: "100vh", overflowX: "hidden" }}>
+      <NebulaBackground variant="discover" />
+
+      <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap');
 
-        .act-page {
+        .act-container {
           max-width: 1200px;
           margin: 0 auto;
-          padding: 40px 20px 80px;
+          padding: 60px 24px 100px;
           font-family: 'DM Sans', sans-serif;
+          position: relative;
+          z-index: 10;
         }
 
-        /* Hero */
         .act-hero {
           text-align: center;
-          margin-bottom: 36px;
+          margin-bottom: 48px;
         }
+
         .act-title {
           font-family: 'Syne', sans-serif;
-          font-size: 38px;
+          font-size: 44px;
           font-weight: 800;
-          background: linear-gradient(135deg, #f0f0f0 0%, #f472b6 40%, #a78bfa 70%, #60a5fa 100%);
+          background: linear-gradient(135deg, #fff 0%, #f472b6 40%, #c084fc 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
           margin: 0;
+          letter-spacing: -0.04em;
         }
+
         .act-subtitle {
-          color: #555;
-          font-size: 15px;
-          margin-top: 8px;
-        }
-
-        /* Search */
-        .act-search-wrap {
-          position: relative;
-          max-width: 520px;
-          margin: 0 auto 24px;
-        }
-        .act-search-icon {
-          position: absolute;
-          left: 16px;
-          top: 50%;
-          transform: translateY(-50%);
-          color: #555;
-          font-size: 16px;
-          pointer-events: none;
-        }
-        .act-search {
-          width: 100%;
-          padding: 14px 18px 14px 44px;
-          border-radius: 14px;
-          border: 1px solid rgba(255,255,255,0.08);
-          background: rgba(255,255,255,0.03);
-          color: #eee;
-          font-size: 15px;
-          font-family: 'DM Sans', sans-serif;
-          outline: none;
-          transition: all 0.3s ease;
-        }
-        .act-search::placeholder { color: #444; }
-        .act-search:focus {
-          border-color: rgba(244,114,182,0.4);
-          box-shadow: 0 0 0 3px rgba(244,114,182,0.08);
-          background: rgba(255,255,255,0.05);
-        }
-
-        /* Category Chips */
-        .act-categories {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          justify-content: center;
-          margin-bottom: 20px;
-        }
-        .act-cat-chip {
-          padding: 7px 16px;
-          border-radius: 999px;
-          font-size: 13px;
-          font-weight: 600;
-          border: 1px solid rgba(255,255,255,0.08);
-          background: rgba(255,255,255,0.03);
           color: #888;
-          cursor: pointer;
-          transition: all 0.25s ease;
-          font-family: 'DM Sans', sans-serif;
-          display: flex;
-          align-items: center;
-          gap: 5px;
-        }
-        .act-cat-chip:hover {
-          background: rgba(244,114,182,0.08);
-          border-color: rgba(244,114,182,0.2);
-          color: #f472b6;
-        }
-        .act-cat-chip.active {
-          background: rgba(244,114,182,0.15);
-          border-color: rgba(244,114,182,0.35);
-          color: #f472b6;
-        }
-
-        /* Filter Toggle Button */
-        .act-filter-toggle {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          margin: 0 auto 20px;
-          padding: 10px 20px;
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 12px;
-          color: #aaa;
-          font-size: 13px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.25s;
-          font-family: 'DM Sans', sans-serif;
-          width: fit-content;
-        }
-        .act-filter-toggle:hover {
-          background: rgba(255,255,255,0.08);
-          color: #fff;
-        }
-        .act-filter-toggle.has-active {
-          background: rgba(244,114,182,0.1);
-          border-color: rgba(244,114,182,0.3);
-          color: #f472b6;
-        }
-
-        /* Filter Panel */
-        .act-filters-panel {
-          max-width: 700px;
-          margin: 0 auto 28px;
-          background: rgba(255,255,255,0.02);
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 16px;
-          padding: 20px 24px;
-          display: flex;
-          flex-wrap: wrap;
-          gap: 20px;
-          animation: filterSlideIn 0.3s ease;
-        }
-        @keyframes filterSlideIn {
-          from { opacity: 0; transform: translateY(-8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .act-filter-group {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          min-width: 140px;
-        }
-        .act-filter-label {
-          font-size: 11px;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          color: #666;
-        }
-        .act-filter-chips {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 6px;
-        }
-        .act-filter-chip {
-          padding: 5px 12px;
-          border-radius: 8px;
-          font-size: 12px;
-          font-weight: 600;
-          border: 1px solid rgba(255,255,255,0.08);
-          background: rgba(255,255,255,0.03);
-          color: #888;
-          cursor: pointer;
-          transition: all 0.2s;
-          font-family: 'DM Sans', sans-serif;
-        }
-        .act-filter-chip:hover {
-          background: rgba(167,139,250,0.08);
-          border-color: rgba(167,139,250,0.2);
-          color: #a78bfa;
-        }
-        .act-filter-chip.active {
-          background: rgba(167,139,250,0.15);
-          border-color: rgba(167,139,250,0.35);
-          color: #a78bfa;
-        }
-        .act-city-input {
-          padding: 8px 12px;
-          border-radius: 8px;
-          border: 1px solid rgba(255,255,255,0.08);
-          background: rgba(255,255,255,0.03);
-          color: #eee;
-          font-size: 13px;
-          font-family: 'DM Sans', sans-serif;
-          outline: none;
-          transition: border 0.2s;
-          width: 160px;
-        }
-        .act-city-input:focus {
-          border-color: rgba(167,139,250,0.4);
-        }
-        .act-city-input::placeholder { color: #444; }
-
-        /* Tab Toggle */
-        .act-tabs {
-          display: flex;
-          justify-content: center;
-          gap: 4px;
-          margin-bottom: 32px;
-          background: rgba(255,255,255,0.04);
-          border-radius: 12px;
-          padding: 4px;
-          max-width: 280px;
-          margin-left: auto;
-          margin-right: auto;
-        }
-        .act-tab {
-          flex: 1;
-          padding: 8px 20px;
-          border-radius: 10px;
-          font-size: 13px;
-          font-weight: 600;
-          border: none;
-          cursor: pointer;
-          transition: all 0.25s ease;
-          font-family: 'DM Sans', sans-serif;
-          color: #666;
-          background: transparent;
-        }
-        .act-tab.active {
-          background: rgba(255,255,255,0.1);
-          color: #fff;
-        }
-        .act-tab:hover:not(.active) {
-          color: #aaa;
-        }
-
-        /* Section Headers */
-        .act-section-header {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          margin-bottom: 16px;
-          margin-top: 32px;
-        }
-        .act-section-header:first-of-type { margin-top: 0; }
-        .act-section-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-        }
-        .act-section-title {
-          font-size: 16px;
-          font-weight: 700;
-          color: #eee;
-        }
-        .act-section-count {
-          font-size: 12px;
-          color: #555;
+          font-size: 17px;
+          margin-top: 14px;
           font-weight: 500;
         }
 
-        /* Horizontal Scroll Row */
+        .act-search-row {
+          display: flex;
+          gap: 12px;
+          max-width: 600px;
+          margin: 0 auto 16px;
+          align-items: center;
+        }
+
+        .act-search {
+          flex: 1;
+          padding: 18px 24px;
+          background: rgba(255, 255, 255, 0.04);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 20px;
+          color: #fff;
+          font-size: 16px;
+          outline: none;
+          transition: all 0.3s;
+          margin: 0;
+        }
+        .act-search:focus {
+          border-color: rgba(244, 114, 182, 0.4);
+          background: rgba(255, 255, 255, 0.06);
+          box-shadow: 0 0 30px rgba(244, 114, 182, 0.1);
+        }
+
+        .act-filter-btn {
+          width: 58px;
+          height: 58px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(255, 255, 255, 0.04);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 20px;
+          color: #fff;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+        .act-filter-btn:hover {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 255, 255, 0.2);
+        }
+        .act-filter-btn.active {
+          background: linear-gradient(135deg, rgba(244, 114, 182, 0.2), rgba(192, 132, 252, 0.2));
+          border-color: rgba(244, 114, 182, 0.4);
+          color: #f472b6;
+        }
+
+        .act-filters-panel {
+          max-width: 800px;
+          margin: 0 auto 40px;
+          background: rgba(255, 255, 255, 0.03);
+          backdrop-filter: blur(30px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 32px;
+          padding: 32px;
+          animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+          position: relative;
+          z-index: 100;
+        }
+
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .filter-group {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .filter-label {
+          font-size: 12px;
+          font-weight: 800;
+          text-transform: uppercase;
+          color: #666;
+          letter-spacing: 0.1em;
+          margin-left: 4px;
+        }
+        .filter-options {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .act-tab {
+          padding: 8px 18px;
+          border-radius: 14px;
+          font-size: 13px;
+          font-weight: 600;
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          cursor: pointer;
+          transition: all 0.3s;
+          background: rgba(255, 255, 255, 0.02);
+          color: #888;
+        }
+        .act-tab.active {
+          background: rgba(255, 255, 255, 0.1);
+          color: #fff;
+          border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .act-cat-chip {
+          padding: 8px 18px;
+          border-radius: 99px;
+          font-size: 13px;
+          font-weight: 600;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          color: #888;
+          cursor: pointer;
+          transition: all 0.3s;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .act-cat-chip.active {
+          background: rgba(244, 114, 182, 0.1);
+          color: #f472b6;
+          border-color: rgba(244, 114, 182, 0.3);
+        }
+
         .act-grid { 
           display: flex;
           overflow-x: auto;
-          gap: 20px;
-          padding-bottom: 24px;
-          margin-bottom: 8px;
+          gap: 24px;
+          padding: 10px 0 32px;
           scroll-snap-type: x mandatory;
-          -webkit-overflow-scrolling: touch;
         }
-
-
+        .act-grid::-webkit-scrollbar { display: none; }
         
-        .act-grid::-webkit-scrollbar {
-          height: 6px;
-        }
-        .act-grid::-webkit-scrollbar-track {
-          background: rgba(255,255,255,0.02);
-          border-radius: 4px;
-        }
-        .act-grid::-webkit-scrollbar-thumb {
-          background: rgba(255,255,255,0.1);
-          border-radius: 4px;
-        }
-        .act-grid::-webkit-scrollbar-thumb:hover {
-          background: rgba(255,255,255,0.2);
-        }
-
         .act-grid > * {
-          flex: 0 0 calc(100% - 32px);
-          max-width: 380px;
+          flex: 0 0 360px;
           scroll-snap-align: start;
         }
-        
-        @media (min-width: 640px) {
-          .act-grid > * { flex: 0 0 320px; }
-        }
-        @media (min-width: 960px) {
-          .act-grid > * { flex: 0 0 360px; }
-        }
 
-        /* FAB */
         .act-fab {
           position: fixed;
           bottom: 32px;
           right: 32px;
-          width: 56px;
-          height: 56px;
-          border-radius: 16px;
-          background: linear-gradient(135deg, #f472b6 0%, #a78bfa 100%);
-          border: none;
-          cursor: pointer;
+          width: 60px;
+          height: 60px;
+          border-radius: 20px;
+          background: linear-gradient(135deg, #f472b6 0%, #c084fc 100%);
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 28px;
           color: #fff;
-          box-shadow: 0 8px 32px rgba(244,114,182,0.3);
-          transition: all 0.3s ease;
-          z-index: 40;
+          font-size: 32px;
+          box-shadow: 0 15px 35px rgba(244, 114, 182, 0.3);
           text-decoration: none;
+          z-index: 100;
+          transition: all 0.3s;
         }
-        .act-fab:hover {
-          transform: translateY(-3px) scale(1.05);
-          box-shadow: 0 12px 40px rgba(244,114,182,0.4);
-        }
+        .act-fab:hover { transform: translateY(-4px) scale(1.05); }
 
-        /* Skeleton */
         .act-skeleton {
-          border-radius: 20px;
-          background: linear-gradient(145deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
-          border: 1px solid rgba(255,255,255,0.05);
-          overflow: hidden;
-          animation: shimmer 1.8s ease-in-out infinite;
+          background: rgba(255,255,255,0.03);
+          border-radius: 28px;
+          height: 380px;
+          border: 1px solid rgba(255,255,255,0.08);
+          animation: skeleton-pulse 1.5s infinite;
         }
-        .act-skeleton-banner {
-          width: 100%;
-          height: 160px;
-          background: rgba(255,255,255,0.04);
-        }
-        .act-skeleton-body { padding: 18px; }
-        .act-skeleton-row {
-          background: rgba(255,255,255,0.06);
-          border-radius: 8px;
-          margin-bottom: 10px;
-        }
-        @keyframes shimmer {
-          0%,100% { opacity: 0.5; }
-          50% { opacity: 1; }
-        }
-
-        /* Empty */
-        .act-empty {
-          text-align: center;
-          padding: 60px 20px;
-          color: #444;
-        }
-        .act-empty-icon { font-size: 48px; margin-bottom: 16px; }
-        .act-empty-text { font-size: 16px; font-weight: 500; }
-        .act-empty-sub { font-size: 13px; color: #333; margin-top: 6px; }
-
-        /* Error */
-        .act-error {
-          text-align: center;
-          padding: 40px 20px;
-          color: #ef4444;
-          font-size: 14px;
-        }
-
-        /* Result count */
-        .act-result-count {
-          text-align: center;
-          font-size: 12px;
-          color: #444;
-          margin-bottom: 20px;
-          font-weight: 500;
-        }
-
-        @media (max-width: 640px) {
-          .act-filters-panel {
-            flex-direction: column;
-            gap: 16px;
-          }
-          .act-filter-group { min-width: auto; }
-          .act-city-input { width: 100%; }
-        }
+        @keyframes skeleton-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
       `}</style>
 
-      <main className="act-page">
-        {/* Hero */}
+      <main className="act-container">
         <div className="act-hero">
           <h1 className="act-title">Activities</h1>
-          <p className="act-subtitle">
-            Events, competitions, and hangouts — all happening around you
-          </p>
+          <p className="act-subtitle">Find your tribe at events and competitions 🎪</p>
         </div>
 
-        {/* Search */}
-        <div className="act-search-wrap">
-          <span className="act-search-icon">🔍</span>
+        <div className="act-search-row">
           <input
             type="text"
             className="act-search"
-            placeholder="Search events..."
+            placeholder="Search events, cities, colleges..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          <button 
+            className={`act-filter-btn ${showFilters || hasActiveFilters ? 'active' : ''}`}
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" />
+              <line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" />
+              <line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" />
+              <line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" />
+            </svg>
+          </button>
         </div>
 
-        {/* Category chips */}
-        <div className="act-categories">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.key}
-              className={`act-cat-chip ${activeCategory === cat.key ? "active" : ""}`}
-              onClick={() => setActiveCategory(cat.key)}
-            >
-              <span>{cat.icon}</span> {cat.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Filter Toggle */}
-        <button
-          className={`act-filter-toggle ${hasActiveFilters ? "has-active" : ""}`}
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="4" y1="6" x2="20" y2="6"></line>
-            <line x1="8" y1="12" x2="20" y2="12"></line>
-            <line x1="12" y1="18" x2="20" y2="18"></line>
-          </svg>
-          {showFilters ? "Hide Filters" : "Browse Filters"}
-          {hasActiveFilters && <span style={{ background: "#f472b6", color: "#fff", borderRadius: "99px", padding: "1px 6px", fontSize: "10px", fontWeight: 700 }}>ON</span>}
-        </button>
-
-        {/* Filter Panel */}
         {showFilters && (
           <div className="act-filters-panel">
-            <div className="act-filter-group">
-              <span className="act-filter-label">Status</span>
-              <div className="act-filter-chips">
-                {STATUS_OPTIONS.map(s => (
-                  <button key={s.key} className={`act-filter-chip ${activeStatus === s.key ? "active" : ""}`} onClick={() => setActiveStatus(s.key)}>
-                    {s.key === "live" && "🔴 "}{s.label}
+            <div className="filter-group">
+              <span className="filter-label">Categories</span>
+              <div className="filter-options">
+                {CATEGORIES.map((cat) => (
+                  <button key={cat.key} className={`act-cat-chip ${activeCategory === cat.key ? "active" : ""}`} onClick={() => setActiveCategory(cat.key)}>
+                    {cat.icon} {cat.label}
                   </button>
                 ))}
               </div>
             </div>
-            <div className="act-filter-group">
-              <span className="act-filter-label">Mode</span>
-              <div className="act-filter-chips">
-                {MODE_OPTIONS.map(m => (
-                  <button key={m.key} className={`act-filter-chip ${activeMode === m.key ? "active" : ""}`} onClick={() => setActiveMode(m.key)}>
-                    {m.label}
-                  </button>
-                ))}
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "24px" }}>
+              <div className="filter-group">
+                <span className="filter-label">Status</span>
+                <div className="filter-options">
+                  {STATUSES.map(s => (
+                    <button key={s.key} className={`act-tab ${activeStatus === s.key ? 'active' : ''}`} onClick={() => setActiveStatus(s.key)}>
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="filter-group">
+                <span className="filter-label">Mode</span>
+                <div className="filter-options">
+                  {MODES.map(m => (
+                    <button key={m.key} className={`act-tab ${activeMode === m.key ? 'active' : ''}`} onClick={() => setActiveMode(m.key)}>
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="filter-group">
+                <span className="filter-label">Price</span>
+                <div className="filter-options">
+                  {PRICES.map(p => (
+                    <button key={p.key} className={`act-tab ${activePrice === p.key ? 'active' : ''}`} onClick={() => setActivePrice(p.key)}>
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-            <div className="act-filter-group">
-              <span className="act-filter-label">Price</span>
-              <div className="act-filter-chips">
-                {PRICE_OPTIONS.map(p => (
-                  <button key={p.key} className={`act-filter-chip ${activePrice === p.key ? "active" : ""}`} onClick={() => setActivePrice(p.key)}>
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '16px' }}>
-              <div className="act-filter-group">
-                <span className="act-filter-label">City</span>
-                <SearchableSelector 
-                  value={citySearch} 
-                  onChange={setCitySearch} 
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div className="filter-group">
+                <span className="filter-label">City</span>
+                <SearchableSelector
                   options={INDIAN_CITIES}
-                  placeholder="All Regions"
-                  icon="📍"
-                  typeIcon="📍"
+                  placeholder="All Cities"
+                  value={citySearch}
+                  onChange={setCitySearch}
                 />
               </div>
-              <div className="act-filter-group">
-                <span className="act-filter-label">College</span>
-                <SearchableSelector 
-                  value={collegeSearch} 
-                  onChange={setCollegeSearch} 
+              <div className="filter-group">
+                <span className="filter-label">College</span>
+                <SearchableSelector
                   options={INDIAN_COLLEGES}
                   placeholder="All Colleges"
-                  icon="🏛️"
-                  typeIcon="🏛️"
+                  value={collegeSearch}
+                  onChange={setCollegeSearch}
                 />
               </div>
             </div>
+
+            {hasActiveFilters && (
+              <button 
+                onClick={() => {
+                  setActiveCategory("all");
+                  setActiveStatus("all");
+                  setActiveMode("all");
+                  setActivePrice("all");
+                  setCitySearch("");
+                  setCollegeSearch("");
+                }}
+                style={{ alignSelf: "center", background: "none", border: "none", color: "#f472b6", fontSize: 13, fontWeight: 700, cursor: "pointer", marginTop: 10 }}
+              >
+                Clear all filters
+              </button>
+            )}
           </div>
         )}
 
-        {/* Tab toggle */}
-        <div className="act-tabs">
-          <button
-            className={`act-tab ${activeTab === "all" ? "active" : ""}`}
-            onClick={() => setActiveTab("all")}
-          >
-            All Events
-          </button>
-          <button
-            className={`act-tab ${activeTab === "my" ? "active" : ""}`}
-            onClick={() => setActiveTab("my")}
-          >
-            My Events
-          </button>
-        </div>
+        {error && <div style={{ textAlign: "center", color: "#f43f5e" }}>{error}</div>}
 
-        {/* Error */}
-        {error && <div className="act-error">{error}</div>}
-
-        {/* Loading skeleton */}
         {loading ? (
           <div className="act-grid">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="act-skeleton" style={{ animationDelay: `${i * 0.15}s` }}>
-                <div className="act-skeleton-banner" />
-                <div className="act-skeleton-body">
-                  <div className="act-skeleton-row" style={{ width: "75%", height: 18 }} />
-                  <div className="act-skeleton-row" style={{ width: "50%", height: 12 }} />
-                  <div className="act-skeleton-row" style={{ width: "60%", height: 12 }} />
-                  <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-                    <div className="act-skeleton-row" style={{ width: 70, height: 28, borderRadius: 999, marginBottom: 0 }} />
-                    <div className="act-skeleton-row" style={{ width: 36, height: 28, borderRadius: 999, marginBottom: 0 }} />
-                    <div className="act-skeleton-row" style={{ width: 50, height: 28, borderRadius: 999, marginBottom: 0 }} />
-                  </div>
-                </div>
-              </div>
-            ))}
+            {[...Array(4)].map((_, i) => <div key={i} className="act-skeleton" />)}
           </div>
-        ) : !error && activities.length === 0 ? (
-          <div className="act-empty">
-            <div className="act-empty-icon">🎪</div>
-            <p className="act-empty-text">No activities found</p>
-            <p className="act-empty-sub">
-              {search || activeCategory !== "all" || hasActiveFilters
-                ? "Try adjusting your search or filters"
-                : activeTab === "my"
-                ? "You haven't joined any events yet"
-                : "Be the first to host an event!"}
-            </p>
-          </div>
-        ) : !error ? (
+        ) : activities.length === 0 ? (
+          <div style={{ textAlign: "center", color: "#666", padding: "80px 0" }}>No activities found. Try a different category!</div>
+        ) : (
           <>
-            {/* Result count */}
-            <div className="act-result-count">
-              {activities.length} {activities.length === 1 ? "event" : "events"} found
-            </div>
-
-            {/* 🔴 Live Now */}
             {liveActivities.length > 0 && (
               <>
-                <div className="act-section-header">
-                  <div className="act-section-dot" style={{ background: "#ef4444", boxShadow: "0 0 8px rgba(239,68,68,0.5)", animation: "pulse-live 1.5s infinite" }} />
-                  <span className="act-section-title">Live Now</span>
-                  <span className="act-section-count">{liveActivities.length}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: 5, background: "#f43f5e", boxShadow: "0 0 10px #f43f5e" }} />
+                  <span style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>Live Now</span>
                 </div>
                 <div className="act-grid">
-                  {liveActivities.map((a) => (
-                    <ActivityCard key={a.id} activity={a} onRsvpChange={handleRsvpChange} />
-                  ))}
+                  {liveActivities.map((a) => <ActivityCard key={a.id} activity={a} onRsvpChange={handleRsvpChange} />)}
                 </div>
               </>
             )}
 
-            {/* ⏰ Coming Up */}
             {upcomingActivities.length > 0 && (
               <>
-                <div className="act-section-header">
-                  <div className="act-section-dot" style={{ background: "#3b82f6" }} />
-                  <span className="act-section-title">Coming Up</span>
-                  <span className="act-section-count">{upcomingActivities.length}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, marginTop: 32 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: 5, background: "#c084fc" }} />
+                  <span style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>Upcoming</span>
                 </div>
                 <div className="act-grid">
-                  {upcomingActivities.map((a) => (
-                    <ActivityCard key={a.id} activity={a} onRsvpChange={handleRsvpChange} />
-                  ))}
-                </div>
-              </>
-            )}
-
-            {/* 📋 Past Events */}
-            {pastActivities.length > 0 && (
-              <>
-                <div className="act-section-header">
-                  <div className="act-section-dot" style={{ background: "#555" }} />
-                  <span className="act-section-title">Past Events</span>
-                  <span className="act-section-count">{pastActivities.length}</span>
-                </div>
-                <div className="act-grid" style={{ opacity: 0.7 }}>
-                  {pastActivities.map((a) => (
-                    <ActivityCard key={a.id} activity={a} onRsvpChange={handleRsvpChange} />
-                  ))}
+                  {upcomingActivities.map((a) => <ActivityCard key={a.id} activity={a} onRsvpChange={handleRsvpChange} />)}
                 </div>
               </>
             )}
           </>
-        ) : null}
+        )}
       </main>
 
-      {/* Floating Action Button */}
-      <Link href="/activities/create" className="act-fab" title="Host an Event">
-        +
-      </Link>
+      <Link href="/activities/create" className="act-fab">+</Link>
     </div>
   );
 }

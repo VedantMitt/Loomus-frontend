@@ -4,13 +4,19 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 
-type Friend = {
-  id: string;
-  name: string;
-  username: string;
-  profile_pic?: string;
-  online: boolean;
-};
+ type Friend = {
+   id: string;
+   name: string;
+   username: string;
+   profile_pic?: string;
+   online: boolean;
+   current_status?: string;
+   status_updated_at?: string;
+   active_rooms?: { id: string, name: string }[];
+   active_pools?: { id: string, title: string }[];
+   active_gtl?: { id: string, title: string }[];
+   active_activities?: { id: string, title: string }[];
+ };
 
 export default function FriendCard({ friend, onRemove }: { friend: Friend, onRemove?: () => void }) {
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -26,6 +32,12 @@ export default function FriendCard({ friend, onRemove }: { friend: Friend, onRem
   const [showPartyMenu, setShowPartyMenu] = useState(false);
   const [showPlayMenu, setShowPlayMenu] = useState(false);
   const [creatingRoom, setCreatingRoom] = useState(false);
+  
+  // New States for game invites
+  const [activeSubMenu, setActiveSubMenu] = useState<"ROULETTE" | "GTL" | null>(null);
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+  const [inviting, setInviting] = useState(false);
 
   const partyRef = useRef<HTMLDivElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
@@ -90,7 +102,7 @@ export default function FriendCard({ friend, onRemove }: { friend: Friend, onRem
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ name: roomName, type, media_url: "" })
+        body: JSON.stringify({ name: roomName, type, media_url: "", invitee_id: friend.id })
       });
 
       if (res.ok) {
@@ -109,9 +121,69 @@ export default function FriendCard({ friend, onRemove }: { friend: Friend, onRem
     }
   };
 
-  const handlePlayInvite = (gameHref: string) => {
-    setShowPlayMenu(false);
-    router.push(gameHref);
+  const handlePlayInvite = async (type: "ROULETTE" | "GTL" | "CRUSH") => {
+    if (type === "CRUSH") {
+      router.push("/play/crush");
+      setShowPlayMenu(false);
+      return;
+    }
+
+    setActiveSubMenu(type);
+    setLoadingSessions(true);
+    try {
+      const token = localStorage.getItem("token");
+      const url = type === "ROULETTE" 
+        ? `${API}/play/roulette/my/joined`
+        : `${API}/play/gtl/my/joined`;
+      
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Filter GTL sessions for rooms
+        if (type === "GTL") {
+          setSessions(data.filter((s: any) => s.type === "GUESS_THE_LIE" || s.type === "VIDEO"));
+        } else {
+          setSessions(data);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingSessions(false);
+    }
+  };
+
+  const sendInvite = async (sessionId: string, sessionName: string) => {
+    setInviting(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/play/roulette/invite`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          invitee_id: friend.id,
+          game_type: activeSubMenu === "ROULETTE" ? "roulette" : "gtl",
+          session_id: sessionId,
+          session_name: sessionName,
+          game_name: activeSubMenu === "ROULETTE" ? "DM Roulette" : "Guess the Lie"
+        })
+      });
+      if (res.ok) {
+        alert(`Invite sent to ${friend.name}!`);
+        setShowPlayMenu(false);
+      } else {
+        alert("Failed to send invite");
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setInviting(false);
+    }
   };
 
   return (
@@ -382,6 +454,35 @@ export default function FriendCard({ friend, onRemove }: { friend: Friend, onRem
               {friend.name}
             </Link>
             <div className="fc-username">@{friend.username}</div>
+             {friend.current_status && friend.status_updated_at && (new Date().getTime() - new Date(friend.status_updated_at).getTime()) < (24 * 60 * 60 * 1000) && (
+               <div style={{ marginTop: 8, fontSize: 13, color: '#34d399', fontWeight: 600, fontStyle: 'italic', background: 'rgba(52, 211, 153, 0.08)', padding: '4px 10px', borderRadius: '10px', border: '1px solid rgba(52, 211, 153, 0.15)', display: 'inline-block', marginRight: 8 }}>
+                 "{friend.current_status}"
+               </div>
+             )}
+ 
+             {/* Live Activity Chips */}
+             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+               {friend.active_rooms?.map(r => (
+                 <Link key={r.id} href={`/rooms/${r.id}`} style={{ display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none', padding: '4px 10px', background: 'rgba(6, 182, 212, 0.12)', border: '1px solid rgba(6, 182, 212, 0.25)', borderRadius: '12px', fontSize: '11px', fontWeight: 700, color: '#06b6d4', transition: 'all 0.2s' }}>
+                   <span>📺</span> In Room: {r.name}
+                 </Link>
+               ))}
+               {friend.active_pools?.map(p => (
+                 <Link key={p.id} href={`/play/roulette?pool=${p.id}`} style={{ display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none', padding: '4px 10px', background: 'rgba(244, 114, 182, 0.12)', border: '1px solid rgba(244, 114, 182, 0.25)', borderRadius: '12px', fontSize: '11px', fontWeight: 700, color: '#f472b6', transition: 'all 0.2s' }}>
+                   <span>🎰</span> Playing: {p.title}
+                 </Link>
+               ))}
+               {friend.active_gtl?.map(g => (
+                 <Link key={g.id} href={`/play/guess-the-lie?game=${g.id}`} style={{ display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none', padding: '4px 10px', background: 'rgba(216, 180, 254, 0.12)', border: '1px solid rgba(216, 180, 254, 0.25)', borderRadius: '12px', fontSize: '11px', fontWeight: 700, color: '#c084fc', transition: 'all 0.2s' }}>
+                   <span>🎲</span> Guess the Lie: {g.title}
+                 </Link>
+               ))}
+               {friend.active_activities?.map(a => (
+                 <Link key={a.id} href={`/activities/${a.id}`} style={{ display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none', padding: '4px 10px', background: 'rgba(59, 130, 246, 0.12)', border: '1px solid rgba(59, 130, 246, 0.25)', borderRadius: '12px', fontSize: '11px', fontWeight: 700, color: '#60a5fa', transition: 'all 0.2s' }}>
+                   <span>🏮</span> Activity: {a.title}
+                 </Link>
+               ))}
+             </div>
           </div>
         </div>
 
@@ -458,39 +559,75 @@ export default function FriendCard({ friend, onRemove }: { friend: Friend, onRem
             </button>
             {showPlayMenu && (
               <div className="fc-dropdown">
-                <div className="fc-dropdown-title">Invite to Play</div>
-                <button
-                  className="fc-dropdown-item"
-                  onClick={() => handlePlayInvite("/play/roulette")}
-                >
-                  <div className="fc-item-icon fc-item-icon-game-roulette">🎰</div>
-                  <div>
-                    <div className="fc-item-label">DM Roulette</div>
-                    <div className="fc-item-desc">Random pairing for 24hrs</div>
-                  </div>
-                </button>
-                <button
-                  className="fc-dropdown-item"
-                  onClick={() => handlePlayInvite("/play/crush")}
-                >
-                  <div className="fc-item-icon fc-item-icon-game-crush">💘</div>
-                  <div>
-                    <div className="fc-item-label">Secret Crush</div>
-                    <div className="fc-item-desc">Anonymous crush matching</div>
-                  </div>
-                </button>
-                <button
-                  className="fc-dropdown-item"
-                  onClick={() => handlePlayInvite("/play/guess-the-lie")}
-                >
-                  <div className="fc-item-icon fc-item-icon-game-gtl">🤥</div>
-                  <div>
-                    <div className="fc-item-label">Guess the Lie</div>
-                    <div className="fc-item-desc">2 truths, 1 lie — vote it out</div>
-                  </div>
-                </button>
+                {!activeSubMenu ? (
+                  <>
+                    <div className="fc-dropdown-title">Invite to Play</div>
+                    <button
+                      className="fc-dropdown-item"
+                      onClick={() => handlePlayInvite("ROULETTE")}
+                    >
+                      <div className="fc-item-icon fc-item-icon-game-roulette">🎰</div>
+                      <div>
+                        <div className="fc-item-label">DM Roulette</div>
+                        <div className="fc-item-desc">Random pairing for 24hrs</div>
+                      </div>
+                    </button>
+                    <button
+                      className="fc-dropdown-item"
+                      onClick={() => handlePlayInvite("CRUSH")}
+                    >
+                      <div className="fc-item-icon fc-item-icon-game-crush">💘</div>
+                      <div>
+                        <div className="fc-item-label">Secret Crush</div>
+                        <div className="fc-item-desc">Anonymous crush matching</div>
+                      </div>
+                    </button>
+                    <button
+                      className="fc-dropdown-item"
+                      onClick={() => handlePlayInvite("GTL")}
+                    >
+                      <div className="fc-item-icon fc-item-icon-game-gtl">🤥</div>
+                      <div>
+                        <div className="fc-item-label">Guess the Lie</div>
+                        <div className="fc-item-desc">2 truths, 1 lie — vote it out</div>
+                      </div>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="fc-dropdown-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      Select Party
+                      <button onClick={() => setActiveSubMenu(null)} style={{ background: "transparent", border: "none", color: "#666", cursor: "pointer", fontSize: "10px" }}>← BACK</button>
+                    </div>
+                    {loadingSessions ? (
+                      <div style={{ padding: "20px", textAlign: "center", color: "#666", fontSize: "12px" }}>Searching...</div>
+                    ) : sessions.length === 0 ? (
+                      <div style={{ padding: "20px", textAlign: "center", color: "#666", fontSize: "12px" }}>
+                        No active parties found. Start one first!
+                      </div>
+                    ) : (
+                      sessions.map(s => (
+                        <button 
+                          key={s.id} 
+                          className="fc-dropdown-item" 
+                          onClick={() => sendInvite(s.id, s.name)}
+                          disabled={inviting}
+                        >
+                          <div className="fc-item-icon" style={{ background: "rgba(255,255,255,0.05)", fontSize: "14px" }}>⭐</div>
+                          <div>
+                            <div className="fc-item-label">{s.name}</div>
+                            <div className="fc-item-desc" style={{ color: s.status === 'paired' ? '#f59e0b' : '#34d399' }}>
+                              {s.status === 'paired' ? 'Active Match' : 'Waiting for spinning'}
+                            </div>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </>
+                )}
               </div>
             )}
+
           </div>
 
           {/* Remove */}

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 type Pool = {
   id: string;
@@ -38,9 +38,18 @@ type Pair = {
   user2_pic: string;
   initiator_id: string;
   expires_at: string;
+  partner_message_count?: number;
 };
 
 export default function RoulettePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <RouletteContent />
+    </Suspense>
+  );
+}
+
+function RouletteContent() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [pools, setPools] = useState<Pool[]>([]);
@@ -65,6 +74,8 @@ export default function RoulettePage() {
 
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
+  const searchParams = useSearchParams();
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) { router.push("/auth/login"); return; }
@@ -74,7 +85,14 @@ export default function RoulettePage() {
     } catch {}
     fetchPools();
     fetchMyPairs();
-  }, [router]);
+
+    // Check for direct pool link (from invite)
+    const poolId = searchParams.get("pool");
+    if (poolId) {
+      fetchPoolDetail(poolId);
+      setShowJoin(true); // Open join modal for better UX
+    }
+  }, [router, searchParams]);
 
   const getToken = () => localStorage.getItem("token");
 
@@ -129,6 +147,23 @@ export default function RoulettePage() {
       if (res.ok) {
         setShowJoin(false);
         fetchPoolDetail(activePool.id);
+      } else {
+        const err = await res.json();
+        alert(err.error);
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  const handleLeavePool = async () => {
+    if (!confirm("Are you sure you want to leave this pool?")) return;
+    try {
+      const res = await fetch(`${API}/play/roulette/pool/${activePool.id}/leave`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (res.ok) {
+        fetchPoolDetail(activePool.id);
+        fetchPools(); // Update participant count in list
       } else {
         const err = await res.json();
         alert(err.error);
@@ -384,7 +419,16 @@ export default function RoulettePage() {
                     🎲 Join Pool
                   </button>
                 ) : (
-                  <span style={{ color: "#22c55e", fontSize: "14px", fontWeight: 600 }}>✅ You've joined!</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                    <span style={{ color: "#22c55e", fontSize: "14px", fontWeight: 600 }}>✅ You've joined!</span>
+                    <button 
+                      className="rl-action-btn" 
+                      onClick={handleLeavePool}
+                      style={{ background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", border: "1px solid rgba(239, 68, 68, 0.2)", padding: "8px 16px" }}
+                    >
+                      Leave Pool
+                    </button>
+                  </div>
                 )}
 
                 {user && activePool.created_by === user.id && (
@@ -445,14 +489,21 @@ export default function RoulettePage() {
                           </div>
                           {isInitiator && (
                             <Link href={`/chat?initiate=${partnerId}`} className="rl-msg-btn">
-                              💬 Start Chat
+                              {parseInt(pair.partner_message_count as any) > 0 ? "💬 Reply" : "💬 Start Chat"}
                             </Link>
                           )}
                           {!isInitiator && (
-                            <span style={{ fontSize: "12px", color: "#a78bfa", fontWeight: 600 }}>Waiting for them to message you...</span>
+                            parseInt(pair.partner_message_count as any) > 0 ? (
+                              <Link href={`/chat?initiate=${partnerId}`} className="rl-msg-btn" style={{ background: "rgba(34, 197, 94, 0.15)", color: "#4ade80", borderColor: "rgba(34, 197, 94, 0.3)" }}>
+                                ✉️ They've sent a message!
+                              </Link>
+                            ) : (
+                              <span style={{ fontSize: "12px", color: "#a78bfa", fontWeight: 600 }}>Waiting for them to message you...</span>
+                            )
                           )}
                         </div>
                       )}
+
                     </div>
                   );
                 })}
@@ -491,12 +542,17 @@ export default function RoulettePage() {
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                         <div className="rl-pair-timer">⏰ {new Date(pair.expires_at).toLocaleString()}</div>
-                        {isInitiator ? (
+                        {parseInt(pair.partner_message_count as any) > 0 ? (
+                          <Link href={`/chat?initiate=${partner.id}`} className="rl-msg-btn" style={{ background: "rgba(34, 197, 94, 0.15)", color: "#4ade80", borderColor: "rgba(34, 197, 94, 0.3)" }}>
+                            ✉️ They've sent a message!
+                          </Link>
+                        ) : isInitiator ? (
                           <Link href={`/chat?initiate=${partner.id}`} className="rl-msg-btn">💬 Chat</Link>
                         ) : (
                           <span style={{ fontSize: "12px", color: "#a78bfa" }}>Their turn to initiate</span>
                         )}
                       </div>
+
                     </div>
                   );
                 })}

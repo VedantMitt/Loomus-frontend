@@ -53,6 +53,32 @@ type Comment = {
   created_at: string;
 };
 
+type Announcement = {
+  id: string;
+  content: string;
+  sender_id: string;
+  sender_name: string;
+  sender_username: string;
+  sender_pic?: string;
+  created_at: string;
+};
+
+type Moderator = {
+  id: string;
+  name: string;
+  username: string;
+  profile_pic?: string;
+  assigned_at: string;
+};
+
+type Member = {
+  id: string;
+  name: string;
+  username: string;
+  profile_pic?: string;
+  rsvp_status: string;
+};
+
 export default function ActivityDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -64,7 +90,7 @@ export default function ActivityDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isHost, setIsHost] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<"gallery" | "leaderboard" | "comments" | "polls">("gallery");
+  const [activeTab, setActiveTab] = useState<"gallery" | "leaderboard" | "comments" | "polls" | "announcements">("gallery");
   const [commentText, setCommentText] = useState("");
   const [commenting, setCommenting] = useState(false);
 
@@ -80,6 +106,20 @@ export default function ActivityDetailPage() {
 
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteeId, setInviteeId] = useState("");
+
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [announcementText, setAnnouncementText] = useState("");
+  const [postingAnnouncement, setPostingAnnouncement] = useState(false);
+  const [moderators, setModerators] = useState<Moderator[]>([]);
+  const [isMod, setIsMod] = useState(false);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [showManageRolesModal, setShowManageRolesModal] = useState(false);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+
+  // Global Search for Invites
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searching, setSearching] = useState(false);
 
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -100,7 +140,17 @@ export default function ActivityDetailPage() {
         const aData = await aRes.json();
         setActivity(aData);
         setIsHost(aData.host_user_id === myUserId);
-        if (aData.format === 'Hangout') setActiveTab('polls');
+        
+        // Auto-select tab from query param or based on format
+        const queryParams = new URLSearchParams(window.location.search);
+        const tabParam = queryParams.get('tab');
+        
+        if (tabParam === 'announcements') setActiveTab('announcements');
+        else if (tabParam === 'comments') setActiveTab('comments');
+        else if (tabParam === 'gallery') setActiveTab('gallery');
+        else if (tabParam === 'leaderboard') setActiveTab('leaderboard');
+        else if (tabParam === 'polls') setActiveTab('polls');
+        else if (aData.format === 'Hangout') setActiveTab('polls');
         else if (aData.format === 'Event' || !aData.allow_submissions) setActiveTab('comments');
 
         // Fetch submissions
@@ -112,6 +162,22 @@ export default function ActivityDetailPage() {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (cRes.ok) setComments(await cRes.json());
+
+        // Fetch moderators
+        const mRes = await fetch(`${API}/activities/${id}/moderators`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (mRes.ok) {
+          const mData = await mRes.json();
+          setModerators(mData);
+          setIsMod(mData.some((m: any) => m.id === myUserId));
+        }
+
+        // Fetch announcements
+        const annRes = await fetch(`${API}/activities/${id}/announcements`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (annRes.ok) setAnnouncements(await annRes.json());
 
         // Fetch analytics if host
         if (aData.host_user_id === myUserId) {
@@ -127,7 +193,50 @@ export default function ActivityDetailPage() {
       }
     }
     fetchData();
-  }, [id, router]);
+  }, [id, router, API]);
+
+  // Global Search for Invites
+  useEffect(() => {
+    if (!showInviteModal) return;
+    
+    setSearching(true);
+    const timeout = setTimeout(async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API}/users/discover?search=${searchQuery.trim()}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (res.ok) {
+          setSearchResults(await res.json());
+        }
+      } catch (err) {
+        console.error("Invite search error:", err);
+      } finally {
+        setSearching(false);
+      }
+    }, searchQuery ? 300 : 0); // Immediate fetch if empty, else debounce
+    return () => clearTimeout(timeout);
+  }, [searchQuery, showInviteModal, API]);
+
+  const fetchAnnouncements = async () => {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`${API}/activities/${id}/announcements`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (res.ok) setAnnouncements(await res.json());
+  };
+
+  const fetchMembers = async () => {
+    setLoadingMembers(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/activities/${id}/participants`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) setMembers(await res.json());
+    } catch (err) { console.error(err); }
+    setLoadingMembers(false);
+  };
 
   const fetchLeaderboard = async () => {
     const token = localStorage.getItem("token");
@@ -309,8 +418,71 @@ export default function ActivityDetailPage() {
     }
   };
 
-  const handleInvite = async () => {
-    if (!inviteeId) return;
+  const handlePostAnnouncement = async () => {
+    if (!announcementText.trim()) return;
+    setPostingAnnouncement(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/activities/${id}/announcements`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ content: announcementText })
+      });
+      if (res.ok) {
+        setAnnouncementText("");
+        fetchAnnouncements();
+        alert("Announcement posted!");
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to post");
+      }
+    } catch (err) { console.error(err); }
+    setPostingAnnouncement(false);
+  };
+
+  const handleAddModerator = async (userId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/activities/${id}/moderators`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ user_id: userId })
+      });
+      if (res.ok) {
+        // Refresh moderators and members
+        const mRes = await fetch(`${API}/activities/${id}/moderators`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (mRes.ok) setModerators(await mRes.json());
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  const handleRemoveModerator = async (userId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/activities/${id}/moderators/${userId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        // Refresh moderators
+        const mRes = await fetch(`${API}/activities/${id}/moderators`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (mRes.ok) setModerators(await mRes.json());
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  const handleInvite = async (userId: string) => {
+    if (!userId) return;
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`${API}/activities/${id}/invite`, {
@@ -319,12 +491,10 @@ export default function ActivityDetailPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ invitee_id: inviteeId })
+        body: JSON.stringify({ invitee_id: userId })
       });
       if (res.ok) {
-        alert("Friend invited!");
-        setShowInviteModal(false);
-        setInviteeId("");
+        alert("Invitation sent!");
       } else {
         const err = await res.json();
         alert(err.error || "Failed to invite");
@@ -360,7 +530,6 @@ export default function ActivityDetailPage() {
           padding-bottom: 80px;
         }
 
-        /* Banner Phase */
         .ad-banner-wrap {
           position: relative;
           width: 100%;
@@ -389,7 +558,6 @@ export default function ActivityDetailPage() {
           background: linear-gradient(0deg, #09090b 0%, rgba(9, 9, 11, 0.5) 40%, transparent 100%);
         }
 
-        /* Container */
         .ad-container {
           max-width: 1000px;
           margin: 0 auto;
@@ -399,7 +567,6 @@ export default function ActivityDetailPage() {
           margin-top: -100px;
         }
 
-        /* Header Info */
         .ad-header-card {
           background: rgba(20, 20, 22, 0.7);
           backdrop-filter: blur(24px);
@@ -467,7 +634,6 @@ export default function ActivityDetailPage() {
         .ad-host-label { font-size: 12px; color: rgba(255, 255, 255, 0.4); }
         .ad-host-name { font-size: 14px; font-weight: 600; color: #fff; }
 
-        /* Action Buttons */
         .ad-actions {
           display: flex;
           flex-direction: column;
@@ -494,7 +660,7 @@ export default function ActivityDetailPage() {
           color: #fff;
           box-shadow: 0 4px 20px rgba(236, 72, 153, 0.3);
         }
-        .ad-btn-primary:active { transform: scale(0.98); }
+        .ad-btn-primary:hover { transform: scale(0.98); }
         
         .ad-btn-secondary {
           background: rgba(255, 255, 255, 0.05);
@@ -505,7 +671,6 @@ export default function ActivityDetailPage() {
           background: rgba(255, 255, 255, 0.1);
         }
         
-        /* Stats */
         .ad-stats {
           display: flex;
           gap: 20px;
@@ -518,7 +683,6 @@ export default function ActivityDetailPage() {
         .ad-stat-val { font-size: 20px; font-weight: 700; color: #fff; font-family: 'Syne', sans-serif; }
         .ad-stat-label { font-size: 12px; color: rgba(255, 255, 255, 0.5); text-transform: uppercase; letter-spacing: 0.05em; }
 
-        /* Content Grid */
         .ad-grid {
           display: grid;
           grid-template-columns: 1fr;
@@ -530,7 +694,6 @@ export default function ActivityDetailPage() {
           }
         }
 
-        /* Description blocks */
         .ad-block {
           background: rgba(20, 20, 22, 0.4);
           border: 1px solid rgba(255, 255, 255, 0.06);
@@ -554,7 +717,6 @@ export default function ActivityDetailPage() {
           white-space: pre-wrap;
         }
 
-        /* Tabs */
         .ad-tabs {
           display: flex;
           gap: 8px;
@@ -581,7 +743,6 @@ export default function ActivityDetailPage() {
           border-bottom-color: #f472b6;
         }
 
-        /* Submissions Grid */
         .ad-gallery {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -624,7 +785,6 @@ export default function ActivityDetailPage() {
         .ad-rank-2 { color: #94a3b8; }
         .ad-rank-3 { color: #b45309; }
 
-        /* Comments */
         .ad-comment-list {
           display: flex;
           flex-direction: column;
@@ -670,9 +830,7 @@ export default function ActivityDetailPage() {
           resize: none;
           outline: none;
         }
-        .ad-c-input:focus { border-color: rgba(244, 114, 182, 0.5); }
 
-        /* Host Area */
         .ad-host-panel {
           background: linear-gradient(135deg, rgba(244, 114, 182, 0.05) 0%, rgba(167, 139, 250, 0.05) 100%);
           border: 1px solid rgba(244, 114, 182, 0.2);
@@ -697,7 +855,6 @@ export default function ActivityDetailPage() {
           border-radius: 12px;
         }
 
-        /* Modal */
         .ad-modal-bg {
           position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
           z-index: 100; display: flex; align-items: center; justify-content: center;
@@ -733,7 +890,6 @@ export default function ActivityDetailPage() {
             </div>
 
             <div className="ad-host">
-              <img src={hostPic} alt="Host" className="ad-host-pic" />
               <div className="ad-host-info">
                 <span className="ad-host-label">Hosted by</span>
                 <span className="ad-host-name">
@@ -759,23 +915,31 @@ export default function ActivityDetailPage() {
           </div>
 
           <div className="ad-actions">
-            {new Date(activity.date).getTime() > new Date().getTime() - 24 * 60 * 60 * 1000 && (
-              <>
+            <div className="flex flex-col gap-2">
+              <button 
+                className={`ad-btn ${activity.my_rsvp === 'going' ? 'ad-btn-primary' : 'ad-btn-secondary'}`}
+                onClick={() => handleRsvp(activity.my_rsvp === 'going' ? 'not_going' : 'going')}
+              >
+                {activity.my_rsvp === 'going' ? 'Joined' : 'Join'}
+              </button>
+              <button className="ad-btn ad-btn-secondary" onClick={() => setShowInviteModal(true)}>
+                💌 Invite Friend
+              </button>
+              {isHost && (
                 <button 
-                  className={`ad-btn ${activity.my_rsvp === 'going' ? 'ad-btn-primary' : 'ad-btn-secondary'}`}
-                  onClick={() => handleRsvp(activity.my_rsvp === 'going' ? 'not_going' : 'going')}
+                  className="ad-btn ad-btn-secondary" 
+                  style={{ border: '1px solid rgba(244, 114, 182, 0.4)', color: '#f472b6' }}
+                  onClick={() => { fetchMembers(); setShowManageRolesModal(true); }}
                 >
-                  {activity.my_rsvp === 'going' ? 'Joined' : 'Join'}
+                  ⚙️ Manage Roles
                 </button>
-                <button className="ad-btn ad-btn-secondary" onClick={() => setShowInviteModal(true)}>
-                  💌 Invite Friend
-                </button>
-              </>
-            )}
+              )}
+            </div>
+            
             {activity.social_links && activity.social_links.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '4px' }}>
+              <div className="grid grid-cols-2 gap-2 mt-4">
                 {activity.social_links.map((link, i) => (
-                  <a key={i} href={link.url} target="_blank" rel="noreferrer" className="ad-btn ad-btn-secondary" style={{textDecoration: 'none', padding: '8px', fontSize: '13px'}}>
+                  <a key={i} href={link.url} target="_blank" rel="noreferrer" className="ad-btn ad-btn-secondary !p-2 !text-[13px] no-underline">
                     🔗 {link.name}
                   </a>
                 ))}
@@ -794,13 +958,19 @@ export default function ActivityDetailPage() {
               </div>
             </div>
 
-            {/* Submissions & Tabs */}
+            {/* Content Tabs */}
             <div className="ad-block">
               <div className="ad-tabs">
+                <button className={`ad-tab ${activeTab === 'comments' ? 'active' : ''}`} onClick={() => setActiveTab('comments')}>
+                  Discussion ({comments.length})
+                </button>
+                <button className={`ad-tab ${activeTab === 'announcements' ? 'active' : ''}`} onClick={() => setActiveTab('announcements')}>
+                   📢 Updates ({announcements.length})
+                </button>
                 {activity.allow_submissions && (
                   <>
                     <button className={`ad-tab ${activeTab === 'gallery' ? 'active' : ''}`} onClick={() => setActiveTab('gallery')}>
-                      Gallery View
+                      Gallery
                     </button>
                     <button className={`ad-tab ${activeTab === 'leaderboard' ? 'active' : ''}`} onClick={() => setActiveTab('leaderboard')}>
                       Leaderboard 🏆
@@ -812,133 +982,184 @@ export default function ActivityDetailPage() {
                     Polls 📊
                   </button>
                 )}
-                <button className={`ad-tab ${activeTab === 'comments' ? 'active' : ''}`} onClick={() => setActiveTab('comments')}>
-                  Discussion ({comments.length})
-                </button>
               </div>
 
-              {activeTab === 'gallery' && (
-                <div className="ad-gallery">
-                  {submissions.map((s) => (
-                    <div key={s.id} className="ad-sub-card">
-                      <img src={s.content_url} className="ad-sub-img" />
-                      <div className="ad-sub-body">
-                        <div className="ad-sub-author">{s.name}</div>
-                        <button 
-                          onClick={() => handleVote(s.id)}
-                          className={`ad-btn ${s.has_voted ? 'ad-btn-primary' : 'ad-btn-secondary'}`}
-                          style={{ padding: '6px', fontSize: '12px' }}
-                        >
-                          {s.has_voted ? `❤️ ${s.vote_count}` : `🤍 ${s.vote_count}`}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                  {submissions.length === 0 && <div className="text-gray-500 py-8 text-center">No submissions yet!</div>}
-                </div>
-              )}
-
-              {activeTab === 'leaderboard' && (
-                <div className="ad-leaderboard">
-                  {submissions.map((s, i) => (
-                    <div key={s.id} className="ad-leaderboard-row">
-                      <div className={`ad-rank ${i===0 ? 'ad-rank-1' : i===1 ? 'ad-rank-2' : i===2 ? 'ad-rank-3' : ''}`}>#{i+1}</div>
-                      <img src={s.content_url} className="w-16 h-16 rounded-xl object-cover" />
-                      <div className="flex-1">
-                        <div className="text-white font-semibold">{s.name}</div>
-                        <div className="text-sm text-gray-400">{s.vote_count} votes</div>
-                      </div>
-                      <button 
-                        onClick={() => handleVote(s.id)}
-                        className={`ad-btn ${s.has_voted ? 'ad-btn-primary' : 'ad-btn-secondary'}`}
-                        style={{ width: 'auto', padding: '8px 16px' }}
-                      >
-                        {s.has_voted ? 'Voted' : 'Vote'}
-                      </button>
-                    </div>
-                  ))}
-                  {submissions.length === 0 && <div className="text-gray-500 py-8 text-center">No entries for leaderboard yet!</div>}
-                </div>
-              )}
-
-              {activeTab === 'polls' && (
-                <div>
-                  {isHost && (
-                    <div className="mb-8 bg-white/5 border border-white/10 p-4 rounded-xl">
-                      <h4 className="text-sm font-bold mb-3 text-pink-400">Create New Poll</h4>
-                      <input type="text" placeholder="Ask a question..." value={newPollQ} onChange={e=>setNewPollQ(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white text-sm mb-3 outline-none" />
-                      {newPollOpts.map((opt, i) => (
-                        <input key={i} type="text" placeholder={`Option ${i+1}`} value={opt} onChange={e=>{const n=[...newPollOpts]; n[i]=e.target.value; setNewPollOpts(n)}} className="w-full bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm mb-2 outline-none" />
-                      ))}
-                      <div className="flex gap-2 mt-2">
-                        <button className="text-xs text-gray-400 hover:text-white" onClick={()=>setNewPollOpts([...newPollOpts, ""])}>+ Add Option</button>
-                        <button className="ml-auto ad-btn ad-btn-primary" style={{width: 'auto', padding: '6px 12px', fontSize: '12px'}} onClick={handleCreatePoll} disabled={creatingPoll}>Create</button>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex flex-col gap-6">
-                    {polls.map((p) => {
-                      const totalVotes = p.options.reduce((sum: number, o: any) => sum + o.vote_count, 0);
-                      return (
-                        <div key={p.id} className="bg-white/5 border border-white/10 rounded-xl p-5">
-                          <h3 className="text-lg font-bold text-white mb-4">{p.question}</h3>
-                          <div className="flex flex-col gap-3">
-                            {p.options.map((o: any) => {
-                              const pct = totalVotes > 0 ? Math.round((o.vote_count / totalVotes) * 100) : 0;
-                              return (
-                                <div key={o.id} className="relative overflow-hidden rounded-lg cursor-pointer bg-black/40 border border-white/5 hover:border-white/20 transition-all" onClick={() => handleVotePoll(o.id)}>
-                                  <div className="absolute inset-y-0 left-0 bg-pink-500/20" style={{width: `${pct}%`}}></div>
-                                  <div className="relative p-3 flex justify-between items-center z-10">
-                                    <div className="flex items-center gap-2">
-                                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${o.has_voted ? 'border-pink-500' : 'border-gray-500'}`}>
-                                        {o.has_voted && <div className="w-2 h-2 rounded-full bg-pink-500"></div>}
-                                      </div>
-                                      <span className="text-sm text-white font-medium">{o.option_text}</span>
-                                    </div>
-                                    <span className="text-xs text-gray-400">{pct}% ({o.vote_count})</span>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                          <div className="mt-4 text-xs text-gray-500">Created by {p.creator_name} • {totalVotes} total votes</div>
-                        </div>
-                      );
-                    })}
-                    {polls.length === 0 && <div className="text-center text-gray-500 py-8">No polls active right now.</div>}
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'comments' && (
-                <div>
-                  <div className="ad-comment-list">
-                    {comments.map((c) => (
-                      <div key={c.id} className="ad-comment">
-                        <img src={c.profile_pic?.startsWith('/uploads') ? `${API}${c.profile_pic}` : c.profile_pic || `https://ui-avatars.com/api/?name=${c.name}&background=0D1117&color=fff`} className="ad-c-avatar" />
-                        <div className="ad-c-body">
-                          <div className="ad-c-name">{c.name} <span style={{color: '#666', fontWeight: 400}}>@{c.username}</span></div>
-                          <div className="ad-c-text">{c.content}</div>
+              {/* Tab Content Rendering */}
+              <div className="mt-6">
+                {activeTab === 'gallery' && (
+                  <div className="ad-gallery">
+                    {submissions.map((s) => (
+                      <div key={s.id} className="ad-sub-card">
+                        <img src={s.content_url} className="ad-sub-img" alt="" />
+                        <div className="ad-sub-body">
+                          <div className="ad-sub-author">{s.name}</div>
+                          <button 
+                            onClick={() => handleVote(s.id)}
+                            className={`ad-btn ${s.has_voted ? 'ad-btn-primary' : 'ad-btn-secondary'}`}
+                            style={{ padding: '6px', fontSize: '12px' }}
+                          >
+                            {s.has_voted ? `❤️ ${s.vote_count}` : `🤍 ${s.vote_count}`}
+                          </button>
                         </div>
                       </div>
                     ))}
-                    {comments.length === 0 && <div className="text-gray-500 py-4 text-center">Be the first to comment!</div>}
+                    {submissions.length === 0 && <div className="text-gray-500 py-8 text-center">No submissions yet!</div>}
                   </div>
-                  <div className="ad-c-input-wrap">
-                    <textarea 
-                      value={commentText} 
-                      onChange={(e) => setCommentText(e.target.value)}
-                      placeholder="Type your message..." 
-                      className="ad-c-input" 
-                      rows={1}
-                    />
-                    <button onClick={handleComment} disabled={commenting} className="ad-btn ad-btn-primary" style={{ width: 'auto' }}>
-                      {commenting ? '...' : 'Send'}
-                    </button>
+                )}
+
+                {activeTab === 'leaderboard' && (
+                  <div className="ad-leaderboard">
+                    {submissions.map((s, i) => (
+                      <div key={s.id} className="ad-leaderboard-row">
+                        <div className={`ad-rank ${i===0 ? 'ad-rank-1' : i===1 ? 'ad-rank-2' : i===2 ? 'ad-rank-3' : ''}`}>#{i+1}</div>
+                        <img src={s.content_url} className="w-16 h-16 rounded-xl object-cover" alt="" />
+                        <div className="flex-1">
+                          <div className="text-white font-semibold">{s.name}</div>
+                          <div className="text-sm text-gray-400">{s.vote_count} votes</div>
+                        </div>
+                        <button 
+                          onClick={() => handleVote(s.id)}
+                          className={`ad-btn ${s.has_voted ? 'ad-btn-primary' : 'ad-btn-secondary'}`}
+                          style={{ width: 'auto', padding: '8px 16px' }}
+                        >
+                          {s.has_voted ? 'Voted' : 'Vote'}
+                        </button>
+                      </div>
+                    ))}
+                    {submissions.length === 0 && <div className="text-gray-500 py-8 text-center">No entries for leaderboard yet!</div>}
                   </div>
-                </div>
-              )}
+                )}
+
+                {activeTab === 'polls' && (
+                  <div>
+                    {isHost && (
+                      <div className="mb-8 bg-white/5 border border-white/10 p-4 rounded-xl">
+                        <h4 className="text-sm font-bold mb-3 text-pink-400">Create New Poll</h4>
+                        <input type="text" placeholder="Ask a question..." value={newPollQ} onChange={e=>setNewPollQ(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white text-sm mb-3 outline-none" />
+                        {newPollOpts.map((opt, i) => (
+                          <input key={i} type="text" placeholder={`Option ${i+1}`} value={opt} onChange={e=>{const n=[...newPollOpts]; n[i]=e.target.value; setNewPollOpts(n)}} className="w-full bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm mb-2 outline-none" />
+                        ))}
+                        <div className="flex gap-2 mt-2">
+                          <button className="text-xs text-gray-400 hover:text-white" onClick={()=>setNewPollOpts([...newPollOpts, ""])}>+ Add Option</button>
+                          <button className="ml-auto ad-btn ad-btn-primary" style={{width: 'auto', padding: '6px 12px', fontSize: '12px'}} onClick={handleCreatePoll} disabled={creatingPoll}>Create</button>
+                        </div>
+                      </div>
+                    )}
+                    <div className="space-y-4">
+                      {polls.map((poll) => {
+                        const totalVotes = poll.options.reduce((sum: number, o: any) => sum + (o.vote_count || 0), 0);
+                        return (
+                          <div key={poll.id} className="bg-white/5 border border-white/10 rounded-xl p-5">
+                            <h4 className="font-bold text-white mb-4">{poll.question}</h4>
+                            <div className="space-y-3">
+                              {poll.options.map((opt: any) => {
+                                const pct = totalVotes > 0 ? Math.round((opt.vote_count / totalVotes) * 100) : 0;
+                                return (
+                                  <div key={opt.id} onClick={() => handleVotePoll(opt.id)} className={`relative overflow-hidden p-3 rounded-lg border transition-all cursor-pointer ${opt.has_voted ? 'border-pink-500/50 bg-pink-500/10' : 'border-white/5 bg-white/3 hover:bg-white/5'}`}>
+                                    <div className="absolute inset-y-0 left-0 bg-pink-500/10 transition-all" style={{ width: `${pct}%` }} />
+                                    <div className="relative flex justify-between items-center text-sm">
+                                      <span className="flex items-center gap-2">
+                                        {opt.option_text}
+                                        {opt.has_voted && <span className="text-[10px] text-pink-400">✓ Voted</span>}
+                                      </span>
+                                      <span className="font-bold">{pct}%</span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <div className="mt-4 text-xs text-gray-500 flex justify-between">
+                              <span>Asked by {poll.creator_name || 'Host'}</span>
+                              <span>{totalVotes} total votes</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {polls.length === 0 && <div className="text-center text-gray-500 py-8">No polls active.</div>}
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'comments' && (
+                  <>
+                    <div className="ad-comment-list">
+                      {comments.map((c) => (
+                        <div key={c.id} className="ad-comment">
+                          <img src={c.profile_pic?.startsWith("/uploads") ? `${API}${c.profile_pic}` : c.profile_pic || `https://ui-avatars.com/api/?name=${c.name}&background=111&color=fff`} alt="" className="ad-c-avatar" />
+                          <div className="ad-c-body">
+                            <div className="ad-c-name">{c.name} (@{c.username})</div>
+                            <div className="ad-c-text">{c.content}</div>
+                          </div>
+                        </div>
+                      ))}
+                      {comments.length === 0 && <div className="text-center text-gray-500 py-4">No comments yet.</div>}
+                    </div>
+                    <div className="ad-c-input-wrap">
+                      <textarea className="ad-c-input" rows={1} placeholder="Add a comment..." value={commentText} onChange={(e) => setCommentText(e.target.value)} />
+                      <button className="ad-btn ad-btn-primary" style={{ width: 'auto', padding: '10px 20px' }} onClick={handleComment} disabled={commenting}>
+                        {commenting ? "..." : "Send"}
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {activeTab === "announcements" && (
+                  <div className="space-y-6">
+                    {(isHost || isMod) && (
+                      <div className="bg-pink-500/5 p-5 rounded-2xl border border-pink-500/20">
+                        <label className="ad-hp-title !text-xs uppercase tracking-wider mb-2 block">Post Official Announcement</label>
+                        <textarea 
+                          className="ad-c-input !rounded-xl !bg-black/40 mb-3" 
+                          rows={3} 
+                          placeholder="Broadcast an update to all members..."
+                          value={announcementText}
+                          onChange={(e) => setAnnouncementText(e.target.value)}
+                        />
+                        <button 
+                          className="ad-btn ad-btn-primary !w-auto !px-6" 
+                          onClick={handlePostAnnouncement}
+                          disabled={postingAnnouncement || !announcementText.trim()}
+                        >
+                          {postingAnnouncement ? "Posting..." : "Broadcast Update 📣"}
+                        </button>
+                      </div>
+                    )}
+
+                    {announcements.length === 0 ? (
+                      <div className="text-center py-12 text-gray-500">
+                        <div className="text-4xl mb-3">🔕</div>
+                        No announcements yet.
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-4">
+                        {announcements.map((ann) => (
+                          <div key={ann.id} className="bg-white/3 border border-white/5 rounded-2xl p-5">
+                            <div className="flex justify-between items-start mb-3">
+                              <div className="flex items-center gap-3">
+                                <img src={ann.sender_pic?.startsWith("/uploads") ? `${API}${ann.sender_pic}` : ann.sender_pic || `https://ui-avatars.com/api/?name=${ann.sender_name}&background=111&color=fff`} className="w-8 h-8 rounded-full" alt="" />
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-bold text-white">{ann.sender_name}</span>
+                                    <span className="text-[9px] bg-pink-500/20 text-pink-400 px-2 py-0.5 rounded-full font-bold uppercase">
+                                      {ann.sender_id === activity.host_user_id ? "Host" : "Mod"}
+                                    </span>
+                                  </div>
+                                  <div className="text-[10px] text-gray-500">
+                                    {new Date(ann.created_at).toLocaleDateString()} at {new Date(ann.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-[#eee] text-sm leading-relaxed whitespace-pre-wrap">
+                              {ann.content}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -946,27 +1167,27 @@ export default function ActivityDetailPage() {
           <div className="ad-sidebar">
             {isHost && (
               <div className="ad-host-panel">
-                <h3 className="ad-hp-title">🛠️ Host Tools</h3>
+                <h3 className="ad-hp-title">🛠️ Host Manager</h3>
                 
                 {analytics && (
                   <div className="ad-hp-grid mb-6">
                     <div className="ad-hp-stat">
-                      <div className="ad-stat-val">{analytics.view_count || 0}</div>
+                      <div className="ad-stat-val text-pink-400">{analytics.view_count || 0}</div>
                       <div className="ad-stat-label">Views</div>
                     </div>
                     <div className="ad-hp-stat">
                       <div className="ad-stat-val">{analytics.submission_count || 0}</div>
-                      <div className="ad-stat-label">Submissions</div>
+                      <div className="ad-stat-label">Entries</div>
                     </div>
                   </div>
                 )}
 
-                <div className="flex gap-2">
-                  <button className="ad-btn ad-btn-secondary flex-1" onClick={() => router.push(`/activities/${id}/edit`)}>
-                    ✏️ Edit
+                <div className="flex flex-col gap-2">
+                  <button className="ad-btn ad-btn-secondary !bg-white/5" onClick={() => router.push(`/activities/${id}/edit`)}>
+                    ✏️ Edit Event
                   </button>
-                  <button className="ad-btn flex-1" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }} onClick={handleDelete}>
-                    🗑️ Delete
+                  <button className="ad-btn !bg-red-500/10 !text-red-500 border border-red-500/20" onClick={handleDelete}>
+                    🗑️ Delete Event
                   </button>
                 </div>
               </div>
@@ -975,16 +1196,15 @@ export default function ActivityDetailPage() {
             {/* Submission Box */}
             {activity.allow_submissions && (
               <div className="ad-block">
-                <h3 className="ad-block-title">Submit Entry</h3>
-                <p className="text-sm text-gray-400 mb-4">Participate in this event by submitting your photo or content.</p>
+                <h3 className="ad-block-title">Submit Content</h3>
+                <p className="text-xs text-gray-400 mb-4">Share your moments from this event with the community.</p>
                 
-                <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} className="w-full mb-3 text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-500 file:text-white hover:file:bg-pink-600" />
+                <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} className="w-full mb-3 text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-pink-500 file:text-white cursor-pointer" />
                 
                 <textarea 
                   value={subDesc} onChange={(e) => setSubDesc(e.target.value)}
-                  placeholder="Caption (optional)"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white text-sm mb-4 outline-none focus:border-pink-500"
-                  rows={2}
+                  placeholder="Tell us about your entry..."
+                  className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white text-sm mb-4 outline-none focus:border-pink-500 min-h-[80px]"
                 />
                 
                 <button 
@@ -992,30 +1212,142 @@ export default function ActivityDetailPage() {
                   disabled={submitting}
                   className="ad-btn ad-btn-primary"
                 >
-                  {submitting ? 'Uploading...' : 'Submit Now'}
+                  {submitting ? 'Uploading...' : 'Upload Entry'}
                 </button>
               </div>
             )}
           </div>
         </div>
+
+        {/* Floating Invite Button (Desktop) */}
+        {!isHost && (
+          <button 
+            onClick={() => setShowInviteModal(true)}
+            className="fixed bottom-10 right-10 w-16 h-16 bg-pink-500 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-all z-40 border-4 border-black"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="8.5" cy="7" r="4"></circle>
+              <line x1="20" y1="8" x2="20" y2="14"></line>
+              <line x1="17" y1="11" x2="23" y2="11"></line>
+            </svg>
+          </button>
+        )}
       </div>
+
+      {/* Manage Roles Modal */}
+      {showManageRolesModal && (
+        <div className="ad-modal-bg" onClick={() => setShowManageRolesModal(false)}>
+          <div className="ad-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="ad-block-title !m-0">Manage Roles</h2>
+              <button onClick={() => setShowManageRolesModal(false)} className="text-gray-500 hover:text-white">✕</button>
+            </div>
+
+            <p className="text-xs text-gray-400 mb-6">Promote members to <b>Moderator</b>. They will be able to post official announcements to the community.</p>
+
+            <div className="max-h-[350px] overflow-y-auto space-y-3 pr-2">
+              {loadingMembers ? (
+                <div className="text-center py-8 text-gray-500 text-sm">Loading participants...</div>
+              ) : members.length === 0 ? (
+                <div className="text-center py-8 text-gray-500 text-sm">No members to manage.</div>
+              ) : (
+                members.map(member => {
+                  const isModUser = moderators.some(m => m.id === member.id);
+                  const isHostUser = member.id === activity.host_user_id;
+
+                  return (
+                    <div key={member.id} className="flex items-center justify-between p-3 bg-white/3 border border-white/5 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <img src={member.profile_pic?.startsWith('/uploads') ? `${API}${member.profile_pic}` : member.profile_pic || `https://ui-avatars.com/api/?name=${member.name}&background=111&color=fff`} className="w-9 h-9 rounded-full" alt="" />
+                        <div>
+                          <div className="text-sm font-bold text-white">{member.name}</div>
+                          <div className="text-[10px] text-gray-500">@{member.username}</div>
+                        </div>
+                      </div>
+                      
+                      {isHostUser ? (
+                        <span className="text-[10px] text-pink-400 font-bold uppercase bg-pink-500/10 px-2 py-1 rounded">Host</span>
+                      ) : (
+                        <button 
+                          className={`text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all ${isModUser ? 'bg-white/10 text-gray-300' : 'bg-pink-500 text-white shadow-lg shadow-pink-500/20'}`}
+                          onClick={() => isModUser ? handleRemoveModerator(member.id) : handleAddModerator(member.id)}
+                        >
+                          {isModUser ? "Demote" : "Make Mod"}
+                        </button>
+                      )}
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Invite Modal */}
       {showInviteModal && (
         <div className="ad-modal-bg" onClick={() => setShowInviteModal(false)}>
-          <div className="ad-modal" onClick={e => e.stopPropagation()}>
-            <h2 className="text-xl font-bold mb-4">Invite a Friend</h2>
-            <p className="text-sm text-gray-400 mb-4">Enter your friend's user ID to invite them to this activity.</p>
-            <input 
-              type="text" 
-              placeholder="Friend's User ID" 
-              value={inviteeId} 
-              onChange={e => setInviteeId(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white text-sm mb-6 outline-none focus:border-pink-500"
-            />
-            <div className="flex gap-3">
-              <button className="ad-btn ad-btn-secondary flex-1" onClick={() => setShowInviteModal(false)}>Cancel</button>
-              <button className="ad-btn ad-btn-primary flex-1" onClick={handleInvite}>Send Invite</button>
+          <div className="ad-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px' }}>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="ad-block-title !m-0">Find People</h2>
+              <button onClick={() => setShowInviteModal(false)} className="text-gray-500 hover:text-white">✕</button>
+            </div>
+            
+            <p className="text-xs text-gray-400 mb-6">Search for anyone on <b>Loomus</b> and invite them to join.</p>
+
+            <div className="relative mb-6">
+              <input 
+                type="text" 
+                placeholder="Search by name or username..." 
+                value={searchQuery} 
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-12 text-white text-sm outline-none focus:border-pink-500 focus:bg-white/10 transition-all"
+              />
+              <svg className="absolute left-4 top-4 text-gray-500" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </div>
+
+            <div className="max-h-[380px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+              {searching ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-pink-500 mx-auto mb-3"></div>
+                  <div className="text-gray-500 text-sm">Searching the campus...</div>
+                </div>
+              ) : searchResults.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-4xl mb-3 opacity-30">🔍</div>
+                  <div className="text-gray-400 font-medium">No results found</div>
+                  <div className="text-gray-600 text-xs mt-1">Try a different name or username</div>
+                </div>
+              ) : (
+                searchResults.map(user => (
+                  <div key={user.id} className="flex items-center justify-between p-3 bg-white/3 border border-white/5 rounded-2xl hover:bg-white/8 transition-all group">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <img 
+                          src={user.profile_pic?.startsWith('/uploads') ? `${API}${user.profile_pic}` : user.profile_pic || `https://ui-avatars.com/api/?name=${user.name}&background=111&color=fff`} 
+                          className="w-11 h-11 rounded-full object-cover border-2 border-transparent group-hover:border-pink-500/50 transition-all" 
+                          alt="" 
+                        />
+                        {user.online && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#1a1a1c] rounded-full" />}
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-white group-hover:text-pink-400 transition-colors">{user.name}</div>
+                        <div className="text-[10px] text-gray-500">@{user.username}</div>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => handleInvite(user.id)}
+                      className="text-[11px] font-bold px-5 py-2.5 bg-pink-500/10 text-pink-400 rounded-xl hover:bg-pink-500 hover:text-white hover:scale-105 transition-all transform active:scale-95 shadow-lg shadow-black/20"
+                    >
+                      Invite
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

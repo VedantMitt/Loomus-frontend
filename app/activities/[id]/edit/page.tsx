@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { uploadSubmission } from "@/lib/uploadSubmission";
 import Link from "next/link";
+import CitySelector from "@/components/CitySelector";
 
 const CATEGORIES = [
   "Party", "Music", "Tech", "Sports", "Dating", "Academic", "Cultural", "Other"
@@ -25,6 +26,14 @@ export default function EditActivityPage() {
   
   const [format, setFormat] = useState("Event");
   const [socialLinks, setSocialLinks] = useState([{ name: "", url: "" }]);
+  const [mode, setMode] = useState("offline");
+  const [isFree, setIsFree] = useState(true);
+  const [price, setPrice] = useState<number | "">("");
+  const [selectedCity, setSelectedCity] = useState("");
+  const [isOfficial, setIsOfficial] = useState(false);
+  const [hostedByName, setHostedByName] = useState("");
+  const [collegeName, setCollegeName] = useState("");
+  const [societyName, setSocietyName] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -70,6 +79,25 @@ export default function EditActivityPage() {
         setAllowSubmissions(!!data.allow_submissions);
         setFormat(data.format || "Event");
         
+        // Detailed fields
+        setMode(data.mode || "offline");
+        setIsFree(data.is_free !== undefined ? data.is_free : true);
+        setPrice(data.price || "");
+        setIsOfficial(!!data.is_official);
+        setHostedByName(data.hosted_by_name || "");
+        setCollegeName(data.college_name || "");
+        setSocietyName(data.society_name || "");
+
+        // Parse location/city
+        const rawLoc = data.location || "";
+        if (rawLoc.includes(": ")) {
+          const [city, ...rest] = rawLoc.split(": ");
+          setSelectedCity(city);
+          setLocation(rest.join(": "));
+        } else {
+          setLocation(rawLoc);
+        }
+        
         if (data.social_links && Array.isArray(data.social_links) && data.social_links.length > 0) {
             setSocialLinks(data.social_links);
         }
@@ -100,17 +128,28 @@ export default function EditActivityPage() {
         bannerUrl = await uploadSubmission(banner);
       }
 
+      const finalLocation = (mode === 'offline' || mode === 'hybrid') 
+        ? (selectedCity ? `${selectedCity}: ${location}` : location)
+        : location;
+
       const payload = {
         title,
         type,
         date,
-        location,
+        location: finalLocation,
         description,
         banner: bannerUrl,
         max_participants: maxParticipants !== "" ? Number(maxParticipants) : null,
         allow_submissions: allowSubmissions,
         format,
-        social_links: socialLinks.filter(l => l.name.trim() && l.url.trim())
+        mode,
+        is_free: isFree,
+        price: isFree ? 0 : (price !== "" ? Number(price) : 0),
+        social_links: socialLinks.filter(l => l.name.trim() && l.url.trim()),
+        is_official: isOfficial,
+        hosted_by_name: isOfficial ? "" : hostedByName,
+        college_name: isOfficial ? collegeName : "",
+        society_name: isOfficial ? societyName : ""
       };
 
       const res = await fetch(`${API}/activities/${id}`, {
@@ -388,8 +427,16 @@ export default function EditActivityPage() {
           <div className="cac-row">
             <div className="cac-col">
               <div className="cac-form-group">
-                <label className="cac-label">Location *</label>
-                <input type="text" className="cac-input" placeholder="e.g. Main Auditorium" value={location} onChange={(e) => setLocation(e.target.value)} />
+                <label className="cac-label">
+                  {(mode === 'offline' || mode === 'hybrid') ? "Venue / Address *" : "Location / URL *"}
+                </label>
+                <input 
+                  type="text" 
+                  className="cac-input" 
+                  placeholder={(mode === 'offline' || mode === 'hybrid') ? "e.g. Main Auditorium" : "e.g. Zoom Link / Discord"} 
+                  value={location} 
+                  onChange={(e) => setLocation(e.target.value)} 
+                />
               </div>
             </div>
             <div className="cac-col" style={{ marginBottom: 0 }}>
@@ -412,12 +459,122 @@ export default function EditActivityPage() {
               <div key={i} className="cac-row" style={{ marginBottom: '12px' }}>
                 <input type="text" className="cac-input" placeholder="Platform" value={link.name} onChange={(e) => { const n = [...socialLinks]; n[i].name = e.target.value; setSocialLinks(n); }} style={{ flex: 1 }} />
                 <input type="text" className="cac-input" placeholder="URL (https://...)" value={link.url} onChange={(e) => { const n = [...socialLinks]; n[i].url = e.target.value; setSocialLinks(n); }} style={{ flex: 2 }} />
-                <button type="button" className="ad-btn" style={{background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '0 16px', borderRadius: '12px'}} onClick={() => setSocialLinks(socialLinks.filter((_, idx) => idx !== i))}>X</button>
+                <button type="button" className="ad-btn" style={{background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '0 16px', borderRadius: '12px', cursor: 'pointer', outline: 'none'}} onClick={() => setSocialLinks(socialLinks.filter((_, idx) => idx !== i))}>X</button>
               </div>
             ))}
             <button type="button" className="ad-btn ad-btn-secondary" style={{ width: 'auto', padding: '8px 16px', fontSize: '13px', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', cursor: 'pointer' }} onClick={() => setSocialLinks([...socialLinks, { name: "", url: "" }])}>
               + Add Link
             </button>
+          </div>
+
+          {/* Mode */}
+          <div className="cac-form-group">
+            <label className="cac-label">Mode</label>
+            <div className="cac-row">
+              {['offline', 'online', 'hybrid'].map(m => (
+                <div 
+                  key={m}
+                  className={`cac-format-btn ${mode === m ? 'active' : ''}`}
+                  onClick={() => setMode(m)}
+                >
+                  {m === 'offline' ? '📍 Offline' : m === 'online' ? '💻 Online' : '🔀 Hybrid'}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Conditional City Dropdown */}
+          {(mode === 'offline' || mode === 'hybrid') && (
+            <div className="cac-form-group" style={{ animation: 'dropReveal 0.4s ease' }}>
+              <label className="cac-label">Select City *</label>
+              <CitySelector 
+                value={selectedCity} 
+                onChange={setSelectedCity} 
+                placeholder="Select city where event is happening"
+              />
+            </div>
+          )}
+
+          {/* Host Information */}
+          <div className="cac-form-group">
+            <label className="cac-label">Host Information</label>
+            <div className="cac-row" style={{ marginBottom: '16px' }}>
+              <div 
+                className={`cac-format-btn ${!isOfficial ? 'active' : ''}`}
+                style={{ flex: 1 }}
+                onClick={() => setIsOfficial(false)}
+              >
+                👤 Unofficial
+              </div>
+              <div 
+                className={`cac-format-btn ${isOfficial ? 'active' : ''}`}
+                style={{ flex: 1 }}
+                onClick={() => setIsOfficial(true)}
+              >
+                🏛️ Official
+              </div>
+            </div>
+
+            {!isOfficial ? (
+              <div style={{ animation: 'dropReveal 0.3s ease' }}>
+                <label className="cac-label" style={{ fontSize: '13px', opacity: 0.7 }}>Hosted By (Personal / Group Name)</label>
+                <input
+                  type="text"
+                  className="cac-input"
+                  placeholder="e.g. Your Name, Friends Group, etc."
+                  value={hostedByName}
+                  onChange={(e) => setHostedByName(e.target.value)}
+                />
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', animation: 'dropReveal 0.3s ease' }}>
+                <div>
+                  <label className="cac-label" style={{ fontSize: '13px', opacity: 0.7 }}>College Name *</label>
+                  <input
+                    type="text"
+                    className="cac-input"
+                    placeholder="e.g. IIT Delhi"
+                    value={collegeName}
+                    onChange={(e) => setCollegeName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="cac-label" style={{ fontSize: '13px', opacity: 0.7 }}>Society Name (Optional)</label>
+                  <input
+                    type="text"
+                    className="cac-input"
+                    placeholder="e.g. DevClub"
+                    value={societyName}
+                    onChange={(e) => setSocietyName(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Pricing */}
+          <div className="cac-form-group">
+            <label className="cac-label">Pricing</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#fff', fontSize: '14px' }}>
+                <input type="radio" name="pricing" checked={isFree} onChange={() => { setIsFree(true); setPrice(''); }} />
+                Free
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#fff', fontSize: '14px' }}>
+                <input type="radio" name="pricing" checked={!isFree} onChange={() => setIsFree(false)} />
+                Paid
+              </label>
+            </div>
+            {!isFree && (
+              <input
+                type="number"
+                className="cac-input"
+                placeholder="Price (₹)"
+                min="1"
+                value={price}
+                onChange={(e) => setPrice(e.target.value ? Number(e.target.value) : "")}
+              />
+            )}
           </div>
 
           <label className="cac-checkbox-wrapper">

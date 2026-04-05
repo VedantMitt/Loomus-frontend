@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import NebulaBackground from "@/components/NebulaBackground";
 
 export default function PlayHub() {
   const router = useRouter();
@@ -69,33 +70,38 @@ export default function PlayHub() {
   ];
 
   return (
-    <>
-      <style>{`
+    <div style={{ position: "relative", minHeight: "100vh" }}>
+      <NebulaBackground variant="play" />
+
+      <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap');
 
         .play-container {
           font-family: 'DM Sans', sans-serif;
           max-width: 1100px;
           margin: 0 auto;
-          padding: 40px 24px 80px;
+          padding: 60px 24px 100px;
+          position: relative;
+          z-index: 10;
         }
 
         .play-hero {
           text-align: center;
-          margin-bottom: 56px;
+          margin-bottom: 64px;
         }
 
         .play-title {
           font-family: 'Syne', sans-serif;
-          font-size: 48px;
+          font-size: clamp(40px, 10vw, 64px);
           font-weight: 800;
           background: linear-gradient(135deg, #f0f0f0 0%, #f59e0b 30%, #ec4899 60%, #06b6d4 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
           margin: 0;
-          animation: shimmerTitle 4s ease infinite;
+          animation: shimmerTitle 6s ease infinite;
           background-size: 200% 200%;
+          letter-spacing: -0.05em;
         }
 
         @keyframes shimmerTitle {
@@ -104,111 +110,88 @@ export default function PlayHub() {
         }
 
         .play-subtitle {
-          color: #666;
-          font-size: 16px;
-          margin-top: 12px;
+          color: #888;
+          font-size: 18px;
+          margin-top: 16px;
           font-weight: 500;
+          letter-spacing: 0.02em;
         }
 
         .games-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
-          gap: 24px;
+          gap: 32px;
         }
 
         @media (max-width: 768px) {
           .games-grid { grid-template-columns: 1fr; }
-          .play-title { font-size: 36px; }
         }
 
         .game-card {
           position: relative;
-          background: rgba(20, 20, 20, 0.7);
-          border: 1px solid rgba(255, 255, 255, 0.06);
-          border-radius: 24px;
-          padding: 32px;
+          background: rgba(255, 255, 255, 0.03);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 32px;
+          padding: 40px;
           text-decoration: none;
           color: inherit;
-          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
           overflow: hidden;
           display: flex;
           flex-direction: column;
-          gap: 16px;
-          cursor: pointer;
-        }
-
-        .game-card::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 3px;
-          border-radius: 24px 24px 0 0;
-          opacity: 0;
-          transition: opacity 0.4s ease;
-        }
-
-        .game-card:hover::before {
-          opacity: 1;
+          gap: 20px;
+          box-shadow: inset 0 1px 1px rgba(255,255,255,0.05);
         }
 
         .game-card:hover {
-          transform: translateY(-6px);
-          border-color: rgba(255, 255, 255, 0.12);
+          transform: translateY(-8px);
+          border-color: rgba(255, 255, 255, 0.2);
+          background: rgba(255, 255, 255, 0.05);
+          box-shadow: 0 25px 50px rgba(0,0,0,0.5);
         }
 
         .game-card.disabled {
           opacity: 0.5;
-          cursor: not-allowed;
-        }
-        .game-card.disabled:hover {
-          transform: none;
-          border-color: rgba(255, 255, 255, 0.06);
+          cursor: not-allowed; filter: grayscale(0.8);
         }
 
         .game-emoji {
-          font-size: 48px;
+          font-size: 56px;
           line-height: 1;
-          filter: saturate(1.2);
-        }
-
-        .game-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
         }
 
         .coming-soon-badge {
-          padding: 4px 12px;
-          border-radius: 999px;
+          padding: 6px 14px;
+          border-radius: 99px;
           font-size: 11px;
-          font-weight: 700;
+          font-weight: 800;
           text-transform: uppercase;
-          letter-spacing: 0.5px;
-          background: rgba(255, 255, 255, 0.06);
-          color: #888;
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          letter-spacing: 0.1em;
+          background: rgba(255, 255, 255, 0.05);
+          color: #666;
+          border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .game-name {
           font-family: 'Syne', sans-serif;
-          font-size: 24px;
+          font-size: 28px;
           font-weight: 800;
           color: #fff;
           margin: 0;
+          letter-spacing: -0.02em;
         }
 
         .game-tagline {
-          font-size: 15px;
-          font-weight: 600;
+          font-size: 16px;
+          font-weight: 700;
           margin: 0;
-          line-height: 1.3;
+          line-height: 1.4;
         }
 
         .game-desc {
           font-size: 14px;
-          color: #888;
+          color: #999;
           margin: 0;
           line-height: 1.6;
         }
@@ -216,42 +199,35 @@ export default function PlayHub() {
         .game-play-btn {
           display: inline-flex;
           align-items: center;
-          gap: 8px;
-          padding: 12px 24px;
-          border-radius: 14px;
-          font-size: 14px;
-          font-weight: 700;
+          gap: 10px;
+          padding: 14px 28px;
+          border-radius: 18px;
+          font-size: 15px;
+          font-weight: 800;
           color: #fff;
           border: none;
           cursor: pointer;
-          margin-top: auto;
-          transition: all 0.3s ease;
+          margin-top: 10px;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
           width: fit-content;
         }
 
         .game-play-btn:hover {
-          transform: translateY(-1px);
-          filter: brightness(1.1);
-        }
-
-        .game-play-btn svg {
-          transition: transform 0.3s ease;
-        }
-        .game-card:hover .game-play-btn svg {
-          transform: translateX(3px);
+          transform: scale(1.05);
         }
 
         .game-glow {
           position: absolute;
-          bottom: -60px;
-          right: -60px;
-          width: 200px;
-          height: 200px;
+          top: -20%;
+          left: -20%;
+          width: 140%;
+          height: 140%;
           border-radius: 50%;
           opacity: 0;
-          transition: opacity 0.5s ease;
+          transition: opacity 0.6s ease;
           pointer-events: none;
           filter: blur(80px);
+          z-index: -1;
         }
 
         .game-card:hover .game-glow {
@@ -272,39 +248,37 @@ export default function PlayHub() {
               href={game.ready ? game.href : "#"}
               className={`game-card ${!game.ready ? "disabled" : ""}`}
               onClick={(e) => { if (!game.ready) e.preventDefault(); }}
-              style={{ ["--game-color" as any]: game.color }}
             >
               <div className="game-glow" style={{ background: game.color }} />
-              <div style={{ background: game.gradient }} className="game-card-before-hack" />
-              <style>{`
-                .game-card[style*="${game.color}"]::before { background: ${game.gradient}; }
-              `}</style>
 
               <div className="game-header">
                 <div className="game-emoji">{game.emoji}</div>
                 {!game.ready && <span className="coming-soon-badge">Coming Soon</span>}
               </div>
 
-              <h2 className="game-name">{game.name}</h2>
-              <p className="game-tagline" style={{ color: game.color }}>{game.tagline}</p>
+              <div>
+                <h2 className="game-name">{game.name}</h2>
+                <p className="game-tagline" style={{ color: game.color }}>{game.tagline}</p>
+              </div>
+              
               <p className="game-desc">{game.description}</p>
 
               {game.ready && (
-                <button
+                <div
                   className="game-play-btn"
-                  style={{ background: game.gradient, boxShadow: `0 4px 20px ${game.shadowColor}` }}
+                  style={{ background: game.gradient, boxShadow: `0 8px 30px ${game.shadowColor}` }}
                 >
                   Play Now
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="5" y1="12" x2="19" y2="12" />
                     <polyline points="12 5 19 12 12 19" />
                   </svg>
-                </button>
+                </div>
               )}
             </Link>
           ))}
         </div>
       </main>
-    </>
+    </div>
   );
 }

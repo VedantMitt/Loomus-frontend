@@ -125,8 +125,10 @@ export default function ActiveRoomPage(props: { params: Promise<{ id: string }> 
       socket.off("receive_room_message");
       socket.off("room_update");
       socket.off("room_deleted");
+      // Explicitly leave the room when the page is closed/navigated away from
+      leaveRoom();
     };
-  }, [socket, currentUser, router, setPlaying]);
+  }, [socket, currentUser, router, setPlaying, leaveRoom]);
 
   // 4. Respond to Global Sync Time
   useEffect(() => {

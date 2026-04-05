@@ -41,29 +41,9 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   const router = useRouter();
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount - REMOVED for non-persistent rooms
   useEffect(() => {
-    const savedRoom = localStorage.getItem("loomus_active_room");
-    if (savedRoom) {
-      try {
-        setActiveRoom(JSON.parse(savedRoom));
-      } catch (e) {
-        localStorage.removeItem("loomus_active_room");
-      }
-    }
-    
-    // Sync across tabs
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === "loomus_active_room") {
-        if (e.newValue) {
-          setActiveRoom(JSON.parse(e.newValue));
-        } else {
-          setActiveRoom(null);
-        }
-      }
-    };
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
+    // Rooms are now page-specific
   }, []);
 
   const refreshActiveRoom = useCallback(async () => {
@@ -78,17 +58,14 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
          const data = await res.json();
          const updated = { ...activeRoom, ...data };
          setActiveRoom(updated);
-         localStorage.setItem("loomus_active_room", JSON.stringify(updated));
        } else if (res.status === 404) {
          setActiveRoom(null);
-         localStorage.removeItem("loomus_active_room");
        }
     } catch {}
   }, [activeRoom]);
 
   const joinRoom = useCallback((room: Room) => {
     setActiveRoom(room);
-    localStorage.setItem("loomus_active_room", JSON.stringify(room));
     // Fetch latest room data once socket is ready
     setTimeout(refreshActiveRoom, 500); 
   }, [refreshActiveRoom]);
@@ -114,7 +91,6 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     setActiveRoom(null);
-    localStorage.removeItem("loomus_active_room");
   }, [activeRoom, socket]);
 
   // Socket Management
@@ -161,7 +137,6 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     newSocket.on("room_deleted", () => {
       setActiveRoom(null);
-      localStorage.removeItem("loomus_active_room");
     });
 
     // Sync Listeners

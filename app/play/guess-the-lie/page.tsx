@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 type Game = {
   id: string;
@@ -45,6 +45,14 @@ type Round = {
 };
 
 export default function GuessTheLiePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <GTLContent />
+    </Suspense>
+  );
+}
+
+function GTLContent() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [games, setGames] = useState<Game[]>([]);
@@ -69,12 +77,21 @@ export default function GuessTheLiePage() {
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
   const getToken = () => localStorage.getItem("token");
 
+  const searchParams = useSearchParams();
+
   useEffect(() => {
     const token = getToken();
     if (!token) { router.push("/auth/login"); return; }
     try { const s = localStorage.getItem("user"); if (s) setUser(JSON.parse(s)); } catch {}
     fetchGames();
-  }, [router]);
+
+    // Direct game link (from invite)
+    const gameId = searchParams.get("game");
+    if (gameId) {
+      fetchGameDetail(gameId);
+      handleJoinGame(gameId); // Auto-join for better UX
+    }
+  }, [router, searchParams]);
 
   const fetchGames = async () => {
     try {
