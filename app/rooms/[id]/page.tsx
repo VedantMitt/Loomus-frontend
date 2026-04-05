@@ -299,395 +299,635 @@ export default function ActiveRoomPage(props: { params: Promise<{ id: string }> 
   };
 
   return (
-    <>
+    <div className="elite-room-root">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&display=swap');
 
-        body { margin: 0; padding: 0; background: #0a0a0a; color: #fff; }
-        
-        .rp-container {
-          font-family: 'DM Sans', sans-serif;
-          height: calc(100vh - 90px);
+        .elite-room-root {
+          font-family: 'Outfit', sans-serif;
+          height: 100vh;
+          width: 100vw;
+          background: #020205;
+          color: #fff;
           display: flex;
-          background: #0a0a0a;
+          overflow: hidden;
+          position: relative;
         }
 
-        /* Main View: Media */
-        .rp-main {
+        .ambient-glow {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: 
+            radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+            radial-gradient(circle at 100% 100%, rgba(168, 85, 247, 0.1) 0%, transparent 40%);
+          pointer-events: none;
+          z-index: 0;
+        }
+
+        /* --- Main Layout --- */
+        .room-main-content {
           flex: 1;
           display: flex;
           flex-direction: column;
-          border-right: 1px solid rgba(255,255,255,0.08);
-          background: radial-gradient(circle at center, rgba(30,30,40,0.4) 0%, transparent 100%);
+          z-index: 1;
         }
 
-        .rp-header {
-          padding: 20px 24px;
-          border-bottom: 1px solid rgba(255,255,255,0.05);
+        .elite-navbar {
+          height: 80px;
+          padding: 0 40px;
           display: flex;
           align-items: center;
-          gap: 16px;
+          background: rgba(13, 13, 18, 0.5);
+          backdrop-filter: blur(20px);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+          gap: 24px;
         }
 
-        .rp-back {
-          background: rgba(255,255,255,0.05);
-          border: 1px solid rgba(255,255,255,0.1);
+        .nav-back-button {
+          width: 48px;
+          height: 48px;
+          border-radius: 16px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #94a3b8;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          cursor: pointer;
+        }
+
+        .nav-back-button:hover {
+          background: rgba(255, 255, 255, 0.08);
           color: #fff;
-          width: 40px; height: 40px;
-          border-radius: 50%;
-          display: flex; align-items: center; justify-content: center;
-          transition: all 0.2s;
+          transform: translateX(-4px);
+          border-color: rgba(99, 102, 241, 0.3);
         }
-        .rp-back:hover { background: rgba(255,255,255,0.1); }
 
-        .rp-title { margin: 0; font-size: 20px; font-weight: 700; color: #fff; }
+        .room-header-info {
+          flex: 1;
+        }
 
-        .rp-media-area {
+        .room-name-title {
+          font-family: 'Plus+Jakarta+Sans', sans-serif;
+          font-size: 24px;
+          font-weight: 800;
+          letter-spacing: -0.02em;
+          margin: 0;
+          background: linear-gradient(to right, #fff, #94a3b8);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+
+        .room-status-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          margin-top: 4px;
+          font-size: 13px;
+          color: #64748b;
+          font-weight: 500;
+        }
+
+        .status-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #22c55e;
+          box-shadow: 0 0 12px rgba(34, 197, 94, 0.6);
+          animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+          0% { opacity: 1; }
+          50% { opacity: 0.4; }
+          100% { opacity: 1; }
+        }
+
+        .room-actions-group {
+          display: flex;
+          gap: 12px;
+          align-items: center;
+        }
+
+        .action-button-premium {
+          padding: 12px 20px;
+          border-radius: 14px;
+          font-size: 14px;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          transition: all 0.3s;
+          cursor: pointer;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-leave {
+          background: rgba(239, 68, 68, 0.05);
+          color: #ef4444;
+        }
+
+        .btn-leave:hover {
+          background: #ef4444;
+          color: #fff;
+          box-shadow: 0 8px 24px rgba(239, 68, 68, 0.2);
+        }
+
+        /* --- Media Area --- */
+        .media-super-container {
           flex: 1;
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 32px;
+          padding: 40px;
+          position: relative;
         }
 
-        .media-placeholder {
-          width: 100%; maxWidth: 800px; aspect-ratio: 16/9;
-          background: rgba(0,0,0,0.5);
+        .main-media-frame {
+          width: 100%;
+          max-width: 1000px;
+          aspect-ratio: 16/9;
+          background: #000;
           border-radius: 24px;
-          display: flex; flex-direction: column; align-items: center; justify-content: center;
-          color: #555; border: 1px solid rgba(255,255,255,0.05);
-          box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+          position: relative;
+          box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          overflow: hidden;
         }
 
-        /* Sidebar: Social */
-        .rp-sidebar {
-          width: 360px;
+        /* --- Sidebar (Elite Glass Panel) --- */
+        .elite-sidebar {
+          width: 400px;
+          background: rgba(10, 10, 14, 0.6);
+          backdrop-filter: blur(40px);
+          border-left: 1px solid rgba(255, 255, 255, 0.06);
           display: flex;
           flex-direction: column;
-          background: rgba(15,15,15,0.8);
+          z-index: 10;
         }
 
-        .rp-tabs {
+        .sidebar-tabs {
           display: flex;
-          border-bottom: 1px solid rgba(255,255,255,0.08);
+          padding: 24px 24px 0;
+          gap: 8px;
         }
-        .rp-tab {
-          flex: 1;
-          padding: 16px;
-          text-align: center;
-          color: #888;
-          font-weight: 600;
-          font-size: 14px;
-          cursor: pointer;
-          border-bottom: 2px solid transparent;
-        }
-        .rp-tab.active { color: #fff; border-bottom-color: #3b82f6; }
 
-        .rp-chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        
-        .rp-messages {
+        .sidebar-tab {
+          padding: 12px 16px;
+          font-size: 14px;
+          font-weight: 600;
+          color: #64748b;
+          cursor: pointer;
+          border-radius: 12px;
+          transition: all 0.3s;
+          position: relative;
+        }
+
+        .sidebar-tab.active {
+          color: #fff;
+          background: rgba(255, 255, 255, 0.04);
+        }
+
+        .sidebar-tab.active::after {
+          content: '';
+          position: absolute;
+          bottom: -24px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 32px;
+          height: 3px;
+          background: #6366f1;
+          border-radius: 3px 3px 0 0;
+          box-shadow: 0 -2px 10px rgba(99, 102, 241, 0.8);
+        }
+
+        .sidebar-content-view {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          margin-top: 24px;
+        }
+
+        /* --- Chat UI --- */
+        .chat-messages-container {
           flex: 1;
           overflow-y: auto;
-          padding: 20px;
+          padding: 0 24px;
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 20px;
         }
 
-        .chat-row { display: flex; gap: 12px; }
-        .chat-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: #222; border: 1px solid rgba(255,255,255,0.1); }
-        .chat-content { background: rgba(255,255,255,0.03); padding: 10px 14px; border-radius: 0 16px 16px 16px; font-size: 14px; color: #eee; line-height: 1.4; border: 1px solid rgba(255,255,255,0.05); }
-        .chat-sender { font-size: 12px; font-weight: 600; color: #888; margin-bottom: 4px; }
+        .chat-bubble-row {
+          display: flex;
+          gap: 14px;
+        }
 
-        .rp-chat-input {
+        .chat-avatar-wrapper {
+          width: 38px;
+          height: 38px;
+          border-radius: 12px;
+          overflow: hidden;
+          background: #111;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          flex-shrink: 0;
+        }
+
+        .chat-message-info {
+          flex: 1;
+        }
+
+        .chat-sender-name {
+          font-size: 13px;
+          font-weight: 700;
+          color: #94a3b8;
+          margin-bottom: 4px;
+        }
+
+        .chat-text-content {
+          font-size: 14px;
+          line-height: 1.6;
+          color: #e2e8f0;
+          background: rgba(255, 255, 255, 0.03);
+          padding: 12px 16px;
+          border-radius: 0 16px 16px 16px;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          width: fit-content;
+          max-width: 90%;
+        }
+
+        .chat-input-bar {
+          padding: 24px;
+          background: rgba(0,0,0,0.2);
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .premium-input-box {
+          display: flex;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 16px;
+          padding: 8px;
+          align-items: center;
+          transition: all 0.3s;
+        }
+
+        .premium-input-box:focus-within {
+          border-color: rgba(99, 102, 241, 0.5);
+          background: rgba(255, 255, 255, 0.06);
+          box-shadow: 0 0 20px rgba(99, 102, 241, 0.1);
+        }
+
+        .sidebar-input {
+          flex: 1;
+          background: transparent;
+          border: none;
+          outline: none;
+          color: #fff;
+          padding: 8px 12px;
+          font-size: 14px;
+          font-family: inherit;
+        }
+
+        .send-button-circle {
+          width: 40px;
+          height: 40px;
+          border-radius: 12px;
+          background: #6366f1;
+          color: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+          border: none;
+        }
+
+        .send-button-circle:hover {
+          transform: scale(1.05);
+          background: #4f46e5;
+          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        /* --- People (Participant Cards) --- */
+        .participant-grid {
+          padding: 0 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .elite-person-card {
           padding: 16px;
-          border-top: 1px solid rgba(255,255,255,0.05);
+          border-radius: 20px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.04);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          transition: 0.3s;
         }
-        .rp-input-wrapper { display: flex; gap: 8px; }
-        .rp-input {
-          flex: 1; padding: 12px 16px; border-radius: 99px; background: rgba(0,0,0,0.5);
-          border: 1px solid rgba(255,255,255,0.1); color: #fff; outline: none; font-size: 14px; font-family: inherit;
-        }
-        .rp-send { background: #3b82f6; color: #fff; border:none; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
-        .rp-send:hover { background: #2563eb; transform: scale(1.05); }
 
-        .finish-btn:hover { background: rgba(16,185,129,0.2) !important; transform: translateY(-1px); }
-        .finish-btn:active { transform: translateY(0); }
+        .elite-person-card:hover {
+          background: rgba(255, 255, 255, 0.04);
+          border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .role-pill {
+          padding: 4px 10px;
+          border-radius: 8px;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .role-host { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+        .role-admin { background: rgba(168, 85, 247, 0.1); color: #a855f7; }
+        .role-viewer { background: rgba(148, 163, 184, 0.1); color: #94a3b8; }
+
+        /* --- Custom Scrollbar --- */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.08); border-radius: 10px; }
       `}</style>
 
-      <div className="rp-container">
-        {/* Main Media Panel */}
-        <div className="rp-main">
-          <header className="rp-header">
-            <Link href="/rooms" className="rp-back">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-            </Link>
-            <div>
-              <h1 className="rp-title">{room.name}</h1>
-              <div style={{ fontSize: "12px", color: "#888", marginTop: "4px", display: "flex", gap: "8px", alignItems: "center" }}>
-                <span style={{ color: isVideo ? "#ef4444" : "#10b981", fontWeight: 600 }}>{isVideo ? 'WATCH PARTY' : 'LISTEN TOGETHER'}</span>
-                • {participants.size + 1} {participants.size + 1 === 1 ? 'person' : 'people'} listening
-                {room.total_approved && room.total_approved > 0 && (
-                  <> • <span style={{ color: "#3b82f6", fontWeight: 600 }}>{room.done_count}/{room.total_approved} finished</span></>
-                )}
-              </div>
+      <div className="ambient-glow" />
+
+      {/* LEFT CONTENT */}
+      <div className="room-main-content">
+        <nav className="elite-navbar">
+          <Link href="/rooms" className="nav-back-button">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          </Link>
+
+          <div className="room-header-info">
+            <h1 className="room-name-title">{room.name}</h1>
+            <div className="room-status-badge">
+              <div className="status-dot" />
+              <span>LIVE</span>
+              <span style={{ opacity: 0.3 }}>|</span>
+              <span>{participants.size + 1} synchronized users</span>
             </div>
-            
-            <div style={{ marginLeft: "auto", display: "flex", gap: "10px" }}>
+          </div>
+
+          <div className="room-actions-group">
+            {room.host_id === currentUser?.id && (
               <button
-                onClick={handleExitRoom}
-                className="finish-btn"
-                style={{
-                  background: "rgba(239, 68, 68, 0.1)",
-                  border: "1px solid rgba(239, 68, 68, 0.3)",
-                  color: "#ef4444",
-                  padding: "8px 16px",
-                  borderRadius: "20px",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  transition: "all 0.2s"
-                }}
+                onClick={deleteRoom}
+                className="action-button-premium"
+                style={{ background: 'rgba(239, 68, 68, 0.05)', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.1)' }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                Leave Party
+                Delete Room
               </button>
+            )}
+            <button onClick={handleExitRoom} className="action-button-premium btn-leave">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+              Leave Session
+            </button>
+          </div>
+        </nav>
 
-              {room.host_id === currentUser?.id && (
-                <button
-                  onClick={deleteRoom}
-                  title="Delete Room"
-                  style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444", width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.2s" }}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                </button>
-              )}
-            </div>
-          </header>
-
-          <div className="rp-media-area">
+        <div className="media-super-container">
+          <div className="main-media-frame">
             {room.media_url ? (
               isVideo ? (
-                <div style={{ width: "100%", maxWidth: "900px", aspectRatio: "16/9", borderRadius: "16px", overflow: "hidden", background: "#000", boxShadow: "0 20px 50px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                  {isClient && (
-                    <Player
-                      ref={playerRef}
-                      url={room.media_url}
-                      width="100%"
-                      height="100%"
-                      playing={playing}
-                      controls={canManage}
-                      onPlay={handlePlay}
-                      onPause={handlePause}
-                      onProgress={(state: any) => handleTimeUpdate(state)}
-                    />
-                  )}
-                </div>
+                isClient && (
+                  <Player
+                    ref={playerRef}
+                    url={room.media_url}
+                    width="100%"
+                    height="100%"
+                    playing={playing}
+                    controls={canManage}
+                    onPlay={handlePlay}
+                    onPause={handlePause}
+                    onProgress={(state: any) => handleTimeUpdate(state)}
+                    config={{
+                      youtube: { playerVars: { origin: window.location.origin } }
+                    }}
+                  />
+                )
               ) : (
-                <div style={{ width: "100%", maxWidth: "600px", background: "rgba(0,0,0,0.4)", padding: "24px", borderRadius: "24px", border: "1px solid rgba(255,255,255,0.05)", boxShadow: "0 20px 50px rgba(0,0,0,0.3)" }}>
+                <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #0d0d12, #18181b)" }}>
                   <iframe
                     src={getSpotifyEmbedUrl(room.media_url)}
-                    width="100%"
+                    width="90%"
                     height="352"
                     frameBorder="0"
                     allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                     loading="lazy"
-                    style={{ borderRadius: "12px" }}
+                    style={{ borderRadius: "24px", boxShadow: "0 24px 60px rgba(0,0,0,0.5)" }}
                   ></iframe>
                 </div>
               )
             ) : (
-              <div className="media-placeholder">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: "16px" }}>
-                  {isVideo
-                    ? <><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></>
-                    : <><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></>}
-                </svg>
-                <h3 style={{ margin: "0 0 8px 0" }}>Waiting for media...</h3>
-                {canManage ? (
-                  <div style={{ width: "100%", maxWidth: "320px", marginTop: "16px" }}>
-                    <input
-                      type="text"
-                      className="rp-input"
-                      placeholder="Paste media URL and press Enter"
-                      style={{ width: "100%" }}
-                      onKeyDown={async (e) => {
-                        if (e.key === 'Enter') {
-                          const val = e.currentTarget.value;
-                          const token = localStorage.getItem('token');
-                          if (val && token) {
-                            try {
-                              await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/rooms/${room.id}/media`, {
-                                method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                                body: JSON.stringify({ media_url: val })
-                              });
-                            } catch (err) { console.error(err); }
-                          }
-                          e.currentTarget.value = '';
-                        }
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div style={{ fontSize: "13px", color: "#666", marginTop: "8px" }}>Only admins can select media.</div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Sidebar */}
-        <div className="rp-sidebar">
-          <div className="rp-tabs">
-            <div className={`rp-tab ${activeTab === 'CHAT' ? 'active' : ''}`} onClick={() => setActiveTab('CHAT')}>Room Chat</div>
-            <div className={`rp-tab ${activeTab === 'QUEUE' ? 'active' : ''}`} onClick={() => setActiveTab('QUEUE')}>Queue ({room.queue?.length || 0})</div>
-            <div className={`rp-tab ${activeTab === 'PEOPLE' ? 'active' : ''}`} onClick={() => setActiveTab('PEOPLE')}>People ({participants.size + 1})</div>
-          </div>
-
-          <div className="rp-chat-area">
-            {activeTab === 'CHAT' && (
-              <>
-                <div className="rp-messages">
-                  <div style={{ textAlign: "center", color: "#666", fontSize: "12px", margin: "10px 0 20px" }}>
-                    You joined {room.name}
-                  </div>
-
-                  {chatMessages.map(msg => {
-                    const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-                    const avatar = msg.sender_pic
-                      ? msg.sender_pic.startsWith("/uploads") ? `${API}${msg.sender_pic}` : msg.sender_pic
-                      : `https://ui-avatars.com/api/?name=${msg.sender_name}&background=0D1117&color=fff`;
-
-                    return (
-                      <div key={msg.id} className="chat-row">
-                        <img src={avatar} className="chat-avatar" alt="" />
-                        <div>
-                          <div className="chat-sender">{msg.sender_name}</div>
-                          <div className="chat-content">{msg.content}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  <div ref={chatEndRef} />
+              <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#64748b", background: "rgba(255,255,255,0.01)" }}>
+                <div style={{ width: 120, height: 120, borderRadius: "40px", background: "rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "24px", border: "1px solid rgba(255,255,255,0.05)" }}>
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="6" ry="6"></rect><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg>
                 </div>
+                <h3 style={{ margin: 0, fontWeight: 700, color: "#fff", fontSize: "20px" }}>Empty Stage</h3>
+                <p style={{ fontSize: "14px", marginTop: "8px", opacity: 0.6 }}>{canManage ? "Paste a link in the input below to start" : "Waiting for the host to play something..."}</p>
 
-                <form className="rp-chat-input" onSubmit={sendRoomMessage}>
-                  <div className="rp-input-wrapper">
-                    <input
-                      type="text"
-                      className="rp-input"
-                      placeholder="Say something..."
-                      value={chatInput}
-                      onChange={e => setChatInput(e.target.value)}
-                    />
-                    <button type="submit" className="rp-send" disabled={!chatInput.trim()}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                    </button>
-                  </div>
-                </form>
-              </>
-            )}
-
-            {activeTab === 'QUEUE' && (
-              <>
-                <div style={{ flex: 1, padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {(room.queue || []).map((q: any) => (
-                    <div key={q.id} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", padding: "12px", borderRadius: "12px" }}>
-                      <div style={{ fontSize: "13px", color: "#eee", marginBottom: "8px", wordBreak: "break-all" }}>
-                        {q.title}
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: "11px", color: "#777" }}>Added by {q.addedBy}</span>
-                        {canManage && (
-                          <div style={{ display: "flex", gap: "8px" }}>
-                            <button onClick={() => playQueueItem(q)} style={{ background: "#10b981", color: "#fff", border: "none", padding: "4px 8px", borderRadius: "6px", fontSize: "11px", cursor: "pointer" }}>Play</button>
-                            <button onClick={() => removeQueueItem(q.id)} style={{ background: "none", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)", padding: "4px 8px", borderRadius: "6px", fontSize: "11px", cursor: "pointer" }}>Remove</button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  {(!room.queue || room.queue.length === 0) && (
-                    <div style={{ textAlign: "center", color: "#666", marginTop: "32px", fontSize: "13px" }}>
-                      The queue is empty.
-                    </div>
-                  )}
-                </div>
-
-                {canAdd && (
-                  <form className="rp-chat-input" onSubmit={handleQueueAdd}>
-                    <div className="rp-input-wrapper">
+                {canManage && (
+                  <div style={{ marginTop: "32px", width: "100%", maxWidth: "400px" }}>
+                    <div className="premium-input-box">
                       <input
                         type="text"
-                        className="rp-input"
-                        placeholder="Paste media URL to add to queue..."
-                        value={queueInput}
-                        onChange={e => setQueueInput(e.target.value)}
+                        className="sidebar-input"
+                        placeholder="Paste YouTube or Video link..."
+                        onKeyDown={async (e: any) => {
+                          if (e.key === 'Enter') {
+                            const val = e.currentTarget.value;
+                            const token = localStorage.getItem('token');
+                            if (val && token) {
+                              try {
+                                await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/rooms/${room.id}/media`, {
+                                  method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                                  body: JSON.stringify({ media_url: val })
+                                });
+                              } catch (err) { console.error(err); }
+                            }
+                            e.currentTarget.value = '';
+                          }
+                        }}
                       />
-                      <button type="submit" className="rp-send" disabled={!queueInput.trim()} style={{ background: "#10b981" }}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                      </button>
-                    </div>
-                  </form>
-                )}
-              </>
-            )}
-
-            {activeTab === 'PEOPLE' && (
-              <div style={{ flex: 1, padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px" }}>
-                <div style={{ fontSize: "12px", fontWeight: 600, color: "#888", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "1px" }}>Room Members</div>
-
-                {/* Host / Self */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,255,255,0.02)", padding: "12px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <img src={currentUser?.profile_pic?.startsWith("/uploads") ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}${currentUser.profile_pic}` : currentUser?.profile_pic || `https://ui-avatars.com/api/?name=${currentUser?.name}&background=0D1117&color=fff`} style={{ width: 36, height: 36, borderRadius: "50%" }} alt="" />
-                    <div>
-                      <div style={{ fontSize: "14px", fontWeight: 600, color: "#fff" }}>{currentUser?.name} (You)</div>
-                      <div style={{ fontSize: "12px", color: room.host_id === currentUser?.id ? "#f59e0b" : "#3b82f6" }}>{room.host_id === currentUser?.id ? "Host - Admin" : myRole === 'ADMIN' ? 'Admin' : myRole === 'CONTRIBUTOR' ? 'Contributor' : 'Viewer'}</div>
                     </div>
                   </div>
-                </div>
-
-                {/* Participants */}
-                {Array.from(participants.values()).map(p => {
-                  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-                  const avatar = p.profile_pic ? (p.profile_pic.startsWith("/uploads") ? `${API}${p.profile_pic}` : p.profile_pic) : `https://ui-avatars.com/api/?name=${p.name}&background=0D1117&color=fff`;
-                  const pRole = room.host_id === p.id ? "ADMIN" : (room.roles || {})[p.id] || "VIEWER";
-
-                  return (
-                    <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,255,255,0.02)", padding: "12px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                        <img src={avatar} style={{ width: 36, height: 36, borderRadius: "50%" }} alt="" />
-                        <div>
-                          <div style={{ fontSize: "14px", fontWeight: 600, color: "#fff" }}>{p.name}</div>
-                          <div style={{ fontSize: "12px", color: pRole === 'ADMIN' ? "#f59e0b" : pRole === 'CONTRIBUTOR' ? "#10b981" : "#888" }}>{room.host_id === p.id ? "Host - Admin" : pRole === 'ADMIN' ? 'Admin' : pRole === 'CONTRIBUTOR' ? 'Contributor' : 'Viewer'}</div>
-                        </div>
-                      </div>
-
-                      {/* Role Selector */}
-                      {room.host_id === currentUser?.id && room.host_id !== p.id && (
-                        <select
-                          value={pRole}
-                          onChange={(e) => handleRoleChange(p.id, e.target.value)}
-                          style={{ background: "#111", color: "#ddd", border: "1px solid #333", borderRadius: "6px", padding: "4px 8px", fontSize: "12px", outline: "none", cursor: "pointer" }}
-                        >
-                          <option value="VIEWER">Viewer</option>
-                          <option value="CONTRIBUTOR">Contributor</option>
-                          <option value="ADMIN">Admin</option>
-                        </select>
-                      )}
-                    </div>
-                  );
-                })}
-                {participants.size === 0 && <div style={{ fontSize: "13px", color: "#666", textAlign: "center", marginTop: "16px" }}>No other people in room</div>}
+                )}
               </div>
             )}
           </div>
         </div>
       </div>
-    </>
+
+      {/* SIDEBAR PANEL */}
+      <aside className="elite-sidebar">
+        <div className="sidebar-tabs">
+          <div className={`sidebar-tab ${activeTab === 'CHAT' ? 'active' : ''}`} onClick={() => setActiveTab('CHAT')}>Chat</div>
+          <div className={`sidebar-tab ${activeTab === 'QUEUE' ? 'active' : ''}`} onClick={() => setActiveTab('QUEUE')}>
+            Queue <span style={{ opacity: 0.4, marginLeft: 4 }}>{room.queue?.length || 0}</span>
+          </div>
+          <div className={`sidebar-tab ${activeTab === 'PEOPLE' ? 'active' : ''}`} onClick={() => setActiveTab('PEOPLE')}>
+            Synced <span style={{ opacity: 0.4, marginLeft: 4 }}>{participants.size + 1}</span>
+          </div>
+        </div>
+
+        <div className="sidebar-content-view">
+          {activeTab === 'CHAT' && (
+            <>
+              <div className="chat-messages-container">
+                <div style={{ textAlign: "center", display: "flex", alignItems: "center", gap: "12px", margin: "20px 0" }}>
+                  <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.05)" }} />
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "1px" }}>Secure Session Start</span>
+                  <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.05)" }} />
+                </div>
+
+                {chatMessages.map(msg => {
+                  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+                  const avatar = msg.sender_pic
+                    ? msg.sender_pic.startsWith("/uploads") ? `${API}${msg.sender_pic}` : msg.sender_pic
+                    : `https://ui-avatars.com/api/?name=${msg.sender_name}&background=1e1b4b&color=fff`;
+
+                  return (
+                    <div key={msg.id} className="chat-bubble-row">
+                      <div className="chat-avatar-wrapper">
+                        <img src={avatar} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
+                      </div>
+                      <div className="chat-message-info">
+                        <div className="chat-sender-name">{msg.sender_name}</div>
+                        <div className="chat-text-content">{msg.content}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div ref={chatEndRef} style={{ height: 20 }} />
+              </div>
+
+              <div className="chat-input-bar">
+                <form onSubmit={sendRoomMessage} className="premium-input-box">
+                  <input
+                    type="text"
+                    className="sidebar-input"
+                    placeholder="Type a message..."
+                    value={chatInput}
+                    onChange={e => setChatInput(e.target.value)}
+                  />
+                  <button type="submit" className="send-button-circle" disabled={!chatInput.trim()}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                  </button>
+                </form>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'QUEUE' && (
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+              <div style={{ flex: 1, overflowY: "auto", padding: "0 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+                {(room.queue || []).map((q: any) => (
+                  <div key={q.id} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", padding: "16px", borderRadius: "20px", transition: "0.2s" }}>
+                    <div style={{ fontSize: "14px", fontWeight: 600, color: "#fff", marginBottom: "4px" }}>{q.title}</div>
+                    <div style={{ fontSize: "12px", color: "#64748b", marginBottom: "12px" }}>Added by {q.addedBy}</div>
+                    {canManage && (
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <button onClick={() => playQueueItem(q)} style={{ flex: 1, padding: "8px", borderRadius: "10px", background: "#6366f1", color: "#fff", border: "none", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>Watch Now</button>
+                        <button onClick={() => removeQueueItem(q.id)} style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "10px", background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", border: "none", cursor: "pointer" }}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {(!room.queue || room.queue.length === 0) && (
+                  <div style={{ textAlign: "center", marginTop: "100px" }}>
+                    <div style={{ width: 64, height: 64, borderRadius: "20px", background: "rgba(255,255,255,0.02)", display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: "16px" }}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                    </div>
+                    <p style={{ color: "#475569", fontSize: "14px" }}>Queue is empty</p>
+                  </div>
+                )}
+              </div>
+
+              {canAdd && (
+                <div className="chat-input-bar">
+                  <form onSubmit={handleQueueAdd} className="premium-input-box">
+                    <input
+                      type="text"
+                      className="sidebar-input"
+                      placeholder="Add media URL to queue..."
+                      value={queueInput}
+                      onChange={e => setQueueInput(e.target.value)}
+                    />
+                    <button type="submit" className="send-button-circle" style={{ background: "#22c55e" }} disabled={!queueInput.trim()}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'PEOPLE' && (
+            <div style={{ flex: 1, overflowY: "auto" }} className="participant-grid">
+              <div style={{ padding: "0 4px 12px", borderBottom: "1px solid rgba(255,255,255,0.05)", marginBottom: "12px" }}>
+                <span style={{ fontSize: "10px", fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: "1.5px" }}>Current Session Nodes</span>
+              </div>
+
+              {/* Self Card */}
+              <div className="elite-person-card" style={{ background: "rgba(99, 102, 241, 0.05)", borderColor: "rgba(99, 102, 241, 0.1)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                  <img src={currentUser?.profile_pic?.startsWith("/uploads") ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}${currentUser.profile_pic}` : currentUser?.profile_pic || `https://ui-avatars.com/api/?name=${currentUser?.name}&background=1e1b4b&color=fff`} style={{ width: 44, height: 44, borderRadius: "14px", border: "1px solid rgba(255,255,255,0.1)" }} alt="" />
+                  <div>
+                    <div style={{ fontSize: "15px", fontWeight: 700, color: "#fff" }}>{currentUser?.name} <span style={{ opacity: 0.5, fontWeight: 400 }}>(You)</span></div>
+                    <div style={{ display: "flex", gap: "6px", marginTop: "4px" }}>
+                      <span className={`role-pill ${room.host_id === currentUser?.id ? 'role-host' : 'role-viewer'}`}>
+                        {room.host_id === currentUser?.id ? 'OWNER' : myRole}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Others */}
+              {Array.from(participants.values()).map(p => {
+                const pRole = (room.roles || {})[p.id] || (room.host_id === p.id ? 'ADMIN' : 'VIEWER');
+                const avatar = p.profile_pic ? (p.profile_pic.startsWith("/uploads") ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}${p.profile_pic}` : p.profile_pic) : `https://ui-avatars.com/api/?name=${p.name}&background=1e1b4b&color=fff`;
+
+                return (
+                  <div key={p.id} className="elite-person-card">
+                    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                      <img src={avatar} style={{ width: 44, height: 44, borderRadius: "14px" }} alt="" />
+                      <div>
+                        <div style={{ fontSize: "15px", fontWeight: 700, color: "#fff" }}>{p.name}</div>
+                        <div style={{ display: "flex", gap: "6px", marginTop: "4px" }}>
+                          <span className={`role-pill ${pRole === 'ADMIN' ? 'role-host' : pRole === 'CONTRIBUTOR' ? 'role-admin' : 'role-viewer'}`}>
+                             {room.host_id === p.id ? 'OWNER' : pRole}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {room.host_id === currentUser?.id && room.host_id !== p.id && (
+                      <select
+                        value={pRole}
+                        onChange={(e) => handleRoleChange(p.id, e.target.value)}
+                        style={{ background: "#111", color: "#ddd", border: "1px solid #333", borderRadius: "10px", padding: "6px 10px", fontSize: "12px", outline: "none", cursor: "pointer" }}
+                      >
+                        <option value="VIEWER">Make Viewer</option>
+                        <option value="CONTRIBUTOR">Make Contributor</option>
+                        <option value="ADMIN">Make Admin</option>
+                      </select>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </aside>
+    </div>
   );
 }
