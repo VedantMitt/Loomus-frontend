@@ -160,13 +160,52 @@ const EXPERIENCE_CATEGORIES = [
   },
 ];
 
+const TOP_LIVE_EVENTS = [
+  {
+    id: "live_1",
+    title: "Karan Aujla Concert",
+    location: "JLN Stadium, Delhi",
+    time: "Starting in 30 mins",
+    type: "Concert",
+    image: "https://images.unsplash.com/photo-1540039155733-d7696d4eb959?w=600&h=400&fit=crop",
+    gradient: "rgba(255, 65, 108, 0.4)",
+  },
+  {
+    id: "live_2",
+    title: "Standup Comedy Open Mic",
+    location: "Hauz Khas Social",
+    time: "Live Now",
+    type: "Comedy",
+    image: "https://images.unsplash.com/photo-1585699324551-f6c309eedeca?w=600&h=400&fit=crop",
+    gradient: "rgba(17, 153, 142, 0.4)",
+  },
+  {
+    id: "live_3",
+    title: "Street Dance Battle",
+    location: "Connaught Place",
+    time: "8:00 PM",
+    type: "Dance",
+    image: "https://images.unsplash.com/photo-1535592201833-53b47814b7e8?w=600&h=400&fit=crop",
+    gradient: "rgba(142, 45, 226, 0.4)",
+  },
+  {
+    id: "live_4",
+    title: "Midnight Run Fest",
+    location: "India Gate",
+    time: "11:30 PM",
+    type: "Fitness",
+    image: "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=600&h=400&fit=crop",
+    gradient: "rgba(0, 210, 255, 0.4)",
+  },
+];
+
 export default function ActivitiesPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"discover" | "my_plans">("discover");
   const [myPlans, setMyPlans] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(false);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
-  const [topEvents, setTopEvents] = useState<any[] | null>(null);
+  const [topEvents, setTopEvents] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchHotEvents = async () => {
@@ -180,10 +219,10 @@ export default function ActivitiesPage() {
             return;
           }
         }
-        setTopEvents([]);
+        setTopEvents(TOP_LIVE_EVENTS);
       } catch (err) {
         console.error("Failed to fetch AI hot events", err);
-        setTopEvents([]);
+        setTopEvents(TOP_LIVE_EVENTS);
       }
     };
     fetchHotEvents();
@@ -677,45 +716,41 @@ export default function ActivitiesPage() {
 
         {activeTab === "discover" && (
           <>
-            {topEvents === null || topEvents.length > 0 ? (
-              <>
-                <div className="exp-section-label">
-                  <span className="glow-icon">🔥</span> Upcoming Hot Events
-                </div>
-                
-                <div className="live-scroll">
-                  {topEvents === null ? (
-                    // Show skeletons while loading
-                    [...Array(4)].map((_, i) => (
-                      <div key={`skel-${i}`} className="live-card exp-skeleton" />
-                    ))
-                  ) : (
-                    topEvents.map((event) => (
-                      <div key={event.id} className="live-card">
-                        <img src={event.image} alt={event.title} className="live-img" />
-                        <div 
-                          className="live-overlay" 
-                          style={{ background: `linear-gradient(to top, rgba(0,0,0,0.95) 0%, ${event.gradient || 'rgba(0,0,0,0.4)'} 60%, transparent 100%)` }} 
-                        />
-                        <div className="live-badge" style={{ background: 'rgba(234, 179, 8, 0.9)', boxShadow: '0 4px 12px rgba(234, 179, 8, 0.4)' }}>
-                          <div className="live-badge-dot" /> SOON
-                        </div>
-                        <div className="live-content">
-                          <div style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', width: 'max-content', marginBottom: '8px' }}>
-                            {event.type}
-                          </div>
-                          <h3 className="live-title">{event.title}</h3>
-                          <div className="live-meta">
-                            <span>📍 {event.location}</span>
-                            <span>⏰ {event.time}</span>
-                          </div>
-                        </div>
+            <div className="exp-section-label">
+              <span className="glow-icon">🔥</span> Top Upcoming Events
+            </div>
+            
+            <div className="live-scroll">
+              {topEvents.length === 0 ? (
+                // Show skeletons while loading
+                [...Array(4)].map((_, i) => (
+                  <div key={`skel-${i}`} className="live-card exp-skeleton" />
+                ))
+              ) : (
+                topEvents.map((event) => (
+                  <div key={event.id} className="live-card">
+                    <img src={event.image} alt={event.title} className="live-img" />
+                    <div 
+                      className="live-overlay" 
+                      style={{ background: `linear-gradient(to top, rgba(0,0,0,0.95) 0%, ${event.gradient || 'rgba(0,0,0,0.4)'} 60%, transparent 100%)` }} 
+                    />
+                    <div className="live-badge" style={{ background: 'rgba(192, 132, 252, 0.9)', boxShadow: '0 4px 12px rgba(192, 132, 252, 0.4)' }}>
+                      <div className="live-badge-dot" style={{ animation: 'none' }} /> UPCOMING
+                    </div>
+                    <div className="live-content">
+                      <div style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', width: 'max-content', marginBottom: '8px' }}>
+                        {event.type}
                       </div>
-                    ))
-                  )}
-                </div>
-              </>
-            ) : null}
+                      <h3 className="live-title">{event.title}</h3>
+                      <div className="live-meta">
+                        <span>📍 {event.location}</span>
+                        <span>⏰ {event.time}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
 
             <div className="exp-section-label" style={{ marginTop: 24 }}>
               <span>✨</span> Pick your vibe
