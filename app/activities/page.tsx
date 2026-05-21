@@ -205,6 +205,25 @@ export default function ActivitiesPage() {
   const [myPlans, setMyPlans] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(false);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  const [topEvents, setTopEvents] = useState(TOP_LIVE_EVENTS);
+
+  useEffect(() => {
+    const fetchHotEvents = async () => {
+      try {
+        const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        const res = await fetch(`${API}/ai/hot-events`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            setTopEvents(data);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch AI hot events", err);
+      }
+    };
+    fetchHotEvents();
+  }, []);
 
   const fetchMyPlans = useCallback(async () => {
     const token = localStorage.getItem("token");
@@ -699,7 +718,7 @@ export default function ActivitiesPage() {
             </div>
             
             <div className="live-scroll">
-              {TOP_LIVE_EVENTS.map((event) => (
+              {topEvents.map((event) => (
                 <div key={event.id} className="live-card">
                   <img src={event.image} alt={event.title} className="live-img" />
                   <div 
