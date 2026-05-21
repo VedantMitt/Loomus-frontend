@@ -205,7 +205,7 @@ export default function ActivitiesPage() {
   const [myPlans, setMyPlans] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(false);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
-  const [topEvents, setTopEvents] = useState(TOP_LIVE_EVENTS);
+  const [topEvents, setTopEvents] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchHotEvents = async () => {
@@ -216,10 +216,13 @@ export default function ActivitiesPage() {
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
             setTopEvents(data);
+            return;
           }
         }
+        setTopEvents(TOP_LIVE_EVENTS);
       } catch (err) {
         console.error("Failed to fetch AI hot events", err);
+        setTopEvents(TOP_LIVE_EVENTS);
       }
     };
     fetchHotEvents();
@@ -718,28 +721,35 @@ export default function ActivitiesPage() {
             </div>
             
             <div className="live-scroll">
-              {topEvents.map((event) => (
-                <div key={event.id} className="live-card">
-                  <img src={event.image} alt={event.title} className="live-img" />
-                  <div 
-                    className="live-overlay" 
-                    style={{ background: `linear-gradient(to top, rgba(0,0,0,0.95) 0%, ${event.gradient} 60%, transparent 100%)` }} 
-                  />
-                  <div className="live-badge">
-                    <div className="live-badge-dot" /> LIVE
-                  </div>
-                  <div className="live-content">
-                    <div style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', width: 'max-content', marginBottom: '8px' }}>
-                      {event.type}
+              {topEvents.length === 0 ? (
+                // Show skeletons while loading
+                [...Array(4)].map((_, i) => (
+                  <div key={`skel-${i}`} className="live-card exp-skeleton" />
+                ))
+              ) : (
+                topEvents.map((event) => (
+                  <div key={event.id} className="live-card">
+                    <img src={event.image} alt={event.title} className="live-img" />
+                    <div 
+                      className="live-overlay" 
+                      style={{ background: `linear-gradient(to top, rgba(0,0,0,0.95) 0%, ${event.gradient || 'rgba(0,0,0,0.4)'} 60%, transparent 100%)` }} 
+                    />
+                    <div className="live-badge">
+                      <div className="live-badge-dot" /> LIVE
                     </div>
-                    <h3 className="live-title">{event.title}</h3>
-                    <div className="live-meta">
-                      <span>📍 {event.location}</span>
-                      <span>⏰ {event.time}</span>
+                    <div className="live-content">
+                      <div style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', width: 'max-content', marginBottom: '8px' }}>
+                        {event.type}
+                      </div>
+                      <h3 className="live-title">{event.title}</h3>
+                      <div className="live-meta">
+                        <span>📍 {event.location}</span>
+                        <span>⏰ {event.time}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
 
             <div className="exp-section-label" style={{ marginTop: 24 }}>
