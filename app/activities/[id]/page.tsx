@@ -232,6 +232,38 @@ export default function LoomusActivityPage() {
     setSavingPlan(false);
   };
 
+  const handleEndPlan = async () => {
+    if (!confirm("Are you sure you want to end this plan right now?")) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/activities/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ 
+          end_date: new Date().toISOString()
+        })
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setActivity(updated);
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  const handleDeletePlan = async () => {
+    if (!confirm("Are you sure you want to delete this plan completely? This cannot be undone.")) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/activities/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        router.push("/activities");
+      }
+    } catch (err) { console.error(err); }
+  };
+
   const handleToggleItineraryItem = async (index: number) => {
     if (!isHost) return;
     const newItin = [...(activity?.itinerary || [])];
@@ -524,7 +556,15 @@ export default function LoomusActivityPage() {
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="syne text-xl font-bold text-white">📝 The Plan</h3>
                   {isHost && !isEditingPlan && (
-                    <button onClick={() => setIsEditingPlan(true)} className="bg-white/10 hover:bg-white/20 text-xs font-bold px-3 py-1.5 rounded-lg transition-all">Edit Plan</button>
+                    <div className="flex gap-2">
+                      <button onClick={() => setIsEditingPlan(true)} className="bg-white/10 hover:bg-white/20 text-xs font-bold px-3 py-1.5 rounded-lg transition-all">Edit Plan</button>
+                      
+                      {activity && (activity.end_date ? new Date(activity.end_date).getTime() <= new Date().getTime() : new Date(activity.date).getTime() + 24 * 60 * 60 * 1000 <= new Date().getTime()) ? (
+                        <button onClick={handleDeletePlan} className="bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold px-3 py-1.5 rounded-lg transition-all border border-red-500/20 hover:border-red-500/50">Delete Plan</button>
+                      ) : (
+                        <button onClick={handleEndPlan} className="bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-xs font-bold px-3 py-1.5 rounded-lg transition-all border border-orange-500/20 hover:border-orange-500/50">End Plan</button>
+                      )}
+                    </div>
                   )}
                 </div>
                 

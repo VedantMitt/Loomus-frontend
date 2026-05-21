@@ -42,6 +42,24 @@ export default function ChaptersPage() {
     fetchChapters();
   }, []);
 
+  const handleDeleteChapter = async (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    if (!confirm("Delete this chapter? This cannot be undone.")) return;
+    try {
+      const token = localStorage.getItem("token");
+      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const res = await fetch(`${API}/activities/${id}`, {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        setChapters(prev => prev.filter(c => c.id !== id));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   // Format date: "Oct 24, 2026"
   const formatDate = (dateString: string) => {
     const d = new Date(dateString);
@@ -211,10 +229,21 @@ export default function ChaptersPage() {
                 <Link 
                   key={chap.id} 
                   href={`/scrapbook/${chap.id}`} 
-                  className="polaroid"
+                  className="polaroid group"
                   style={{ transform: `rotate(${rotation}deg)` }}
                 >
                   <div className="polaroid-tape"></div>
+                  
+                  <button 
+                    onClick={(e) => handleDeleteChapter(e, chap.id)}
+                    className="absolute top-2 right-2 w-8 h-8 bg-red-500/80 hover:bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-lg"
+                    style={{ zIndex: 20 }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                    </svg>
+                  </button>
+
                   <div className="polaroid-img-wrapper">
                     <img src={bannerUrl} alt={chap.title} className="polaroid-img" />
                   </div>
