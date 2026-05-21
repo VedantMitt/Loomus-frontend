@@ -74,7 +74,8 @@ const getOrdinalSuffix = (i: number) => {
 const formatDateShort = (dateStr: string) => {
   if (!dateStr) return "";
   const d = new Date(dateStr);
-  return `${d.getDate()}${getOrdinalSuffix(d.getDate())} ${d.toLocaleString('default', { month: 'short' })}`;
+  const dayName = d.toLocaleString('default', { weekday: 'short' });
+  return `${d.getDate()}${getOrdinalSuffix(d.getDate())} ${d.toLocaleString('default', { month: 'short' })}, ${dayName}`;
 };
 
 // Main component
