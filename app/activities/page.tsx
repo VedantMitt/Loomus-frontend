@@ -717,7 +717,7 @@ export default function ActivitiesPage() {
         {activeTab === "discover" && (
           <>
             <div className="exp-section-label">
-              <span className="glow-icon">🔥</span> Top Live Events
+              <span className="glow-icon">🔥</span> Upcoming Hot Events
             </div>
             
             <div className="live-scroll">
@@ -734,8 +734,8 @@ export default function ActivitiesPage() {
                       className="live-overlay" 
                       style={{ background: `linear-gradient(to top, rgba(0,0,0,0.95) 0%, ${event.gradient || 'rgba(0,0,0,0.4)'} 60%, transparent 100%)` }} 
                     />
-                    <div className="live-badge">
-                      <div className="live-badge-dot" /> LIVE
+                    <div className="live-badge" style={{ background: 'rgba(234, 179, 8, 0.9)', boxShadow: '0 4px 12px rgba(234, 179, 8, 0.4)' }}>
+                      <div className="live-badge-dot" /> SOON
                     </div>
                     <div className="live-content">
                       <div style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', width: 'max-content', marginBottom: '8px' }}>
