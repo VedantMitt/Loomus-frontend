@@ -40,9 +40,21 @@ export default function CreateActivityPage() {
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState(initialTitle || suggestion.title);
   const [date, setDate] = useState("");
+  const [minDate, setMinDate] = useState("");
   const [location, setLocation] = useState(initialLocation || suggestion.location);
   const [description, setDescription] = useState(initialDesc || suggestion.description);
   const [banner, setBanner] = useState<File | null>(null);
+
+  // Set initial date and minimum allowed date
+  useEffect(() => {
+    const d = new Date();
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    const localISOTime = new Date(d.getTime() - tzOffset).toISOString().slice(0, 16);
+    setMinDate(localISOTime);
+    if (!date) {
+      setDate(localISOTime);
+    }
+  }, [date]);
 
   // Step 2 - Invite
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -215,7 +227,13 @@ export default function CreateActivityPage() {
 
             <div className="wiz-group">
               <label className="wiz-label">Date & Time *</label>
-              <input type="datetime-local" className="wiz-input" value={date} onChange={e => setDate(e.target.value)} />
+              <input 
+                type="datetime-local" 
+                className="wiz-input" 
+                value={date} 
+                min={minDate}
+                onChange={e => setDate(e.target.value)} 
+              />
             </div>
 
             <div className="wiz-group">

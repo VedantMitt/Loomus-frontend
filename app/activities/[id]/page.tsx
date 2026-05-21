@@ -100,8 +100,15 @@ export default function LoomusActivityPage() {
   const [isEditingPlan, setIsEditingPlan] = useState(false);
   const [editDate, setEditDate] = useState("");
   const [editEndDate, setEditEndDate] = useState("");
+  const [minDate, setMinDate] = useState("");
   const [editItinerary, setEditItinerary] = useState<any[]>([]);
   const [savingPlan, setSavingPlan] = useState(false);
+
+  useEffect(() => {
+    const d = new Date();
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    setMinDate(new Date(d.getTime() - tzOffset).toISOString().slice(0, 16));
+  }, []);
 
   // Compute possible days based on editDate and editEndDate
   const possibleDays = useMemo(() => {
@@ -524,13 +531,13 @@ export default function LoomusActivityPage() {
                 {isEditingPlan ? (
                   <div className="space-y-4 mb-4">
                     <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-xs text-gray-400 font-bold mb-1 block">Start Time</label>
-                        <input type="datetime-local" value={editDate} onChange={e => setEditDate(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-pink-500" />
+                       <div className="flex-1">
+                        <label className="text-xs text-white/50 mb-1 block">Start Date/Time</label>
+                        <input type="datetime-local" value={editDate} min={minDate} onChange={e => setEditDate(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-pink-500" />
                       </div>
-                      <div>
-                        <label className="text-xs text-gray-400 font-bold mb-1 block">End Time</label>
-                        <input type="datetime-local" value={editEndDate} onChange={e => setEditEndDate(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-pink-500" />
+                      <div className="flex-1">
+                        <label className="text-xs text-white/50 mb-1 block">End Date/Time (Optional)</label>
+                        <input type="datetime-local" value={editEndDate} min={minDate} onChange={e => setEditEndDate(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-pink-500" />
                       </div>
                     </div>
                     

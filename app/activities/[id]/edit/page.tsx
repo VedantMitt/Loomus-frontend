@@ -17,6 +17,14 @@ export default function EditActivityPage() {
   const [title, setTitle] = useState("");
   const [type, setType] = useState("Party");
   const [date, setDate] = useState("");
+  const [minDate, setMinDate] = useState("");
+
+  useEffect(() => {
+    const d = new Date();
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    setMinDate(new Date(d.getTime() - tzOffset).toISOString().slice(0, 16));
+  }, []);
+
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
   const [maxParticipants, setMaxParticipants] = useState<number | "">("");
@@ -419,7 +427,7 @@ export default function EditActivityPage() {
             <div className="cac-col" style={{ marginBottom: 0 }}>
               <div className="cac-form-group">
                 <label className="cac-label">Date & Time *</label>
-                <input type="datetime-local" className="cac-input" value={date} onChange={(e) => setDate(e.target.value)} />
+                <input type="datetime-local" className="cac-input" value={date} min={minDate} onChange={(e) => setDate(e.target.value)} />
               </div>
             </div>
           </div>
