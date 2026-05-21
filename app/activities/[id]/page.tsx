@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { uploadSubmission } from "@/lib/uploadSubmission";
@@ -63,6 +63,20 @@ type Member = {
   rsvp_status: string;
 };
 
+const getOrdinalSuffix = (i: number) => {
+  const j = i % 10, k = i % 100;
+  if (j == 1 && k != 11) return "st";
+  if (j == 2 && k != 12) return "nd";
+  if (j == 3 && k != 13) return "rd";
+  return "th";
+};
+
+const formatDateShort = (dateStr: string) => {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  return `${d.getDate()}${getOrdinalSuffix(d.getDate())} ${d.toLocaleString('default', { month: 'short' })}`;
+};
+
 // Main component
 export default function LoomusActivityPage() {
   const { id } = useParams<{ id: string }>();
@@ -87,6 +101,27 @@ export default function LoomusActivityPage() {
   const [editEndDate, setEditEndDate] = useState("");
   const [editItinerary, setEditItinerary] = useState<any[]>([]);
   const [savingPlan, setSavingPlan] = useState(false);
+
+  // Compute possible days based on editDate and editEndDate
+  const possibleDays = useMemo(() => {
+    if (!editDate) return [];
+    const start = new Date(editDate);
+    const end = editEndDate ? new Date(editEndDate) : new Date(editDate);
+    const days = [];
+    let current = new Date(start);
+    current.setHours(0,0,0,0);
+    const last = new Date(end);
+    last.setHours(0,0,0,0);
+    
+    // Safety check to prevent infinite loops if dates are invalid
+    let count = 0;
+    while (current <= last && count < 30) {
+      days.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+      count++;
+    }
+    return days;
+  }, [editDate, editEndDate]);
 
   // Inputs
   const [commentText, setCommentText] = useState("");
@@ -501,13 +536,25 @@ export default function LoomusActivityPage() {
                     <div>
                       <div className="flex justify-between items-center mb-2">
                         <label className="text-xs text-gray-400 font-bold block">Itinerary</label>
-                        <button onClick={() => setEditItinerary([...editItinerary, { location: '', time: '', checked: false }])} className="text-[10px] bg-pink-500/20 text-pink-400 px-2 py-1 rounded hover:bg-pink-500 hover:text-white">+ Add Location</button>
+                        <button onClick={() => setEditItinerary([...editItinerary, { location: '', time: '', date: possibleDays.length > 0 ? possibleDays[0].toISOString().split('T')[0] : '', checked: false }])} className="text-[10px] bg-pink-500/20 text-pink-400 px-2 py-1 rounded hover:bg-pink-500 hover:text-white">+ Add Location</button>
                       </div>
                       <div className="space-y-2">
                         {editItinerary.map((item, idx) => (
                           <div key={idx} className="flex gap-2">
                             <LocationAutocomplete value={item.location} onChange={(val) => { const newI = [...editItinerary]; newI[idx].location = val; setEditItinerary(newI); }} className="flex-1" />
-                            <input type="time" value={item.time} onChange={e => { const newI = [...editItinerary]; newI[idx].time = e.target.value; setEditItinerary(newI); }} className="w-28 bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-500" />
+                            {possibleDays.length > 1 && (
+                              <select 
+                                value={item.date || (possibleDays.length > 0 ? possibleDays[0].toISOString().split('T')[0] : '')} 
+                                onChange={e => { const newI = [...editItinerary]; newI[idx].date = e.target.value; setEditItinerary(newI); }}
+                                className="w-[100px] bg-black/50 border border-white/10 rounded-lg px-2 py-2 text-sm outline-none focus:border-pink-500 text-white"
+                              >
+                                {possibleDays.map(d => {
+                                  const dStr = d.toISOString().split('T')[0];
+                                  return <option key={dStr} value={dStr}>{formatDateShort(dStr)}</option>;
+                                })}
+                              </select>
+                            )}
+                            <input type="time" value={item.time} onChange={e => { const newI = [...editItinerary]; newI[idx].time = e.target.value; setEditItinerary(newI); }} className="w-24 bg-black/50 border border-white/10 rounded-lg px-2 py-2 text-sm outline-none focus:border-pink-500" />
                             <button onClick={() => setEditItinerary(editItinerary.filter((_, i) => i !== idx))} className="text-red-500 px-2 hover:bg-white/5 rounded-lg">✕</button>
                           </div>
                         ))}
@@ -536,7 +583,9 @@ export default function LoomusActivityPage() {
                             </div>
                             <div className="flex-1 flex justify-between items-center">
                               <span className={`font-bold ${item.checked ? 'text-green-400 line-through' : 'text-white'}`}><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{item.location}</a></span>
-                              <span className={`text-xs font-bold px-2 py-1 rounded bg-black/40 ${item.checked ? 'text-green-200' : 'text-pink-300'}`}>{item.time}</span>
+                              <span className={`text-xs font-bold px-2 py-1 rounded bg-black/40 ${item.checked ? 'text-green-200' : 'text-pink-300'}`}>
+                                {item.date ? `${formatDateShort(item.date)} ` : ''}{item.time}
+                              </span>
                             </div>
                           </div>
                         ))}
