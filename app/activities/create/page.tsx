@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { uploadSubmission } from "@/lib/uploadSubmission";
 import Link from "next/link";
+import LocationAutocomplete from "@/components/LocationAutocomplete";
 
 const AI_SUGGESTIONS: Record<string, { title: string; description: string; location: string }> = {
   bowling: { title: "Bowling Night", description: "Book lanes, split into teams, play 3 rounds. Loser buys snacks. Perfect for groups of 4-8.", location: "Nearest bowling alley" },
@@ -216,7 +217,13 @@ export default function CreateActivityPage() {
 
             <div className="wiz-group">
               <label className="wiz-label">Location *</label>
-              <input className="wiz-input" placeholder="Where's this happening?" value={location} onChange={e => setLocation(e.target.value)} />
+              <LocationAutocomplete 
+                value={location} 
+                onChange={val => setLocation(val)} 
+                placeholder="Where's this happening?" 
+                className="" 
+                inputClassName="wiz-input"
+              />
             </div>
 
             <div className="wiz-group">

@@ -5,6 +5,7 @@ import { RoomProvider } from "@/context/RoomContext";
 
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import type { Metadata, Viewport } from "next";
+import AIAssistant from "@/components/AIAssistant";
 
 export const metadata: Metadata = {
   title: "Loomus",
@@ -31,6 +32,7 @@ export default function RootLayout({
             <Navbar />
             {children}
             <MobileNav />
+            <AIAssistant />
           </RoomProvider>
         </GoogleOAuthProvider>
       </body>

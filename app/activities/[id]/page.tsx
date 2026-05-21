@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { uploadSubmission } from "@/lib/uploadSubmission";
+import LocationAutocomplete from "@/components/LocationAutocomplete";
 
 // Types
 type Activity = {
@@ -416,7 +417,7 @@ export default function LoomusActivityPage() {
             {activity.title}
           </h1>
           <div className="flex flex-wrap gap-4 text-sm font-medium text-gray-300">
-            <div className="flex items-center gap-2"><span className="text-lg">📍</span> {activity.location}</div>
+            <div className="flex items-center gap-2"><span className="text-lg">📍</span> <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.location)}`} target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-pink-300">{activity.location}</a></div>
             <div className="flex items-center gap-2"><span className="text-lg">⏳</span> {formattedDate} {activity.end_date ? ` to ${new Date(activity.end_date).toLocaleString("en-US", { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : ''}</div>
           </div>
         </div>
@@ -505,7 +506,7 @@ export default function LoomusActivityPage() {
                       <div className="space-y-2">
                         {editItinerary.map((item, idx) => (
                           <div key={idx} className="flex gap-2">
-                            <input type="text" placeholder="Location name..." value={item.location} onChange={e => { const newI = [...editItinerary]; newI[idx].location = e.target.value; setEditItinerary(newI); }} className="flex-1 bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-500" />
+                            <LocationAutocomplete value={item.location} onChange={(val) => { const newI = [...editItinerary]; newI[idx].location = val; setEditItinerary(newI); }} className="flex-1" />
                             <input type="time" value={item.time} onChange={e => { const newI = [...editItinerary]; newI[idx].time = e.target.value; setEditItinerary(newI); }} className="w-28 bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-500" />
                             <button onClick={() => setEditItinerary(editItinerary.filter((_, i) => i !== idx))} className="text-red-500 px-2 hover:bg-white/5 rounded-lg">✕</button>
                           </div>
@@ -534,7 +535,7 @@ export default function LoomusActivityPage() {
                               {item.checked && <span className="text-white text-xs font-bold">✓</span>}
                             </div>
                             <div className="flex-1 flex justify-between items-center">
-                              <span className={`font-bold ${item.checked ? 'text-green-400 line-through' : 'text-white'}`}>{item.location}</span>
+                              <span className={`font-bold ${item.checked ? 'text-green-400 line-through' : 'text-white'}`}><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{item.location}</a></span>
                               <span className={`text-xs font-bold px-2 py-1 rounded bg-black/40 ${item.checked ? 'text-green-200' : 'text-pink-300'}`}>{item.time}</span>
                             </div>
                           </div>
