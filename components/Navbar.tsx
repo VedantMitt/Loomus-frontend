@@ -156,6 +156,7 @@ export default function Navbar() {
     { name: "Discover", href: "/discover" },
     { name: "Friends", href: "/friends" },
     { name: "Activities", href: "/activities" },
+    { name: "Chapters", href: "/chapters" },
     { name: "Play", href: "/play" },
     { name: "Rooms", href: "/rooms" },
   ];
@@ -375,11 +376,57 @@ export default function Navbar() {
 
         .nav-spacer { height: 100px; }
 
+        .mobile-top-nav {
+          display: none;
+        }
+
+        .mtn-btn {
+          width: 42px;
+          height: 42px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+          border-radius: 14px;
+          color: #fff;
+          position: relative;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        .mtn-btn:active {
+          transform: scale(0.95);
+          background: rgba(255,255,255,0.12);
+        }
+
         @media (max-width: 767px) {
-          .nav-wrapper { padding: 12px; }
-          .nav-container { border-radius: 20px; padding: 8px 16px; }
-          .nav-profile-pill, .nav-logout-btn, .nav-action-btn-text { display: none !important; }
-          .notif-panel { position: fixed; top: 80px; left: 12px; right: 12px; width: auto; }
+          .nav-wrapper { display: none !important; }
+          .nav-spacer { display: block !important; height: calc(76px + env(safe-area-inset-top, 0px)); }
+          .notif-panel { position: fixed; top: calc(76px + env(safe-area-inset-top, 0px)); left: 12px; right: 12px; width: auto; z-index: 9999; }
+          
+          .mobile-top-nav {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 999;
+            justify-content: space-between;
+            align-items: center;
+            padding: calc(16px + env(safe-area-inset-top, 0px)) 20px 16px;
+            background: linear-gradient(to bottom, rgba(13, 13, 17, 0.95), rgba(13, 13, 17, 0.75));
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+          }
+          .mobile-top-nav::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(244,114,182,0.4), rgba(192,132,252,0.4), transparent);
+          }
         }
       `}</style>
 
@@ -427,8 +474,9 @@ export default function Navbar() {
                     {notifications.some(n => !n.is_read) && <div className="notif-dot" />}
                   </button>
  
+                  {/* Dropdown rendered outside layout bounds for desktop, but mobile overrides below */}
                   {showDropdown && (
-                    <div className="notif-panel">
+                    <div className="notif-panel desktop-notif">
                       <h4 style={{ color: "#fff", margin: "0 0 16px", fontSize: "16px", fontWeight: 800 }}>Activity</h4>
                       {pendingRequests.length === 0 && notifications.length === 0 ? (
                         <div style={{ padding: "32px", textAlign: "center", color: "#666", fontSize: "14px" }}>No new activity</div>
@@ -586,6 +634,134 @@ export default function Navbar() {
               <Link href="/auth/login" className="nav-profile-pill" style={{ paddingLeft: "14px" }}>
                 Login
               </Link>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="mobile-top-nav">
+        <Link href="/" className="nav-logo" style={{ fontSize: "22px" }}>
+          Loom<span>us</span>
+        </Link>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <Link href="/chat" className="mtn-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
+            {hasUnreadDMs && <div className="notif-dot" style={{ width: 8, height: 8, top: -2, right: -2, border: "2px solid #141414" }} />}
+          </Link>
+          <div style={{ position: "relative" }} ref={dropdownRef}>
+            <button className="mtn-btn" onClick={(e) => {
+              e.stopPropagation();
+              setShowDropdown(!showDropdown);
+            }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              {(notifications.some(n => !n.is_read) || hasPendingRequests) && <div className="notif-dot" style={{ width: 8, height: 8, top: -2, right: -2, border: "2px solid #141414" }} />}
+            </button>
+            {/* Mobile Dropdown reused from above */}
+            {showDropdown && (
+              <div className="notif-panel mobile-notif">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                  <h4 style={{ color: "#fff", margin: 0, fontSize: "16px", fontWeight: 800 }}>Activity</h4>
+                  <button onClick={() => setShowDropdown(false)} style={{ background: "none", border: "none", color: "#666", fontSize: "20px", cursor: "pointer" }}>✕</button>
+                </div>
+                {pendingRequests.length === 0 && notifications.length === 0 ? (
+                  <div style={{ padding: "32px", textAlign: "center", color: "#666", fontSize: "14px" }}>No new activity</div>
+                ) : (
+                  <>
+                    {pendingRequests.map(req => {
+                      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+                      const avatar = req.profile_pic ? (req.profile_pic.startsWith("/uploads") ? `${API}${req.profile_pic}` : req.profile_pic) : `https://ui-avatars.com/api/?name=${req.name}&background=0D1117&color=fff`;
+                      return (
+                        <div key={req.id} style={{ display: "flex", gap: "12px", alignItems: "center", padding: "12px", borderRadius: "16px", background: "rgba(59, 130, 246, 0.08)", marginBottom: "12px", border: "1px solid rgba(59, 130, 246, 0.2)" }}>
+                          <img src={avatar} alt="" style={{ width: "42px", height: "42px", borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(255,255,255,0.1)" }} />
+                          <div style={{ flex: 1, fontSize: "13px", color: "#ccc", lineHeight: "1.3" }}>
+                            <Link href={`/profile/${req.username}`} onClick={() => setShowDropdown(false)} style={{ color: "#fff", fontWeight: 700, textDecoration: "none" }}>{req.name}</Link>
+                            <div style={{ fontSize: "12px", color: "#888", marginTop: "2px" }}>Friend request</div>
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                            <button onClick={(e) => handleAcceptRequest(req.id, e)} style={{ padding: "6px 12px", background: "#f472b6", color: "#fff", border: "none", borderRadius: "8px", fontSize: "11px", fontWeight: 800, cursor: "pointer" }}>Accept</button>
+                            <button onClick={(e) => handleRejectRequest(req.id, e)} style={{ padding: "6px 12px", background: "rgba(255,255,255,0.08)", color: "#ccc", border: "none", borderRadius: "8px", fontSize: "11px", fontWeight: 800, cursor: "pointer" }}>Ignore</button>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {notifications.map(n => {
+                      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+                      const avatar = n.profile_pic ? (n.profile_pic.startsWith("/uploads") ? `${API}${n.profile_pic}` : n.profile_pic) : `https://ui-avatars.com/api/?name=${n.name}&background=0D1117&color=fff`;
+                      
+                      let message = "interacted with you.";
+                      let link = `/profile/${n.username}`;
+                      const meta = typeof n.metadata === 'string' ? JSON.parse(n.metadata) : n.metadata;
+
+                      if (n.type === 'friend_accepted') message = "accepted your request!";
+                      if (n.type === 'game_invite') {
+                        const gName = meta?.game_name || (meta?.game_type === 'gtl' ? 'Guess the Lie' : 'DM Roulette');
+                        message = `invited you to play ${gName}!`;
+                        link = meta?.game_type === 'gtl' 
+                          ? `/play/guess-the-lie?game=${meta.game_id}` 
+                          : `/play/roulette?pool=${meta.game_id}`;
+                      }
+                      if (n.type === 'room_invite') {
+                        message = "invited you to a room!";
+                        link = `/rooms/${meta?.room_id}`;
+                      }
+                      if (n.type === 'room_approved') {
+                        message = "approved your room request!";
+                        link = `/rooms/${meta?.room_id}`;
+                      }
+                      if (n.type === 'activity_invite') {
+                        message = "invited you to an activity!";
+                        link = `/activities/${meta?.activity_id}`;
+                      }
+                      if (n.type === 'activity_announcement') {
+                        message = `posted an announcement in ${meta?.title || 'an activity'}!`;
+                        link = `/activities/${meta?.activity_id}?tab=announcements`;
+                      }
+
+                        return (
+                          <div key={n.id} style={{ display: "flex", gap: "12px", alignItems: "center", padding: "12px", borderRadius: "16px", background: n.is_read ? "rgba(255,255,255,0.02)" : (n.type === 'game_invite' ? "rgba(6, 182, 212, 0.08)" : (n.type === 'room_invite' ? "rgba(6, 182, 212, 0.08)" : "rgba(244, 114, 182, 0.08)")), marginBottom: "4px", border: n.is_read ? "1px solid rgba(255,255,255,0.05)" : (['game_invite', 'room_invite'].includes(n.type) ? "1px solid rgba(6, 182, 212, 0.2)" : "1px solid rgba(244, 114, 182, 0.2)"), opacity: n.is_read ? 0.6 : 1, transition: 'all 0.3s ease' }}>
+                            <img src={avatar} alt="" style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover", border: "1px solid rgba(255,255,255,0.1)" }} />
+                            <div style={{ flex: 1, fontSize: "13px", color: "#ccc", lineHeight: "1.4" }}>
+                              <Link href={link} onClick={() => { markNotifRead(n.id); setShowDropdown(false); }} style={{ color: "inherit", textDecoration: "none" }}>
+                                <span style={{ color: "#fff", fontWeight: 700 }}>{n.name}</span>
+                                {" "}{message}
+                                {(n.type === 'game_invite' || n.type === 'room_invite') && meta?.title && (
+                                  <div style={{ fontSize: "11px", color: "#666", marginTop: "2px" }}>{n.type === 'game_invite' ? 'Party' : 'Room'}: {meta.title}</div>
+                                )}
+                              </Link>
+                            </div>
+                            {(n.type === 'game_invite' || n.type === 'room_invite') && !n.is_read ? (
+                              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                                <button 
+                                  onClick={() => { window.location.href = link; markNotifRead(n.id); setShowDropdown(false); }} 
+                                  style={{ padding: "5px 10px", background: n.type === 'game_invite' ? "#f472b6" : "#06b6d4", color: "#fff", border: "none", borderRadius: "8px", fontSize: "10px", fontWeight: 800, cursor: "pointer" }}
+                                >
+                                  Join
+                                </button>
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); markNotifRead(n.id); }} 
+                                  style={{ padding: "5px 10px", background: "rgba(255,255,255,0.08)", color: "#ccc", border: "none", borderRadius: "8px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}
+                                >
+                                  Ignore
+                                </button>
+                              </div>
+                            ) : (
+                              !n.is_read && (
+                                <button onClick={() => markNotifRead(n.id)} style={{ padding: "6px", background: "transparent", border: "none", color: "#666", cursor: "pointer", fontSize: "18px" }}>×</button>
+                              )
+                            )}
+                          </div>
+                        );
+                    })}
+                  </>
+                )}
+              </div>
             )}
           </div>
         </div>

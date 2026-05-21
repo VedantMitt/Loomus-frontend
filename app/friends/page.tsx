@@ -17,6 +17,14 @@ type Friend = {
   status_updated_at?: string;
 };
 
+type User = {
+  id: string;
+  name: string;
+  username: string;
+  profile_pic?: string;
+  college: string;
+};
+
 type PendingRequest = {
   id: string;
   name: string;
@@ -50,6 +58,44 @@ export default function FriendsPage() {
   const [loadingFriends, setLoadingFriends] = useState(true);
   const [loadingRequests, setLoadingRequests] = useState(true);
   const [loadingNotifs, setLoadingNotifs] = useState(true);
+
+  const [search, setSearch] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchSuggestions, setSearchSuggestions] = useState<User[]>([]);
+
+  const fetchSearchSuggestions = useCallback(
+    async (searchTerm: string) => {
+      if (!searchTerm.trim()) {
+        setSearchSuggestions([]);
+        return;
+      }
+      setIsSearching(true);
+      try {
+        const token = localStorage.getItem("token");
+        const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        const res = await fetch(`${API}/users/discover?search=${searchTerm.trim()}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setSearchSuggestions(data);
+        }
+      } catch (err) {
+        console.error("Search fetch error:", err);
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (search) fetchSearchSuggestions(search);
+      else setSearchSuggestions([]);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [search, fetchSearchSuggestions]);
 
   const fetchFriends = useCallback(async () => {
     try {
@@ -180,18 +226,104 @@ export default function FriendsPage() {
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap');
 
+        /* 🔎 Search Component */
+        .search-container {
+          position: relative;
+          max-width: 650px;
+          margin: 0 auto 32px;
+          z-index: 100;
+        }
+        .search-input {
+          width: 100%;
+          background: rgba(255, 255, 255, 0.03);
+          backdrop-filter: blur(25px);
+          border: 1px solid rgba(255,255,255,0.08);
+          padding: 16px 24px 16px 52px;
+          border-radius: 20px;
+          color: #fff;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 15px;
+          outline: none;
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .search-input:focus {
+          border-color: #34d399;
+          background: rgba(255, 255, 255, 0.05);
+          box-shadow: 0 15px 50px rgba(52, 211, 153, 0.15);
+          transform: translateY(-2px);
+        }
+        .search-icon {
+          position: absolute;
+          left: 18px;
+          top: 16px;
+          color: #666;
+          pointer-events: none;
+        }
+        .search-clear {
+          position: absolute;
+          right: 18px;
+          top: 16px;
+          color: #666;
+          cursor: pointer;
+          transition: 0.2s;
+        }
+        .search-clear:hover { color: #fff; }
+
+        .search-dropdown {
+          position: absolute;
+          top: calc(100% + 14px);
+          left: 0; right: 0;
+          background: rgba(13, 13, 17, 0.85);
+          backdrop-filter: blur(30px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 20px;
+          box-shadow: 0 25px 60px -12px rgba(0,0,0,0.7);
+          overflow: hidden;
+          animation: dropSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes dropSlide {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .suggestion-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 14px 20px;
+          text-decoration: none;
+          transition: background 0.2s;
+          border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+        .suggestion-item:hover { background: rgba(255,255,255,0.05); }
+
         .friends-container {
           max-width: 900px;
           margin: 0 auto;
-          padding: 60px 24px 100px;
+          padding: calc(60px + env(safe-area-inset-top, 0px)) 24px 100px;
           font-family: 'DM Sans', sans-serif;
           position: relative;
           z-index: 10;
         }
 
         .fp-hero {
+          position: relative;
           text-align: center;
           margin-bottom: 48px;
+          padding-top: 24px;
+        }
+        .fp-hero::before {
+          content: '';
+          position: absolute;
+          top: 0%; left: 50%;
+          transform: translate(-50%, -40%);
+          width: 80vw;
+          height: 250px;
+          background: radial-gradient(circle, rgba(52,211,153,0.15) 0%, rgba(14,165,233,0.1) 30%, transparent 70%);
+          filter: blur(40px);
+          z-index: -1;
+          pointer-events: none;
         }
 
         .fp-title {
@@ -309,6 +441,55 @@ export default function FriendsPage() {
       <main className="friends-container">
         <div className="fp-hero">
           <h1 className="fp-title">Your Circle</h1>
+        </div>
+
+        {/* 🔎 Search Bar + Floating Results */}
+        <div className="search-container">
+          <div style={{ position: 'relative' }}>
+            <div className="search-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </div>
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Search people by name or username..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onFocus={() => { if (search) setIsSearching(true); }}
+              onBlur={() => setTimeout(() => setIsSearching(false), 200)}
+            />
+            {search && (
+              <div className="search-clear" onClick={() => { setSearch(""); setSearchSuggestions([]); }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </div>
+            )}
+          </div>
+
+          {/* Suggestions Dropdown */}
+          {(search.trim() && (isSearching || searchSuggestions.length > 0)) && (
+            <div className="search-dropdown">
+              {isSearching && searchSuggestions.length === 0 ? (
+                <div style={{ padding: 20, textAlign: "center", color: "#666", fontSize: 13 }}>Searching Loomus...</div>
+              ) : searchSuggestions.length > 0 ? (
+                searchSuggestions.map((user: User) => {
+                  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+                  const avatar = user.profile_pic ? (user.profile_pic.startsWith("/uploads") ? `${API}${user.profile_pic}` : user.profile_pic) : `https://ui-avatars.com/api/?name=${user.name}&background=0D1117&color=fff`;
+                  return (
+                    <Link key={user.id} href={`/profile/${user.username}`} className="suggestion-item">
+                      <img src={avatar} alt="" style={{ width: 40, height: 40, borderRadius: 10, objectFit: "cover" }} />
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{user.name}</div>
+                        <div style={{ fontSize: 12, color: "#666" }}>@{user.username}</div>
+                        <div style={{ fontSize: 11, color: "#34d399" }}>{user.college}</div>
+                      </div>
+                    </Link>
+                  );
+                })
+              ) : (
+                !isSearching && <div style={{ padding: 20, textAlign: "center", color: "#666", fontSize: 13 }}>No users found for "{search}"</div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="fp-tabs">

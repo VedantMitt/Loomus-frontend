@@ -5,10 +5,16 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:mobile": "npx cross-env CAPACITOR_BUILD=true next build",
+    "cap": "cap",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.4",
+    "@capacitor/cli": "^8.3.4",
+    "@capacitor/core": "^8.3.4",
+    "@capacitor/ios": "^8.3.4",
     "@react-oauth/google": "^0.13.4",
     "@supabase/supabase-js": "^2.93.3",
     "lucide-react": "^1.7.0",

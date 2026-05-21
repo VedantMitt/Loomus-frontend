@@ -554,28 +554,28 @@ function ChatContent() {
           .chat-page {
             padding: 0;
             gap: 0;
-            height: calc(100vh - 70px - 72px);
+            height: calc(100dvh - 72px - env(safe-area-inset-bottom) - env(safe-area-inset-top));
           }
-          .chat-sidebar {
+          .chat-sidebar, .chat-main {
             width: 100%;
             height: 100%;
             border-radius: 0;
             border: none;
           }
-          .chat-main {
-            width: 100%;
-            height: 100%;
-            border-radius: 0;
-            border: none;
-          }
-          .chat-sidebar.mobile-hidden {
-            display: none;
-          }
-          .chat-main.mobile-hidden {
+          .chat-sidebar.mobile-hidden, .chat-main.mobile-hidden {
             display: none;
           }
           .mobile-back-btn {
             display: flex !important;
+          }
+          .chat-input-area {
+            padding: 12px 16px;
+          }
+          .msg-list {
+            padding: 16px;
+          }
+          .chat-header {
+            padding: 12px 16px;
           }
         }
 

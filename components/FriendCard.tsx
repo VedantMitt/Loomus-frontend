@@ -16,6 +16,7 @@ import { useState, useRef, useEffect } from "react";
    active_pools?: { id: string, title: string }[];
    active_gtl?: { id: string, title: string }[];
    active_activities?: { id: string, title: string }[];
+   shared_chapters?: { id: string, title: string }[];
  };
 
 export default function FriendCard({ friend, onRemove }: { friend: Friend, onRemove?: () => void }) {
@@ -483,6 +484,18 @@ export default function FriendCard({ friend, onRemove }: { friend: Friend, onRem
                  </Link>
                ))}
              </div>
+
+             {/* Shared Chapters */}
+             {friend.shared_chapters && friend.shared_chapters.length > 0 && (
+               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '12px' }}>
+                 <div style={{ fontSize: '11px', color: '#888', fontWeight: 600, width: '100%', marginBottom: '2px' }}>SHARED CHAPTERS</div>
+                 {friend.shared_chapters.map(c => (
+                   <Link key={c.id} href={`/activities/${c.id}`} style={{ display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none', padding: '4px 10px', background: 'linear-gradient(135deg, rgba(244, 114, 182, 0.1), rgba(192, 132, 252, 0.1))', border: '1px solid rgba(192, 132, 252, 0.3)', borderRadius: '12px', fontSize: '11px', fontWeight: 600, color: '#e879f9', transition: 'all 0.2s' }}>
+                     <span>📖</span> {c.title}
+                   </Link>
+                 ))}
+               </div>
+             )}
           </div>
         </div>
 

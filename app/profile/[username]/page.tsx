@@ -221,28 +221,50 @@ export default function ProfilePage() {
   const isOwnProfile = currentUserId === user.id;
 
   return (
-    <div className="min-h-screen bg-black text-white px-4 py-12">
+    <div className="min-h-screen bg-black text-white px-4 pb-12" style={{ paddingTop: 'calc(32px + env(safe-area-inset-top, 0px))' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap');
 
-        .profile-container { max-width: 720px; margin: 0 auto; font-family: 'DM Sans', sans-serif; }
+        .profile-container { max-width: 720px; margin: 0 auto; font-family: 'DM Sans', sans-serif; padding-bottom: 100px; }
 
         .profile-header {
           display: flex;
-          flex-direction: column;
+          flex-direction: row;
           align-items: center;
-          gap: 16px;
+          gap: 20px;
+          padding: 24px;
+          background: linear-gradient(145deg, rgba(40, 40, 40, 0.6), rgba(15, 15, 15, 0.8));
+          border-radius: 24px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+          position: relative;
+          overflow: hidden;
+        }
+        .profile-header::before {
+          content: '';
+          position: absolute;
+          top: -50%; left: -50%;
+          width: 200%; height: 200%;
+          background: radial-gradient(circle at center, rgba(59, 130, 246, 0.15) 0%, transparent 50%);
+          z-index: 0;
+          pointer-events: none;
+        }
+        .profile-header > * {
+          z-index: 1;
         }
         @media (min-width: 640px) {
-          .profile-header { flex-direction: row; align-items: flex-start; gap: 28px; }
+          .profile-header { gap: 28px; }
         }
 
         .avatar {
-          width: 120px; height: 120px;
+          width: 100px; height: 100px;
           border-radius: 50%;
           object-fit: cover;
           border: 3px solid #1a1a1a;
           flex-shrink: 0;
+        }
+        @media (min-width: 640px) {
+          .avatar { width: 120px; height: 120px; }
         }
 
         .profile-card {
@@ -321,8 +343,8 @@ export default function ProfilePage() {
             alt={user.name}
             className="avatar"
           />
-          <div style={{ textAlign: "center" }} className="sm:!text-left">
-            <h1 style={{ fontSize: "28px", fontWeight: 700, margin: 0 }}>{user.name}</h1>
+          <div style={{ textAlign: "left", flex: 1 }}>
+            <h1 style={{ fontSize: "24px", fontWeight: 700, margin: 0 }}>{user.name}</h1>
             <p style={{ color: "#666", fontSize: "14px", marginTop: "2px" }}>@{user.username}</p>
             <p style={{ color: "#3b82f6", fontSize: "13px", marginTop: "4px" }}>
               {user.college}{user.year ? ` '${user.year.toString().slice(-2)}` : ""}
@@ -332,9 +354,7 @@ export default function ProfilePage() {
                 {user.bio}
               </p>
             )}
-            <div style={{ marginTop: "16px", display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center" }}
-              className="sm:!justify-start"
-            >
+            <div style={{ marginTop: "16px", display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "flex-start" }}>
               {isOwnProfile ? (
                 <button
                   onClick={() => router.push("/profile/edit")}
@@ -466,6 +486,39 @@ export default function ProfilePage() {
             <p className="empty-text">Not filled in yet</p>
           )}
         </div>
+
+        {/* Logout Button (Own Profile Only) */}
+        {isOwnProfile && (
+          <div style={{ marginTop: "40px", display: "flex", justifyContent: "center" }}>
+            <button
+              onClick={() => {
+                localStorage.removeItem("token");
+                router.push("/auth/login");
+              }}
+              style={{
+                padding: "12px 32px",
+                borderRadius: "12px",
+                background: "transparent",
+                color: "#ef4444",
+                border: "2px solid rgba(239, 68, 68, 0.3)",
+                fontWeight: 700,
+                fontSize: "15px",
+                cursor: "pointer",
+                transition: "all 0.2s"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)";
+                e.currentTarget.style.borderColor = "rgba(239, 68, 68, 0.5)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.borderColor = "rgba(239, 68, 68, 0.3)";
+              }}
+            >
+              Logout Account
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
