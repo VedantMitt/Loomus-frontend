@@ -10,6 +10,7 @@ type Activity = {
   location: string;
   date: string;
   banner?: string;
+  is_shared?: boolean;
 };
 
 type Submission = {
@@ -28,8 +29,34 @@ export default function ScrapbookStoryPage() {
   const [activity, setActivity] = useState<Activity | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sharing, setSharing] = useState(false);
 
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+  const handleShare = async () => {
+    const caption = prompt("Add a caption for the feed (or leave blank):");
+    if (caption === null) return;
+    setSharing(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/activities/${id}/share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ caption })
+      });
+      if (res.ok) {
+        setActivity(prev => prev ? { ...prev, is_shared: true } : prev);
+        alert("Scrapbook shared to feed!");
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to share.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to share.");
+    }
+    setSharing(false);
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -68,14 +95,30 @@ export default function ScrapbookStoryPage() {
       </div>
 
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5 p-4 flex items-center gap-4">
-        <button onClick={() => router.back()} className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors">
-          <ChevronLeft className="w-5 h-5 text-white" />
-        </button>
-        <div>
-          <h1 className="font-['Syne'] font-bold text-lg leading-tight">{activity.title}</h1>
-          <p className="text-xs text-gray-400">Scrapbook Story</p>
+      <div className="sticky top-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5 p-4 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <button onClick={() => router.back()} className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors">
+            <ChevronLeft className="w-5 h-5 text-white" />
+          </button>
+          <div>
+            <h1 className="font-['Syne'] font-bold text-lg leading-tight">{activity.title}</h1>
+            <p className="text-xs text-gray-400">Scrapbook Story</p>
+          </div>
         </div>
+        
+        {activity.is_shared ? (
+          <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-pink-500/10 text-pink-400 border border-pink-500/20">
+            ✓ Shared to Feed
+          </span>
+        ) : (
+          <button 
+            onClick={handleShare}
+            disabled={sharing}
+            className="text-xs font-bold px-4 py-2 rounded-full bg-white text-black hover:bg-gray-200 transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            {sharing ? 'Sharing...' : 'Post to Feed'}
+          </button>
+        )}
       </div>
 
       <div className="max-w-2xl mx-auto p-4 md:p-8 relative z-10 pb-32">
