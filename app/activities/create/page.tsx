@@ -7,22 +7,22 @@ import Link from "next/link";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 
 const AI_SUGGESTIONS: Record<string, { title: string; description: string; location: string }> = {
-  bowling: { title: "Bowling Night", description: "Book lanes, split into teams, play 3 rounds. Loser buys snacks. Perfect for groups of 4-8.", location: "Nearest bowling alley" },
-  golf: { title: "Golf Session", description: "Mini golf or driving range. Great for casual hangs, no skill needed. Grab smoothies after.", location: "Driving range / mini golf" },
-  pickleball: { title: "Pickleball Match", description: "Book a court for 2 hours. Doubles tournament style. Bring water. Winner gets bragging rights.", location: "Sports complex court" },
-  clubbing: { title: "Club Night", description: "Pre-game at someone's place. Hit the club by 11. Set a budget. Dance like nobody's watching.", location: "Your favourite club" },
-  cafe_hopping: { title: "Café Hopping Tour", description: "Pick 3-4 cafés in one area. Try a different drink at each. Rate them all. Find your new spot.", location: "Hauz Khas / Champa Gali" },
-  movie: { title: "Movie Plan", description: "Pick the movie together. Book last row seats. Post-movie dinner to discuss plot holes.", location: "PVR / INOX nearest" },
-  trip: { title: "Weekend Trip", description: "Pick a destination within 4-6 hours. Split costs. Assign roles: navigator, DJ, photographer, snack manager.", location: "" },
-  road_trip: { title: "Road Trip", description: "Midnight drive or sunrise chase. Pick scenic stops. Aux cord rules: driver picks first song. Stop at every dhaba.", location: "" },
-  city_exploration: { title: "City Exploration", description: "Pick an area you've never been to. Walk with no plan. Try street food. Talk to locals. Get lost on purpose.", location: "" },
-  explore_spot: { title: "Explore a Spot", description: "Discover a hidden gem. Eat local food, visit shops, find street art. Take candid photos.", location: "Majnu ka Tilla" },
-  gaming: { title: "Gaming Night", description: "Pick the game: Valorant, FIFA, or board games. Tournament bracket. Loser does a dare.", location: "Online / someone's place" },
-  watch_party: { title: "Watch Party", description: "Pick a series or movie. Sync up. React together. Bring blankets and snacks.", location: "Online Room" },
-  study_session: { title: "Study Session", description: "Pick a café or library. Pomodoro timers. No phones for 25 mins. Break together.", location: "Library / café" },
-  food_walk: { title: "Food Walk", description: "Pick a food street. Try 5 different things. Rate each. Find the best momos. Document the journey.", location: "Chandni Chowk / CR Park" },
-  workout: { title: "Workout Session", description: "Gym or outdoor run. Push each other. Post-workout protein shake. Consistency > motivation.", location: "Gym / park" },
-  concert: { title: "Concert Night", description: "Find a live gig or open mic. Get there early. Sing along. Record clips for the chapter.", location: "" },
+  bowling: { title: "Bowling Night", description: "Book lanes, split into teams, play 3 rounds. Loser buys snacks. Perfect for groups of 4-8.", location: "Smaaash (Cyberhub) / Yes Minister (HKV)" },
+  golf: { title: "Golf Session", description: "Mini golf or driving range. Great for casual hangs, no skill needed. Grab smoothies after.", location: "Siri Fort Sports Complex / Qutab Golf Course" },
+  pickleball: { title: "Pickleball Match", description: "Book a court for 2 hours. Doubles tournament style. Bring water. Winner gets bragging rights.", location: "Hudle Pickleball, Vasant Kunj" },
+  clubbing: { title: "Club Night", description: "Pre-game at someone's place. Hit the club by 11. Set a budget. Dance like nobody's watching.", location: "Soho (Ashoka) / Diablo (Mehrauli)" },
+  cafe_hopping: { title: "Café Hopping Tour", description: "Pick 3-4 cafés in one area. Try a different drink at each. Rate them all. Find your new spot.", location: "Champa Gali / Dhan Mill Compound" },
+  movie: { title: "Movie Plan", description: "Pick the movie together. Book last row seats. Post-movie dinner to discuss plot holes.", location: "PVR Director's Cut / INOX Nehru Place" },
+  trip: { title: "Weekend Trip", description: "Pick a destination within 4-6 hours. Split costs. Assign roles: navigator, DJ, photographer, snack manager.", location: "Rishikesh / Jaipur / Neemrana" },
+  road_trip: { title: "Road Trip", description: "Midnight drive or sunrise chase. Pick scenic stops. Aux cord rules: driver picks first song. Stop at every dhaba.", location: "Murthal (Amrik Sukhdev) / Leopard Trail" },
+  city_exploration: { title: "City Exploration", description: "Pick an area you've never been to. Walk with no plan. Try street food. Talk to locals. Get lost on purpose.", location: "Lodhi Art District / Paharganj" },
+  explore_spot: { title: "Explore a Spot", description: "Discover a hidden gem. Eat local food, visit shops, find street art. Take candid photos.", location: "Majnu Ka Tilla / Safdarjung Enclave" },
+  gaming: { title: "Gaming Night", description: "Pick the game: Valorant, FIFA, or board games. Tournament bracket. Loser does a dare.", location: "Microgravity (Gurgaon) / Local Cafe" },
+  watch_party: { title: "Watch Party", description: "Pick a series or movie. Sync up. React together. Bring blankets and snacks.", location: "Online Room / Friend's House" },
+  study_session: { title: "Study Session", description: "Pick a café or library. Pomodoro timers. No phones for 25 mins. Break together.", location: "Blue Tokai / Triveni Terrace Cafe" },
+  food_walk: { title: "Food Walk", description: "Pick a food street. Try 5 different things. Rate each. Find the best momos. Document the journey.", location: "Chandni Chowk / Jama Masjid / CR Park" },
+  workout: { title: "Workout Session", description: "Gym or outdoor run. Push each other. Post-workout protein shake. Consistency > motivation.", location: "Sanjay Van / Nehru Park / Lodhi Garden" },
+  concert: { title: "Concert Night", description: "Find a live gig or open mic. Get there early. Sing along. Record clips for the chapter.", location: "The Piano Man / Auro Kitchen Bar" },
 };
 
 type Friend = { id: string; name: string; username: string; profile_pic?: string };
@@ -31,14 +31,17 @@ export default function CreateActivityPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const categoryType = searchParams.get("type") || "";
+  const initialTitle = searchParams.get("title") || "";
+  const initialLocation = searchParams.get("location") || "";
+  const initialDesc = searchParams.get("desc") || "";
 
   const suggestion = AI_SUGGESTIONS[categoryType] || { title: "", description: "", location: "" };
 
   const [step, setStep] = useState(1);
-  const [title, setTitle] = useState(suggestion.title);
+  const [title, setTitle] = useState(initialTitle || suggestion.title);
   const [date, setDate] = useState("");
-  const [location, setLocation] = useState(suggestion.location);
-  const [description, setDescription] = useState(suggestion.description);
+  const [location, setLocation] = useState(initialLocation || suggestion.location);
+  const [description, setDescription] = useState(initialDesc || suggestion.description);
   const [banner, setBanner] = useState<File | null>(null);
 
   // Step 2 - Invite

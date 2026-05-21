@@ -257,6 +257,16 @@ export default function ActivitiesPage() {
     router.push(`/activities/create?type=${categoryKey}`);
   };
 
+  const handleEventClick = (event: any) => {
+    const query = new URLSearchParams({
+      type: "event",
+      title: event.title,
+      location: event.location,
+      desc: `Let's go to ${event.title} at ${event.location}! Event time: ${event.time}`,
+    }).toString();
+    router.push(`/activities/create?${query}`);
+  };
+
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   return (
@@ -728,7 +738,7 @@ export default function ActivitiesPage() {
                 ))
               ) : (
                 topEvents.map((event) => (
-                  <div key={event.id} className="live-card">
+                  <div key={event.id} className="live-card" onClick={() => handleEventClick(event)}>
                     <img src={event.image} alt={event.title} className="live-img" />
                     <div 
                       className="live-overlay" 
