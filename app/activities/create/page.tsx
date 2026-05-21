@@ -79,7 +79,7 @@ export default function CreateActivityPage() {
     const timeout = setTimeout(async () => {
       setSearching(true);
       try {
-        const res = await fetch(`${API}/users/search?q=${encodeURIComponent(friendSearch)}`, {
+        const res = await fetch(`${API}/users/discover?search=${encodeURIComponent(friendSearch)}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) setSearchResults(await res.json());
