@@ -699,6 +699,29 @@ export default function ActivitiesPage() {
           .exp-card-label { font-size: 16px; }
           .exp-card-ai { display: none; }
         }
+
+        .create-fab {
+          position: fixed;
+          bottom: 100px;
+          right: 24px;
+          width: 56px;
+          height: 56px;
+          border-radius: 28px;
+          background: linear-gradient(135deg, #c084fc 0%, #f472b6 100%);
+          color: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: none;
+          box-shadow: 0 8px 32px rgba(192,132,252,0.4);
+          cursor: pointer;
+          z-index: 100;
+          transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .create-fab:hover {
+          transform: scale(1.08);
+          box-shadow: 0 12px 40px rgba(192,132,252,0.6);
+        }
       `}</style>
 
       <main className="exp-container">
@@ -875,6 +898,16 @@ export default function ActivitiesPage() {
           </>
         )}
 
+        {/* Floating Create Button */}
+        <button
+          onClick={() => router.push("/activities/create")}
+          className="create-fab"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
       </main>
     </div>
   );
