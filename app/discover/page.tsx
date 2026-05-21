@@ -25,8 +25,35 @@ export default function DiscoverPage() {
   const [recommendedUsers, setRecommendedUsers] = useState<User[]>([]);
   const [sharedFeed, setSharedFeed] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
 
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem("token");
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setMyUserId(payload.userId || payload.id);
+      }
+    } catch(e) {}
+  }, []);
+
+  const handleDeleteFromFeed = async (id: string) => {
+    if (!confirm("Remove this chapter from the public feed?")) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/activities/${id}/unshare`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        setSharedFeed(prev => prev.filter(item => item.id !== id));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -106,12 +133,12 @@ export default function DiscoverPage() {
               <div key={feedItem.id} style={{ marginBottom: "64px" }}>
                 {/* Scrapbook Post */}
                 <div className="glass-panel" style={{ borderRadius: "24px", padding: "24px", border: "1px solid rgba(255,255,255,0.05)" }}>
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", marginBottom: "20px" }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", marginBottom: "20px", position: "relative" }}>
                     <img 
                       src={feedItem.host_pic?.startsWith('/uploads') ? `${API}${feedItem.host_pic}` : feedItem.host_pic || `https://ui-avatars.com/api/?name=${feedItem.host_name}&background=111&color=fff`} 
                       style={{ width: "48px", height: "48px", borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(255,255,255,0.1)", marginTop: "2px" }}
                     />
-                    <div style={{ flex: 1 }}>
+                    <div style={{ flex: 1, paddingRight: "40px" }}>
                       <div style={{ fontWeight: 700, fontSize: "16px", color: "#fff" }}>{feedItem.host_name}</div>
                       <div style={{ fontSize: "13px", color: "#888" }}>Shared a chapter • {feedItem.title}</div>
                       {feedItem.shared_caption && (
@@ -120,6 +147,17 @@ export default function DiscoverPage() {
                         </div>
                       )}
                     </div>
+                    {feedItem.host_id === myUserId && (
+                      <button 
+                        onClick={() => handleDeleteFromFeed(feedItem.id)}
+                        className="absolute top-0 right-0 w-8 h-8 flex items-center justify-center rounded-full bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all"
+                        title="Remove from Feed"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                        </svg>
+                      </button>
+                    )}
                   </div>
                   
                   {feedItem.timeline_photos && feedItem.timeline_photos.length > 0 ? (

@@ -58,6 +58,28 @@ export default function ScrapbookStoryPage() {
     setSharing(false);
   };
 
+  const handleUnshare = async () => {
+    if (!confirm("Remove this chapter from the public feed?")) return;
+    setSharing(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/activities/${id}/unshare`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setActivity(prev => prev ? { ...prev, is_shared: false } : prev);
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to remove.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to remove.");
+    }
+    setSharing(false);
+  };
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -107,9 +129,14 @@ export default function ScrapbookStoryPage() {
         </div>
         
         {activity.is_shared ? (
-          <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-pink-500/10 text-pink-400 border border-pink-500/20">
-            ✓ Shared to Feed
-          </span>
+          <button 
+            onClick={handleUnshare}
+            disabled={sharing}
+            className="text-xs font-bold px-3 py-1.5 rounded-full bg-pink-500/10 text-pink-400 border border-pink-500/20 hover:bg-pink-500 hover:text-white transition-all disabled:opacity-50"
+            title="Click to remove from feed"
+          >
+            {sharing ? 'Removing...' : '✓ Shared to Feed'}
+          </button>
         ) : (
           <button 
             onClick={handleShare}
