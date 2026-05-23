@@ -59,6 +59,8 @@ export default function FriendCard({ friend, onRemove }: { friend: Friend, onRem
     } catch (err) {
       console.error(err);
     }
+  };
+
   return (
     <>
       <style>{`
