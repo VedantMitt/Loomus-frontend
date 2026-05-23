@@ -30,23 +30,24 @@ export default function ScrapbookStoryPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [sharing, setSharing] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareCaption, setShareCaption] = useState("");
 
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-  const handleShare = async () => {
-    const caption = prompt("Add a caption for the feed (or leave blank):");
-    if (caption === null) return;
+  const submitShare = async () => {
     setSharing(true);
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`${API}/activities/${id}/share`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ caption })
+        body: JSON.stringify({ caption: shareCaption })
       });
       if (res.ok) {
         setActivity(prev => prev ? { ...prev, is_shared: true } : prev);
-        alert("Scrapbook shared to feed!");
+        setShowShareModal(false);
+        setShareCaption("");
       } else {
         const err = await res.json();
         alert(err.error || "Failed to share.");
@@ -139,11 +140,11 @@ export default function ScrapbookStoryPage() {
           </button>
         ) : (
           <button 
-            onClick={handleShare}
+            onClick={() => setShowShareModal(true)}
             disabled={sharing}
             className="text-xs font-bold px-4 py-2 rounded-full bg-white text-black hover:bg-gray-200 transition-colors flex items-center gap-2 disabled:opacity-50"
           >
-            {sharing ? 'Sharing...' : 'Post to Feed'}
+            Post to Feed
           </button>
         )}
       </div>
@@ -214,6 +215,39 @@ export default function ScrapbookStoryPage() {
           </div>
         )}
       </div>
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <h2 className="text-xl font-bold mb-2 font-['Syne']">Post to Discover</h2>
+            <p className="text-sm text-gray-400 mb-6">Share this scrapbook with everyone. Add a caption!</p>
+            
+            <textarea
+              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:outline-none focus:border-pink-500/50 resize-none min-h-[100px] mb-6"
+              placeholder="What a night! ✨"
+              value={shareCaption}
+              onChange={(e) => setShareCaption(e.target.value)}
+            />
+            
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowShareModal(false)}
+                className="flex-1 py-3 px-4 rounded-xl font-bold text-sm bg-white/5 hover:bg-white/10 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={submitShare}
+                disabled={sharing}
+                className="flex-1 py-3 px-4 rounded-xl font-bold text-sm bg-gradient-to-r from-pink-500 to-purple-500 hover:opacity-90 transition-opacity disabled:opacity-50 flex justify-center items-center"
+              >
+                {sharing ? 'Posting...' : 'Post'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
