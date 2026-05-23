@@ -220,8 +220,22 @@ export default function DiscoverPage() {
                      </div>
                   )}
 
-                  <div style={{ marginTop: "20px", display: "flex", justifyContent: "flex-end" }}>
-                    <Link href={`/scrapbook/${feedItem.id}`} style={{ fontSize: "13px", fontWeight: 700, color: "#f472b6", textDecoration: "none", background: "rgba(244, 114, 182, 0.1)", padding: "10px 20px", borderRadius: "12px", border: "1px solid rgba(244, 114, 182, 0.2)", transition: "all 0.3s" }}>
+                  <div style={{ marginTop: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", gap: "12px" }}>
+                      <button className="group flex items-center gap-2 bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full transition-all border border-white/5 hover:border-pink-500/30">
+                        <span className="text-lg group-hover:scale-125 transition-transform duration-200">❤️</span>
+                        <span className="text-xs font-bold text-gray-400 group-hover:text-pink-400">Like</span>
+                      </button>
+                      <button className="group flex items-center gap-2 bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full transition-all border border-white/5 hover:border-blue-500/30" onClick={() => alert("Comments dropping soon 👀")}>
+                        <span className="text-lg group-hover:scale-125 transition-transform duration-200">💬</span>
+                        <span className="text-xs font-bold text-gray-400 group-hover:text-blue-400">Spill</span>
+                      </button>
+                      <button className="group flex items-center gap-2 bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full transition-all border border-white/5 hover:border-yellow-500/30" onClick={() => alert("+1000 Aura ✨")}>
+                        <span className="text-lg group-hover:scale-125 transition-transform duration-200">✨</span>
+                        <span className="text-xs font-bold text-gray-400 group-hover:text-yellow-400">Aura</span>
+                      </button>
+                    </div>
+                    <Link href={`/scrapbook/${feedItem.id}`} style={{ fontSize: "13px", fontWeight: 700, color: "#f472b6", textDecoration: "none", background: "rgba(244, 114, 182, 0.1)", padding: "10px 20px", borderRadius: "12px", border: "1px solid rgba(244, 114, 182, 0.2)", transition: "all 0.3s" }} className="hover:bg-pink-500/20">
                       Open Chapter ↗
                     </Link>
                   </div>
