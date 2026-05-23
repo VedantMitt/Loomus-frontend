@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import UserCard from "@/components/UserCard";
 import Link from "next/link";
 import NebulaBackground from "@/components/NebulaBackground";
+import { Heart, MessageCircle, Sparkles } from "lucide-react";
 
 type User = {
   id: string;
@@ -26,6 +27,12 @@ export default function DiscoverPage() {
   const [sharedFeed, setSharedFeed] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [myUserId, setMyUserId] = useState<string | null>(null);
+
+  // Local state for feed interactions
+  const [likes, setLikes] = useState<Record<string, boolean>>({});
+  const [auras, setAuras] = useState<Record<string, boolean>>({});
+  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
+  const [auraCounts, setAuraCounts] = useState<Record<string, number>>({});
 
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -222,17 +229,38 @@ export default function DiscoverPage() {
 
                   <div style={{ marginTop: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ display: "flex", gap: "12px" }}>
-                      <button className="group flex items-center gap-2 bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full transition-all border border-white/5 hover:border-pink-500/30">
-                        <span className="text-lg group-hover:scale-125 transition-transform duration-200">❤️</span>
-                        <span className="text-xs font-bold text-gray-400 group-hover:text-pink-400">Like</span>
+                      <button 
+                        onClick={() => {
+                          setLikes(p => ({ ...p, [feedItem.id]: !p[feedItem.id] }));
+                          setLikeCounts(p => ({ ...p, [feedItem.id]: (p[feedItem.id] || 0) + (likes[feedItem.id] ? -1 : 1) }));
+                        }}
+                        className={`group flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border ${likes[feedItem.id] ? 'bg-pink-500/20 border-pink-500/50' : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-pink-500/30'}`}
+                      >
+                        <Heart className={`w-4 h-4 transition-transform duration-200 group-hover:scale-125 ${likes[feedItem.id] ? 'fill-pink-500 text-pink-500' : 'text-gray-400 group-hover:text-pink-400'}`} />
+                        <span className={`text-xs font-bold ${likes[feedItem.id] ? 'text-pink-400' : 'text-gray-400 group-hover:text-pink-400'}`}>
+                          {likeCounts[feedItem.id] > 0 ? likeCounts[feedItem.id] : "Like"}
+                        </span>
                       </button>
-                      <button className="group flex items-center gap-2 bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full transition-all border border-white/5 hover:border-blue-500/30" onClick={() => alert("Comments dropping soon 👀")}>
-                        <span className="text-lg group-hover:scale-125 transition-transform duration-200">💬</span>
+                      <Link 
+                        href={`/scrapbook/${feedItem.id}`}
+                        className="group flex items-center gap-2 bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full transition-all border border-white/5 hover:border-blue-500/30 no-underline"
+                      >
+                        <MessageCircle className="w-4 h-4 text-gray-400 group-hover:text-blue-400 transition-transform duration-200 group-hover:scale-125" />
                         <span className="text-xs font-bold text-gray-400 group-hover:text-blue-400">Spill</span>
-                      </button>
-                      <button className="group flex items-center gap-2 bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full transition-all border border-white/5 hover:border-yellow-500/30" onClick={() => alert("+1000 Aura ✨")}>
-                        <span className="text-lg group-hover:scale-125 transition-transform duration-200">✨</span>
-                        <span className="text-xs font-bold text-gray-400 group-hover:text-yellow-400">Aura</span>
+                      </Link>
+                      <button 
+                        onClick={() => {
+                          if (!auras[feedItem.id]) {
+                            setAuras(p => ({ ...p, [feedItem.id]: true }));
+                            setAuraCounts(p => ({ ...p, [feedItem.id]: (p[feedItem.id] || 0) + 1000 }));
+                          }
+                        }}
+                        className={`group flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border ${auras[feedItem.id] ? 'bg-yellow-500/20 border-yellow-500/50' : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-yellow-500/30'}`}
+                      >
+                        <Sparkles className={`w-4 h-4 transition-transform duration-200 group-hover:scale-125 ${auras[feedItem.id] ? 'fill-yellow-500 text-yellow-500' : 'text-gray-400 group-hover:text-yellow-400'}`} />
+                        <span className={`text-xs font-bold ${auras[feedItem.id] ? 'text-yellow-400' : 'text-gray-400 group-hover:text-yellow-400'}`}>
+                          {auraCounts[feedItem.id] > 0 ? `+${auraCounts[feedItem.id]}` : "Aura"}
+                        </span>
                       </button>
                     </div>
                     <Link href={`/scrapbook/${feedItem.id}`} style={{ fontSize: "13px", fontWeight: 700, color: "#f472b6", textDecoration: "none", background: "rgba(244, 114, 182, 0.1)", padding: "10px 20px", borderRadius: "12px", border: "1px solid rgba(244, 114, 182, 0.2)", transition: "all 0.3s" }} className="hover:bg-pink-500/20">
