@@ -208,6 +208,7 @@ export default function ActivitiesPage() {
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [topEvents, setTopEvents] = useState<any[]>([]);
   const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [planToDelete, setPlanToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -265,22 +266,22 @@ export default function ActivitiesPage() {
     if (activeTab === "my_plans") fetchMyPlans();
   }, [activeTab, fetchMyPlans]);
 
-  const handleDeletePlan = async (e: React.MouseEvent, planId: string) => {
-    e.preventDefault();
-    if (!confirm("Are you sure you want to delete this past plan?")) return;
+  const handleDeletePlan = async () => {
+    if (!planToDelete) return;
     try {
       const token = localStorage.getItem("token");
       const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-      const res = await fetch(`${API}/activities/${planId}`, {
+      const res = await fetch(`${API}/activities/${planToDelete}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
-        setMyPlans(prev => prev.filter(p => p.id !== planId));
+        setMyPlans(prev => prev.filter(p => p.id !== planToDelete));
       }
     } catch (err) {
       console.error(err);
     }
+    setPlanToDelete(null);
   };
 
   const handleCategoryClick = (categoryKey: string) => {
@@ -896,7 +897,10 @@ export default function ActivitiesPage() {
                       
                       {isPast && plan.host_id === myUserId && (
                         <button 
-                          onClick={(e) => handleDeletePlan(e, plan.id)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setPlanToDelete(plan.id);
+                          }}
                           className="absolute top-4 right-4 w-8 h-8 rounded-full bg-red-500/10 text-red-500/40 hover:bg-red-500 hover:text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-20"
                         >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -951,6 +955,30 @@ export default function ActivitiesPage() {
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
         </button>
+        {/* Delete Plan Modal */}
+        {planToDelete && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl text-center">
+              <h2 className="text-xl font-bold mb-2 font-['Syne'] text-white">Delete Plan?</h2>
+              <p className="text-sm text-gray-400 mb-6">Are you sure you want to delete this plan? This cannot be undone.</p>
+              
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setPlanToDelete(null)}
+                  className="flex-1 py-3 px-4 rounded-xl font-bold text-sm bg-white/5 text-white hover:bg-white/10 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleDeletePlan}
+                  className="flex-1 py-3 px-4 rounded-xl font-bold text-sm bg-red-500/20 text-red-500 hover:bg-red-500/30 transition-colors border border-red-500/30"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

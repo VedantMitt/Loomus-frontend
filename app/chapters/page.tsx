@@ -19,6 +19,7 @@ type Activity = {
 export default function ChaptersPage() {
   const [chapters, setChapters] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [chapterToDelete, setChapterToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchChapters = async () => {
@@ -42,22 +43,22 @@ export default function ChaptersPage() {
     fetchChapters();
   }, []);
 
-  const handleDeleteChapter = async (e: React.MouseEvent, id: string) => {
-    e.preventDefault();
-    if (!confirm("Delete this chapter? This cannot be undone.")) return;
+  const handleDeleteChapter = async () => {
+    if (!chapterToDelete) return;
     try {
       const token = localStorage.getItem("token");
       const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-      const res = await fetch(`${API}/activities/${id}`, {
+      const res = await fetch(`${API}/activities/${chapterToDelete}`, {
         method: "DELETE",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.ok) {
-        setChapters(prev => prev.filter(c => c.id !== id));
+        setChapters(prev => prev.filter(c => c.id !== chapterToDelete));
       }
     } catch (err) {
       console.error(err);
     }
+    setChapterToDelete(null);
   };
 
   // Format date: "Oct 24, 2026"
@@ -195,6 +196,27 @@ export default function ChaptersPage() {
           border-radius: 24px;
           backdrop-filter: blur(10px);
         }
+
+        .chap-delete {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          width: 32px;
+          height: 32px;
+          background: rgba(239, 68, 68, 0.9);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          opacity: 0;
+          transition: opacity 0.2s;
+          z-index: 20;
+          border: none;
+          cursor: pointer;
+        }
+        .polaroid:hover .chap-delete {
+          opacity: 1;
+        }
       `}</style>
 
       <div className="chapters-container">
@@ -235,13 +257,14 @@ export default function ChaptersPage() {
                   <div className="polaroid-tape"></div>
                   
                   <button 
-                    onClick={(e) => handleDeleteChapter(e, chap.id)}
-                    className="absolute top-2 right-2 w-8 h-8 bg-red-500/80 hover:bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-lg"
-                    style={{ zIndex: 20 }}
+                    className="chap-delete"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setChapterToDelete(chap.id);
+                    }}
+                    title="Delete Chapter"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                    </svg>
+                    🗑️
                   </button>
 
                   <div className="polaroid-img-wrapper">
@@ -255,6 +278,31 @@ export default function ChaptersPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Chapter Modal */}
+      {chapterToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl text-center">
+            <h2 className="text-xl font-bold mb-2 font-['Syne'] text-white">Delete Chapter?</h2>
+            <p className="text-sm text-gray-400 mb-6">Are you sure you want to delete this chapter? This cannot be undone.</p>
+            
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setChapterToDelete(null)}
+                className="flex-1 py-3 px-4 rounded-xl font-bold text-sm bg-white/5 text-white hover:bg-white/10 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleDeleteChapter}
+                className="flex-1 py-3 px-4 rounded-xl font-bold text-sm bg-red-500/20 text-red-500 hover:bg-red-500/30 transition-colors border border-red-500/30"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

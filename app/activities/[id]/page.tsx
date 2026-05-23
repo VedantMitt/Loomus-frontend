@@ -142,6 +142,7 @@ export default function LoomusActivityPage() {
   // Invites
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [showDeletePlanModal, setShowDeletePlanModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
@@ -252,7 +253,6 @@ export default function LoomusActivityPage() {
   };
 
   const handleDeletePlan = async () => {
-    if (!confirm("Are you sure you want to delete this plan completely? This cannot be undone.")) return;
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`${API}/activities/${id}`, {
@@ -380,18 +380,6 @@ export default function LoomusActivityPage() {
     } else {
       handleSubmit(activity?.location?.split(',')[0] || "Unknown");
     }
-  };
-
-  const handleDelete = async () => {
-    if (!confirm("Delete this plan?")) return;
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API}/activities/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) router.push("/activities");
-    } catch (err) { console.error(err); }
   };
 
   const handleInvite = async (userId: string) => {
@@ -567,7 +555,7 @@ export default function LoomusActivityPage() {
                       <button onClick={() => setIsEditingPlan(true)} className="bg-white/10 hover:bg-white/20 text-xs font-bold px-3 py-1.5 rounded-lg transition-all">Edit Plan</button>
                       
                       {activity && (activity.end_date ? new Date(activity.end_date).getTime() <= new Date().getTime() : new Date(activity.date).getTime() + 24 * 60 * 60 * 1000 <= new Date().getTime()) ? (
-                        <button onClick={handleDeletePlan} className="bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold px-3 py-1.5 rounded-lg transition-all border border-red-500/20 hover:border-red-500/50">Delete Plan</button>
+                        <button onClick={() => setShowDeletePlanModal(true)} className="bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold px-3 py-1.5 rounded-lg transition-all border border-red-500/20 hover:border-red-500/50">Delete Plan</button>
                       ) : (
                         <button onClick={handleEndPlan} className="bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-xs font-bold px-3 py-1.5 rounded-lg transition-all border border-orange-500/20 hover:border-orange-500/50">End Plan</button>
                       )}
@@ -702,7 +690,7 @@ export default function LoomusActivityPage() {
 
               {isHost && (
                 <div className="flex justify-end pt-4">
-                  <button onClick={handleDelete} className="text-xs font-bold text-red-500/70 hover:text-red-500 border border-red-500/20 hover:border-red-500/50 px-4 py-2 rounded-lg transition-all">
+                  <button onClick={() => setShowDeletePlanModal(true)} className="text-xs font-bold text-red-500/70 hover:text-red-500 border border-red-500/20 hover:border-red-500/50 px-4 py-2 rounded-lg transition-all">
                     Delete Plan
                   </button>
                 </div>
@@ -1017,6 +1005,34 @@ export default function LoomusActivityPage() {
                 className="flex-1 py-3 px-4 rounded-xl font-bold text-sm bg-red-500/20 text-red-500 hover:bg-red-500/30 transition-colors border border-red-500/30"
               >
                 I'm Out 🏃
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Plan Modal */}
+      {showDeletePlanModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl text-center">
+            <h2 className="text-xl font-bold mb-2 font-['Syne'] text-white">Delete Plan?</h2>
+            <p className="text-sm text-gray-400 mb-6">Are you sure you want to delete this plan completely? This cannot be undone.</p>
+            
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowDeletePlanModal(false)}
+                className="flex-1 py-3 px-4 rounded-xl font-bold text-sm bg-white/5 text-white hover:bg-white/10 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={async () => {
+                  setShowDeletePlanModal(false);
+                  await handleDeletePlan();
+                }}
+                className="flex-1 py-3 px-4 rounded-xl font-bold text-sm bg-red-500/20 text-red-500 hover:bg-red-500/30 transition-colors border border-red-500/30"
+              >
+                Delete Plan
               </button>
             </div>
           </div>
