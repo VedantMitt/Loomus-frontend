@@ -221,7 +221,7 @@ export default function DiscoverPage() {
                   )}
 
                   <div style={{ marginTop: "20px", display: "flex", justifyContent: "flex-end" }}>
-                    <Link href={`/activities/${feedItem.id}`} style={{ fontSize: "13px", fontWeight: 700, color: "#f472b6", textDecoration: "none", background: "rgba(244, 114, 182, 0.1)", padding: "10px 20px", borderRadius: "12px", border: "1px solid rgba(244, 114, 182, 0.2)", transition: "all 0.3s" }}>
+                    <Link href={`/scrapbook/${feedItem.id}`} style={{ fontSize: "13px", fontWeight: 700, color: "#f472b6", textDecoration: "none", background: "rgba(244, 114, 182, 0.1)", padding: "10px 20px", borderRadius: "12px", border: "1px solid rgba(244, 114, 182, 0.2)", transition: "all 0.3s" }}>
                       Open Chapter ↗
                     </Link>
                   </div>
