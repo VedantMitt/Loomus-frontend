@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import UserCard from "@/components/UserCard";
 import Link from "next/link";
 import NebulaBackground from "@/components/NebulaBackground";
-import { Heart, MessageCircle, Sparkles } from "lucide-react";
+import { Heart, MessageCircle, Send } from "lucide-react";
 
 type User = {
   id: string;
@@ -30,9 +30,18 @@ export default function DiscoverPage() {
 
   // Local state for feed interactions
   const [likes, setLikes] = useState<Record<string, boolean>>({});
-  const [auras, setAuras] = useState<Record<string, boolean>>({});
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
-  const [auraCounts, setAuraCounts] = useState<Record<string, number>>({});
+  const [showComments, setShowComments] = useState<Record<string, boolean>>({});
+  const [comments, setComments] = useState<Record<string, any[]>>({});
+  const [commentText, setCommentText] = useState<Record<string, string>>({});
+
+  const handlePostComment = (feedId: string) => {
+    const text = commentText[feedId]?.trim();
+    if (!text) return;
+    const newComment = { id: Date.now(), text, author: "You", time: "Just now" };
+    setComments(p => ({ ...p, [feedId]: [...(p[feedId] || []), newComment] }));
+    setCommentText(p => ({ ...p, [feedId]: "" }));
+  };
 
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -241,32 +250,66 @@ export default function DiscoverPage() {
                           {likeCounts[feedItem.id] > 0 ? likeCounts[feedItem.id] : "Like"}
                         </span>
                       </button>
-                      <Link 
-                        href={`/scrapbook/${feedItem.id}`}
-                        className="group flex items-center gap-2 bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full transition-all border border-white/5 hover:border-blue-500/30 no-underline"
-                      >
-                        <MessageCircle className="w-4 h-4 text-gray-400 group-hover:text-blue-400 transition-transform duration-200 group-hover:scale-125" />
-                        <span className="text-xs font-bold text-gray-400 group-hover:text-blue-400">Spill</span>
-                      </Link>
                       <button 
-                        onClick={() => {
-                          if (!auras[feedItem.id]) {
-                            setAuras(p => ({ ...p, [feedItem.id]: true }));
-                            setAuraCounts(p => ({ ...p, [feedItem.id]: (p[feedItem.id] || 0) + 1000 }));
-                          }
-                        }}
-                        className={`group flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border ${auras[feedItem.id] ? 'bg-yellow-500/20 border-yellow-500/50' : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-yellow-500/30'}`}
+                        onClick={() => setShowComments(p => ({ ...p, [feedItem.id]: !p[feedItem.id] }))}
+                        className={`group flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border ${showComments[feedItem.id] ? 'bg-blue-500/20 border-blue-500/50' : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-blue-500/30'}`}
                       >
-                        <Sparkles className={`w-4 h-4 transition-transform duration-200 group-hover:scale-125 ${auras[feedItem.id] ? 'fill-yellow-500 text-yellow-500' : 'text-gray-400 group-hover:text-yellow-400'}`} />
-                        <span className={`text-xs font-bold ${auras[feedItem.id] ? 'text-yellow-400' : 'text-gray-400 group-hover:text-yellow-400'}`}>
-                          {auraCounts[feedItem.id] > 0 ? `+${auraCounts[feedItem.id]}` : "Aura"}
+                        <MessageCircle className={`w-4 h-4 transition-transform duration-200 group-hover:scale-125 ${showComments[feedItem.id] ? 'text-blue-400' : 'text-gray-400 group-hover:text-blue-400'}`} />
+                        <span className={`text-xs font-bold ${showComments[feedItem.id] ? 'text-blue-400' : 'text-gray-400 group-hover:text-blue-400'}`}>
+                          {(comments[feedItem.id]?.length || 0) > 0 ? comments[feedItem.id].length : "Comments"}
                         </span>
                       </button>
                     </div>
-                    <Link href={`/scrapbook/${feedItem.id}`} style={{ fontSize: "13px", fontWeight: 700, color: "#f472b6", textDecoration: "none", background: "rgba(244, 114, 182, 0.1)", padding: "10px 20px", borderRadius: "12px", border: "1px solid rgba(244, 114, 182, 0.2)", transition: "all 0.3s" }} className="hover:bg-pink-500/20">
+                    <Link href={`/scrapbook/${feedItem.id}`} style={{ fontSize: "13px", fontWeight: 700, color: "#f472b6", textDecoration: "none", background: "rgba(244, 114, 182, 0.1)", padding: "10px 20px", borderRadius: "12px", border: "1px solid rgba(244, 114, 182, 0.2)", transition: "all 0.3s" }} className="hover:bg-pink-500/20 no-underline">
                       Open Chapter ↗
                     </Link>
                   </div>
+
+                  {/* Comment Section */}
+                  {showComments[feedItem.id] && (
+                    <div className="mt-4 pt-4 border-t border-white/10 flex flex-col gap-3">
+                      {/* Comment List */}
+                      {comments[feedItem.id] && comments[feedItem.id].length > 0 ? (
+                        <div className="flex flex-col gap-3 max-h-40 overflow-y-auto pr-2 hide-scroll">
+                          {comments[feedItem.id].map((c: any) => (
+                            <div key={c.id} className="flex gap-2">
+                              <div className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+                                {c.author.charAt(0)}
+                              </div>
+                              <div className="bg-white/5 rounded-xl rounded-tl-none px-3 py-2 border border-white/5 text-sm w-full">
+                                <div className="flex justify-between items-end mb-1">
+                                  <span className="font-bold text-xs text-gray-300">{c.author}</span>
+                                  <span className="text-[10px] text-gray-500">{c.time}</span>
+                                </div>
+                                <p className="text-gray-300 m-0">{c.text}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-center text-gray-500 italic py-2">No comments yet. Be the first to spill!</div>
+                      )}
+                      
+                      {/* Comment Input */}
+                      <div className="flex gap-2 items-center mt-1">
+                        <input 
+                          type="text"
+                          value={commentText[feedItem.id] || ""}
+                          onChange={(e) => setCommentText(p => ({ ...p, [feedItem.id]: e.target.value }))}
+                          onKeyDown={(e) => e.key === 'Enter' && handlePostComment(feedItem.id)}
+                          placeholder="Add a comment..."
+                          className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50"
+                        />
+                        <button 
+                          onClick={() => handlePostComment(feedItem.id)}
+                          disabled={!commentText[feedItem.id]?.trim()}
+                          className="p-2 rounded-full bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-blue-500/20 disabled:hover:text-blue-400"
+                        >
+                          <Send className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Interleaved Suggestions */}
