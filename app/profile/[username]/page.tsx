@@ -8,8 +8,6 @@ type User = {
   name: string;
   username: string;
   bio?: string;
-  college: string;
-  year?: string;
   interests?: string[];
   vibe_tags?: string[];
   current_status?: string;
@@ -346,9 +344,7 @@ export default function ProfilePage() {
           <div style={{ textAlign: "left", flex: 1 }}>
             <h1 style={{ fontSize: "24px", fontWeight: 700, margin: 0 }}>{user.name}</h1>
             <p style={{ color: "#666", fontSize: "14px", marginTop: "2px" }}>@{user.username}</p>
-            <p style={{ color: "#3b82f6", fontSize: "13px", marginTop: "4px" }}>
-              {user.college}{user.year ? ` '${user.year.toString().slice(-2)}` : ""}
-            </p>
+
             {user.bio && (
               <p style={{ color: "#999", fontSize: "14px", marginTop: "8px", maxWidth: "400px" }}>
                 {user.bio}

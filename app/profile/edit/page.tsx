@@ -14,8 +14,6 @@ export default function EditProfile() {
   // Form fields
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
-  const [college, setCollege] = useState("");
-  const [year, setYear] = useState("");
   const [currentStatus, setCurrentStatus] = useState("");
   const [friendsIf, setFriendsIf] = useState("");
   const [profilePic, setProfilePic] = useState("");
@@ -48,8 +46,6 @@ export default function EditProfile() {
 
         setUsername(data.username || "");
         setBio(data.bio || "");
-        setCollege(data.college || "");
-        setYear(data.year || "");
         setCurrentStatus(data.current_status || "");
         setFriendsIf(data.friends_if || "");
         setInterests(data.interests || []);
@@ -82,8 +78,6 @@ export default function EditProfile() {
         body: JSON.stringify({
           username: username.toLowerCase(),
           bio,
-          college,
-          year,
           current_status: currentStatus,
           friends_if: friendsIf,
           interests,
@@ -352,32 +346,6 @@ export default function EditProfile() {
           />
         </div>
 
-        {/* College */}
-        <div className="edit-card">
-          <label className="edit-label">College</label>
-          <input
-            className="edit-input"
-            value={college}
-            onChange={(e) => setCollege(e.target.value)}
-            placeholder="e.g. NSUT"
-          />
-        </div>
-
-        {/* Graduation Year */}
-        <div className="edit-card">
-          <label className="edit-label">Graduation Year</label>
-          <select
-            className="edit-input"
-            value={year}
-            onChange={(e) => setYear(e.target.value)}
-            style={{ cursor: "pointer" }}
-          >
-            <option value="" disabled>Select year</option>
-            {[2025, 2026, 2027, 2028, 2029, 2030].map((y) => (
-              <option key={y} value={String(y)} style={{ background: "#0a0a0a" }}>{y}</option>
-            ))}
-          </select>
-        </div>
 
         {/* Bio */}
         <div className="edit-card">
