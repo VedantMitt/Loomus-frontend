@@ -463,8 +463,14 @@ export default function LoomusActivityPage() {
         .wm-author { font-size: 11px; font-weight: 700; color: #fff; display: flex; items-center; gap: 6px; }
         .wm-author img { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.5); }
       `}</style>
+      </style>
 
       {/* Cinematic Hero */}
+      {(() => {
+        const isPastPlan = activity ? (activity.end_date ? new Date(activity.end_date).getTime() <= new Date().getTime() : new Date(activity.date).getTime() + 24 * 60 * 60 * 1000 <= new Date().getTime()) : false;
+        
+        return (
+          <>
       <div className="relative w-full h-[45vh] min-h-[300px] bg-black">
         {activity.banner ? (
           <img src={activity.banner} className="w-full h-full object-cover opacity-60" alt="Banner" />
@@ -506,26 +512,28 @@ export default function LoomusActivityPage() {
             {goingMembers.length > 0 && <div className="text-sm font-semibold">{goingMembers.length} Going</div>}
           </div>
 
-          <div className="flex gap-3">
-            <button 
-              onClick={() => {
-                if (activity.my_rsvp === 'going') {
-                  setShowLeaveModal(true);
-                } else {
-                  handleRsvp('going');
-                }
-              }}
-              className={`px-6 py-2.5 rounded-xl font-bold transition-all ${activity.my_rsvp === 'going' ? 'bg-white/10 text-white hover:bg-white/20 hover:text-red-400' : 'bg-pink-500 text-white shadow-lg shadow-pink-500/20 hover:scale-105'}`}
-            >
-              {activity.my_rsvp === 'going' ? "I'm Out 🏃" : "Join Plan"}
-            </button>
-            <button 
-              onClick={() => setShowInviteModal(true)}
-              className="px-6 py-2.5 rounded-xl font-bold bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
-            >
-              💌 Invite
-            </button>
-          </div>
+          {!isPastPlan && (
+            <div className="flex gap-3">
+              <button 
+                onClick={() => {
+                  if (activity.my_rsvp === 'going') {
+                    setShowLeaveModal(true);
+                  } else {
+                    handleRsvp('going');
+                  }
+                }}
+                className={`px-6 py-2.5 rounded-xl font-bold transition-all ${activity.my_rsvp === 'going' ? 'bg-white/10 text-white hover:bg-white/20 hover:text-red-400' : 'bg-pink-500 text-white shadow-lg shadow-pink-500/20 hover:scale-105'}`}
+              >
+                {activity.my_rsvp === 'going' ? "I'm Out 🏃" : "Join Plan"}
+              </button>
+              <button 
+                onClick={() => setShowInviteModal(true)}
+                className="px-6 py-2.5 rounded-xl font-bold bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+              >
+                💌 Invite
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Tabs */}
@@ -550,15 +558,10 @@ export default function LoomusActivityPage() {
               <div className="glass-panel rounded-2xl p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="syne text-xl font-bold text-white">📝 The Plan</h3>
-                  {isHost && !isEditingPlan && (
+                  {isHost && !isEditingPlan && !isPastPlan && (
                     <div className="flex gap-2">
                       <button onClick={() => setIsEditingPlan(true)} className="bg-white/10 hover:bg-white/20 text-xs font-bold px-3 py-1.5 rounded-lg transition-all">Edit Plan</button>
-                      
-                      {activity && (activity.end_date ? new Date(activity.end_date).getTime() <= new Date().getTime() : new Date(activity.date).getTime() + 24 * 60 * 60 * 1000 <= new Date().getTime()) ? (
-                        <button onClick={() => setShowDeletePlanModal(true)} className="bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold px-3 py-1.5 rounded-lg transition-all border border-red-500/20 hover:border-red-500/50">Delete Plan</button>
-                      ) : (
-                        <button onClick={handleEndPlan} className="bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-xs font-bold px-3 py-1.5 rounded-lg transition-all border border-orange-500/20 hover:border-orange-500/50">End Plan</button>
-                      )}
+                      <button onClick={handleEndPlan} className="bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-xs font-bold px-3 py-1.5 rounded-lg transition-all border border-orange-500/20 hover:border-orange-500/50">End Plan</button>
                     </div>
                   )}
                 </div>
@@ -746,9 +749,11 @@ export default function LoomusActivityPage() {
             <div className="glass-panel rounded-2xl p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="syne text-xl font-bold text-white">The Crew</h3>
-                <button onClick={() => setShowInviteModal(true)} className="text-xs font-bold bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-all">
-                  + Add Friends
-                </button>
+                {!isPastPlan && (
+                  <button onClick={() => setShowInviteModal(true)} className="text-xs font-bold bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-all">
+                    + Add Friends
+                  </button>
+                )}
               </div>
 
               {members.length === 0 ? (
@@ -1038,7 +1043,9 @@ export default function LoomusActivityPage() {
           </div>
         </div>
       )}
-
+      </>
+        );
+      })()}
     </div>
   );
 }

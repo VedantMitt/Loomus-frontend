@@ -35,12 +35,75 @@ export default function DiscoverPage() {
   const [comments, setComments] = useState<Record<string, any[]>>({});
   const [commentText, setCommentText] = useState<Record<string, string>>({});
 
-  const handlePostComment = (feedId: string) => {
+  const handleToggleLike = async (feedId: string) => {
+    const isLiked = likes[feedId];
+    setLikes(p => ({ ...p, [feedId]: !isLiked }));
+    setLikeCounts(p => ({ ...p, [feedId]: (p[feedId] || 0) + (isLiked ? -1 : 1) }));
+
+    try {
+      const token = localStorage.getItem("token");
+      await fetch(`${API}/activities/${feedId}/like`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+    } catch (err) {}
+  };
+
+  const handlePostComment = async (feedId: string) => {
     const text = commentText[feedId]?.trim();
     if (!text) return;
-    const newComment = { id: Date.now(), text, author: "You", time: "Just now" };
-    setComments(p => ({ ...p, [feedId]: [...(p[feedId] || []), newComment] }));
     setCommentText(p => ({ ...p, [feedId]: "" }));
+    
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/activities/${feedId}/comments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ content: text })
+      });
+      if (res.ok) {
+        const newComment = await res.json();
+        const formatted = { 
+          id: newComment.id, 
+          text: newComment.content, 
+          author: newComment.name || newComment.username || "You", 
+          time: "Just now" 
+        };
+        setComments(p => ({ ...p, [feedId]: [...(p[feedId] || []), formatted] }));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const toggleComments = async (feedId: string) => {
+    setShowComments(p => {
+      const isShowing = !p[feedId];
+      if (isShowing && !comments[feedId]) {
+        // Fetch comments if not loaded yet
+        const token = localStorage.getItem("token");
+        fetch(`${API}/activities/${feedId}/comments`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            const formatted = data.map((c: any) => ({
+              id: c.id,
+              text: c.content,
+              author: c.name || c.username || "Unknown",
+              time: new Date(c.created_at).toLocaleDateString()
+            }));
+            setComments(p2 => ({ ...p2, [feedId]: formatted }));
+          }
+        })
+        .catch(console.error);
+      }
+      return { ...p, [feedId]: isShowing };
+    });
   };
 
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -83,7 +146,18 @@ export default function DiscoverPage() {
         ]);
 
         if (userRes?.ok) setRecommendedUsers(await userRes.json());
-        if (feedRes?.ok) setSharedFeed(await feedRes.json());
+        if (feedRes?.ok) {
+          const feed = await feedRes.json();
+          setSharedFeed(feed);
+          const initialLikes: Record<string, boolean> = {};
+          const initialLikeCounts: Record<string, number> = {};
+          feed.forEach((item: any) => {
+            initialLikes[item.id] = item.has_liked;
+            initialLikeCounts[item.id] = parseInt(item.likes_count || '0', 10);
+          });
+          setLikes(initialLikes);
+          setLikeCounts(initialLikeCounts);
+        }
       } catch (err) {
         console.error("Initial load error:", err);
       } finally {
@@ -239,10 +313,7 @@ export default function DiscoverPage() {
                   <div style={{ marginTop: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ display: "flex", gap: "12px" }}>
                       <button 
-                        onClick={() => {
-                          setLikes(p => ({ ...p, [feedItem.id]: !p[feedItem.id] }));
-                          setLikeCounts(p => ({ ...p, [feedItem.id]: (p[feedItem.id] || 0) + (likes[feedItem.id] ? -1 : 1) }));
-                        }}
+                        onClick={() => handleToggleLike(feedItem.id)}
                         className={`group flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border ${likes[feedItem.id] ? 'bg-pink-500/20 border-pink-500/50' : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-pink-500/30'}`}
                       >
                         <Heart className={`w-4 h-4 transition-transform duration-200 group-hover:scale-125 ${likes[feedItem.id] ? 'fill-pink-500 text-pink-500' : 'text-gray-400 group-hover:text-pink-400'}`} />
@@ -251,12 +322,12 @@ export default function DiscoverPage() {
                         </span>
                       </button>
                       <button 
-                        onClick={() => setShowComments(p => ({ ...p, [feedItem.id]: !p[feedItem.id] }))}
+                        onClick={() => toggleComments(feedItem.id)}
                         className={`group flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border ${showComments[feedItem.id] ? 'bg-blue-500/20 border-blue-500/50' : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-blue-500/30'}`}
                       >
                         <MessageCircle className={`w-4 h-4 transition-transform duration-200 group-hover:scale-125 ${showComments[feedItem.id] ? 'text-blue-400' : 'text-gray-400 group-hover:text-blue-400'}`} />
                         <span className={`text-xs font-bold ${showComments[feedItem.id] ? 'text-blue-400' : 'text-gray-400 group-hover:text-blue-400'}`}>
-                          {(comments[feedItem.id]?.length || 0) > 0 ? comments[feedItem.id].length : "Comments"}
+                          {comments[feedItem.id] ? (comments[feedItem.id].length > 0 ? comments[feedItem.id].length : "Comments") : (parseInt(feedItem.comment_count || '0', 10) > 0 ? feedItem.comment_count : "Comments")}
                         </span>
                       </button>
                     </div>
