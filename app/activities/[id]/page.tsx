@@ -816,44 +816,66 @@ export default function LoomusActivityPage() {
                   className="hidden" 
                   id="camera-upload" 
                 />
-                {!file && !isWritingNote ? (
-                  <div className="flex items-center gap-4 mt-2">
-                    <label htmlFor="camera-upload" className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-full cursor-pointer transition-all shadow-[0_0_20px_rgba(236,72,153,0.3)] hover:shadow-[0_0_30px_rgba(236,72,153,0.5)] hover:scale-105 active:scale-95 flex items-center gap-2">
-                      <span className="text-xl">🔴</span> Snap a Moment
-                    </label>
-                    <button onClick={() => setIsWritingNote(true)} className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-6 rounded-full transition-all flex items-center gap-2">
-                      📝 Note
-                    </button>
-                  </div>
-                ) : isWritingNote ? (
-                  <div className="flex flex-col items-center gap-4 w-full">
-                    <textarea 
-                      placeholder="Write your scrapbook note here..."
-                      className="w-full max-w-[300px] h-[150px] bg-black/50 border border-pink-500/50 rounded-xl p-4 text-white resize-none outline-none focus:border-pink-500"
-                      value={noteText}
-                      onChange={e => setNoteText(e.target.value)}
-                      autoFocus
-                    />
-                    <div className="flex items-center gap-3">
-                      <button onClick={handleCapturePost} disabled={submitting || !noteText.trim()} className="bg-pink-500 text-white font-bold py-2 px-6 rounded-full text-sm hover:bg-pink-600 shadow-[0_0_15px_rgba(236,72,153,0.4)] disabled:opacity-50 disabled:cursor-not-allowed">
-                        {submitting ? "Processing..." : "Post Note"}
-                      </button>
-                      <button onClick={() => { setIsWritingNote(false); setNoteText(""); }} className="bg-white/10 text-white font-bold py-2 px-4 rounded-full text-sm hover:bg-white/20">Cancel</button>
+                {(() => {
+                  const isFinished = activity.end_date ? new Date(activity.end_date).getTime() < new Date().getTime() : false;
+                  
+                  if (isFinished) {
+                    return (
+                      <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10">
+                        <p className="text-sm font-bold text-gray-300 mb-1">🏁 Plan Finished</p>
+                        <p className="text-xs text-gray-500">Camera and notes are disabled because this plan has ended.</p>
+                      </div>
+                    );
+                  }
+
+                  if (!file && !isWritingNote) {
+                    return (
+                      <div className="flex items-center gap-4 mt-2">
+                        <label htmlFor="camera-upload" className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-full cursor-pointer transition-all shadow-[0_0_20px_rgba(236,72,153,0.3)] hover:shadow-[0_0_30px_rgba(236,72,153,0.5)] hover:scale-105 active:scale-95 flex items-center gap-2">
+                          <span className="text-xl">🔴</span> Snap a Moment
+                        </label>
+                        <button onClick={() => setIsWritingNote(true)} className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-6 rounded-full transition-all flex items-center gap-2">
+                          📝 Note
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  if (isWritingNote) {
+                    return (
+
+                      <div className="flex flex-col items-center gap-4 w-full">
+                        <textarea 
+                          placeholder="Write your scrapbook note here..."
+                          className="w-full max-w-[300px] h-[150px] bg-black/50 border border-pink-500/50 rounded-xl p-4 text-white resize-none outline-none focus:border-pink-500"
+                          value={noteText}
+                          onChange={e => setNoteText(e.target.value)}
+                          autoFocus
+                        />
+                        <div className="flex items-center gap-3">
+                          <button onClick={handleCapturePost} disabled={submitting || !noteText.trim()} className="bg-pink-500 text-white font-bold py-2 px-6 rounded-full text-sm hover:bg-pink-600 shadow-[0_0_15px_rgba(236,72,153,0.4)] disabled:opacity-50 disabled:cursor-not-allowed">
+                            {submitting ? "Processing..." : "Post Note"}
+                          </button>
+                          <button onClick={() => { setIsWritingNote(false); setNoteText(""); }} className="bg-white/10 text-white font-bold py-2 px-4 rounded-full text-sm hover:bg-white/20">Cancel</button>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="flex flex-col items-center gap-4 w-full">
+                      <div className="relative w-full max-w-[200px] aspect-[3/4] rounded-xl overflow-hidden border-2 border-pink-500/50">
+                        <img src={URL.createObjectURL(file!)} className="w-full h-full object-cover" alt="Preview" />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button onClick={handleCapturePost} disabled={submitting} className="bg-pink-500 text-white font-bold py-2 px-6 rounded-full text-sm hover:bg-pink-600 shadow-[0_0_15px_rgba(236,72,153,0.4)]">
+                          {submitting ? "Uploading..." : "Post to Scrapbook"}
+                        </button>
+                        <button onClick={() => setFile(null)} className="bg-white/10 text-white font-bold py-2 px-4 rounded-full text-sm hover:bg-white/20">Cancel</button>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-4 w-full">
-                    <div className="relative w-full max-w-[200px] aspect-[3/4] rounded-xl overflow-hidden border-2 border-pink-500/50">
-                      <img src={URL.createObjectURL(file!)} className="w-full h-full object-cover" alt="Preview" />
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <button onClick={handleCapturePost} disabled={submitting} className="bg-pink-500 text-white font-bold py-2 px-6 rounded-full text-sm hover:bg-pink-600 shadow-[0_0_15px_rgba(236,72,153,0.4)]">
-                        {submitting ? "Processing..." : "Post to Chapter"}
-                      </button>
-                      <button onClick={() => setFile(null)} className="bg-white/10 text-white font-bold py-2 px-4 rounded-full text-sm hover:bg-white/20">Cancel</button>
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
 
               <div className="scrapbook-grid">
