@@ -177,7 +177,7 @@ export default function DiscoverPage() {
                         } catch(e) {}
                         if (photo.url === 'note') {
                           return (
-                            <div key={i} style={{ flex: "0 0 300px", padding: "20px", background: "rgba(255,255,255,0.05)", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.1)", display: "flex", flexDirection: "column", gap: "12px", justifyContent: "space-between" }}>
+                            <div key={i} style={{ flex: "0 0 300px", height: "fit-content", padding: "20px", background: "rgba(255,255,255,0.05)", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.1)", display: "flex", flexDirection: "column", gap: "12px" }}>
                               <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
                                 <img src={photo.author_pic?.startsWith('/uploads') ? `${API}${photo.author_pic}` : photo.author_pic || `https://ui-avatars.com/api/?name=${photo.author_name}&background=111&color=fff`} style={{ width: "40px", height: "40px", borderRadius: "50%", border: "2px solid rgba(255,255,255,0.1)", objectFit: "cover", flexShrink: 0 }} />
                                 <div>
