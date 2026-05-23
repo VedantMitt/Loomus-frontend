@@ -463,7 +463,6 @@ export default function LoomusActivityPage() {
         .wm-author { font-size: 11px; font-weight: 700; color: #fff; display: flex; items-center; gap: 6px; }
         .wm-author img { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.5); }
       `}</style>
-      </style>
 
       {/* Cinematic Hero */}
       {(() => {
