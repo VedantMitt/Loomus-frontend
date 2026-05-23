@@ -519,10 +519,18 @@ export default function LoomusActivityPage() {
 
           <div className="flex gap-3">
             <button 
-              onClick={() => handleRsvp(activity.my_rsvp === 'going' ? 'not_going' : 'going')}
-              className={`px-6 py-2.5 rounded-xl font-bold transition-all ${activity.my_rsvp === 'going' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-pink-500 text-white shadow-lg shadow-pink-500/20 hover:scale-105'}`}
+              onClick={() => {
+                if (activity.my_rsvp === 'going') {
+                  if (confirm("Are you sure you want to leave this plan?")) {
+                    handleRsvp('not_going');
+                  }
+                } else {
+                  handleRsvp('going');
+                }
+              }}
+              className={`px-6 py-2.5 rounded-xl font-bold transition-all ${activity.my_rsvp === 'going' ? 'bg-white/10 text-white hover:bg-white/20 hover:text-red-400' : 'bg-pink-500 text-white shadow-lg shadow-pink-500/20 hover:scale-105'}`}
             >
-              {activity.my_rsvp === 'going' ? "I'm In ✓" : "Join Plan"}
+              {activity.my_rsvp === 'going' ? "Leave Plan" : "Join Plan"}
             </button>
             <button 
               onClick={() => setShowInviteModal(true)}
