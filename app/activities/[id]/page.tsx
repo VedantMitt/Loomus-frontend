@@ -141,6 +141,7 @@ export default function LoomusActivityPage() {
 
   // Invites
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
@@ -521,16 +522,14 @@ export default function LoomusActivityPage() {
             <button 
               onClick={() => {
                 if (activity.my_rsvp === 'going') {
-                  if (confirm("Are you sure you want to leave this plan?")) {
-                    handleRsvp('not_going');
-                  }
+                  setShowLeaveModal(true);
                 } else {
                   handleRsvp('going');
                 }
               }}
               className={`px-6 py-2.5 rounded-xl font-bold transition-all ${activity.my_rsvp === 'going' ? 'bg-white/10 text-white hover:bg-white/20 hover:text-red-400' : 'bg-pink-500 text-white shadow-lg shadow-pink-500/20 hover:scale-105'}`}
             >
-              {activity.my_rsvp === 'going' ? "Leave Plan" : "Join Plan"}
+              {activity.my_rsvp === 'going' ? "I'm Out 🏃" : "Join Plan"}
             </button>
             <button 
               onClick={() => setShowInviteModal(true)}
@@ -990,6 +989,35 @@ export default function LoomusActivityPage() {
                    </div>
                  ))}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leave Modal */}
+      {showLeaveModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl text-center">
+            <h2 className="text-xl font-bold mb-2 font-['Syne']">Leave Plan?</h2>
+            <p className="text-sm text-gray-400 mb-6">Are you sure you want to bail on this plan?</p>
+            
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowLeaveModal(false)}
+                className="flex-1 py-3 px-4 rounded-xl font-bold text-sm bg-white/5 hover:bg-white/10 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={async () => {
+                  setShowLeaveModal(false);
+                  await handleRsvp('not_going');
+                  router.push('/activities');
+                }}
+                className="flex-1 py-3 px-4 rounded-xl font-bold text-sm bg-red-500/20 text-red-500 hover:bg-red-500/30 transition-colors border border-red-500/30"
+              >
+                I'm Out 🏃
+              </button>
             </div>
           </div>
         </div>
