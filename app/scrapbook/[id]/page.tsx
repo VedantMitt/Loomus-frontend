@@ -11,6 +11,7 @@ type Activity = {
   date: string;
   banner?: string;
   is_shared?: boolean;
+  host_id?: string;
 };
 
 type Submission = {
@@ -30,7 +31,18 @@ export default function ScrapbookStoryPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [sharing, setSharing] = useState(false);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem("token");
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setMyUserId(payload.userId || payload.id);
+      }
+    } catch(e) {}
+  }, []);
 
   const handleUnshare = async () => {
     if (!confirm("Remove this chapter from the public feed?")) return;
@@ -101,24 +113,25 @@ export default function ScrapbookStoryPage() {
             <p className="text-xs text-gray-400">Scrapbook Story</p>
           </div>
         </div>
-        
-        {activity.is_shared ? (
-          <button 
-            onClick={handleUnshare}
-            disabled={sharing}
-            className="text-xs font-bold px-3 py-1.5 rounded-full bg-pink-500/10 text-pink-400 border border-pink-500/20 hover:bg-pink-500 hover:text-white transition-all disabled:opacity-50"
-            title="Click to remove from feed"
-          >
-            {sharing ? 'Removing...' : '✓ Shared to Feed'}
-          </button>
-        ) : (
-          <button 
-            onClick={() => router.push(`/activities/${id}/share`)}
-            disabled={sharing}
-            className="text-xs font-bold px-4 py-2 rounded-full bg-white text-black hover:bg-gray-200 transition-colors flex items-center gap-2 disabled:opacity-50"
-          >
-            Post to Feed
-          </button>
+        {activity.host_id === myUserId && (
+          activity.is_shared ? (
+            <button 
+              onClick={handleUnshare}
+              disabled={sharing}
+              className="text-xs font-bold px-3 py-1.5 rounded-full bg-pink-500/10 text-pink-400 border border-pink-500/20 hover:bg-pink-500 hover:text-white transition-all disabled:opacity-50"
+              title="Click to remove from feed"
+            >
+              {sharing ? 'Removing...' : '✓ Shared to Feed'}
+            </button>
+          ) : (
+            <button 
+              onClick={() => router.push(`/activities/${id}/share`)}
+              disabled={sharing}
+              className="text-xs font-bold px-4 py-2 rounded-full bg-white text-black hover:bg-gray-200 transition-colors flex items-center gap-2 disabled:opacity-50"
+            >
+              Post to Feed
+            </button>
+          )
         )}
       </div>
 

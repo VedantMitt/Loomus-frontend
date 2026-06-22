@@ -48,6 +48,15 @@ export default function RoomsHub() {
     fetchRooms();
   }, [router]);
 
+  useEffect(() => {
+    const onRefresh = () => {
+      setLoading(true);
+      fetchRooms();
+    };
+    window.addEventListener("app_refresh", onRefresh);
+    return () => window.removeEventListener("app_refresh", onRefresh);
+  }, []);
+
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
@@ -283,7 +292,11 @@ export default function RoomsHub() {
         </header>
 
         {loading ? (
-          <div style={{ textAlign: "center", color: "#888", marginTop: "100px" }}>Loading active rooms...</div>
+          <div className="rooms-grid">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="exp-skeleton" style={{ width: '100%', height: '180px', borderRadius: '20px' }} />
+            ))}
+          </div>
         ) : rooms.length === 0 ? (
           <div style={{ textAlign: "center", color: "#888", marginTop: "100px" }}>
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{margin: "0 auto 16px auto"}}>

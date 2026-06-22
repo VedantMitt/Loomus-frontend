@@ -207,8 +207,21 @@ export default function ActivitiesPage() {
   const [loading, setLoading] = useState(false);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [topEvents, setTopEvents] = useState<any[]>([]);
+  const [publicPlans, setPublicPlans] = useState<Activity[]>([]);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [planToDelete, setPlanToDelete] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    const onRefresh = () => {
+      setRefreshTrigger(prev => prev + 1);
+      setIsRefreshing(true);
+      setTimeout(() => setIsRefreshing(false), 1200);
+    };
+    window.addEventListener("app_refresh", onRefresh);
+    return () => window.removeEventListener("app_refresh", onRefresh);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -239,7 +252,7 @@ export default function ActivitiesPage() {
       }
     };
     fetchHotEvents();
-  }, []);
+  }, [refreshTrigger]);
 
   const fetchMyPlans = useCallback(async () => {
     const token = localStorage.getItem("token");
@@ -264,7 +277,27 @@ export default function ActivitiesPage() {
 
   useEffect(() => {
     if (activeTab === "my_plans") fetchMyPlans();
-  }, [activeTab, fetchMyPlans]);
+  }, [activeTab, fetchMyPlans, refreshTrigger]);
+
+  useEffect(() => {
+    const fetchPublicPlans = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      try {
+        const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        const res = await fetch(`${API}/activities?is_public=true&status=upcoming`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setPublicPlans(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch public plans", err);
+      }
+    };
+    fetchPublicPlans();
+  }, [refreshTrigger]);
 
   const handleDeletePlan = async () => {
     if (!planToDelete) return;
@@ -415,9 +448,28 @@ export default function ActivitiesPage() {
         }
 
         /* LIVE CARDS */
-        .live-card {
+        .live-card-wrapper {
           flex: 0 0 320px;
           scroll-snap-align: start;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        @media (max-width: 640px) {
+          .live-card-wrapper { flex: 0 0 82%; }
+        }
+        .live-card-category {
+          background: rgba(255,255,255,0.1);
+          padding: 4px 10px;
+          border-radius: 8px;
+          font-size: 11px;
+          font-weight: bold;
+          width: max-content;
+          color: rgba(255,255,255,0.9);
+          backdrop-filter: blur(10px);
+        }
+        .live-card {
+          width: 100%;
           border-radius: 24px;
           overflow: hidden;
           position: relative;
@@ -427,7 +479,7 @@ export default function ActivitiesPage() {
           box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
         @media (max-width: 640px) {
-          .live-card { flex: 0 0 82%; aspect-ratio: 16/11; }
+          .live-card { aspect-ratio: 16/11; }
         }
         .live-img {
           position: absolute;
@@ -696,13 +748,17 @@ export default function ActivitiesPage() {
         }
 
         .exp-skeleton {
-          background: rgba(255,255,255,0.03);
+          background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.03) 75%);
+          background-size: 400% 100%;
           border-radius: 20px;
           aspect-ratio: 4/3;
           border: 1px solid rgba(255,255,255,0.06);
-          animation: exp-pulse 1.5s infinite;
+          animation: exp-shimmer 1.5s infinite linear;
         }
-        @keyframes exp-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+        @keyframes exp-shimmer {
+          0% { background-position: 100% 0; }
+          100% { background-position: -100% 0; }
+        }
 
         .exp-section-label {
           font-family: 'Syne', sans-serif;
@@ -722,13 +778,26 @@ export default function ActivitiesPage() {
         }
 
         @media (max-width: 640px) {
-          .exp-container { padding: calc(32px + env(safe-area-inset-top, 0px)) 16px 120px; }
+          .exp-container { padding: 12px 16px 120px; }
           .exp-title { font-size: 32px; }
           .exp-subtitle { font-size: 15px; }
-          .exp-card { padding: 16px; aspect-ratio: 4/4; }
-          .exp-card-emoji { font-size: 32px; top: 12px; right: 12px; }
-          .exp-card-label { font-size: 16px; }
+          .exp-tabs { margin-bottom: 20px; }
+          .exp-section-label { margin-bottom: 14px; }
+          .live-scroll { gap: 12px; padding-bottom: 12px; margin-right: -16px; padding-right: 16px; }
+          .live-card-wrapper { flex: 0 0 80%; }
+          .live-card { aspect-ratio: 4/3; border-radius: 18px; width: 100%; }
+          .live-title { font-size: 19px; margin-bottom: 8px; }
+          .live-meta { font-size: 12px; }
+          .live-content { padding: 14px; justify-content: flex-end; }
+          .live-badge { padding: 4px 10px; font-size: 10px; top: 12px; left: auto; right: 12px; }
+          .vibe-scroll { gap: 12px; padding-bottom: 12px; margin-right: -16px; padding-right: 16px; }
+          .vibe-card-wrapper { flex: 0 0 44%; }
+          .exp-card { width: 100%; height: auto; padding: 14px; aspect-ratio: 1/1; border-radius: 18px; }
+          .exp-card-emoji { font-size: 28px; top: 10px; right: 10px; }
+          .exp-card-label { font-size: 14px; margin-bottom: 2px; }
+          .exp-card-vibe { font-size: 11px; }
           .exp-card-ai { display: none; }
+          .exp-card-arrow { display: none; }
         }
 
         .create-fab {
@@ -756,12 +825,6 @@ export default function ActivitiesPage() {
       `}</style>
 
       <main className="exp-container">
-        <div className="exp-hero">
-          <h1 className="exp-title">What are we doing today?</h1>
-          <p className="exp-subtitle">
-            Pick an experience. Plan it. Live it. Remember it forever. ✨
-          </p>
-        </div>
 
         <div className="exp-tabs">
           <button
@@ -778,6 +841,7 @@ export default function ActivitiesPage() {
           </button>
         </div>
 
+        <div style={{ pointerEvents: isRefreshing ? "none" : "auto", transition: "all 0.3s ease" }}>
         {activeTab === "discover" && (
           <>
             <div className="exp-section-label">
@@ -785,30 +849,35 @@ export default function ActivitiesPage() {
             </div>
             
             <div className="live-scroll">
-              {topEvents.length === 0 ? (
-                // Show skeletons while loading
+              {isRefreshing || topEvents.length === 0 ? (
+                // Show skeletons while loading or refreshing
                 [...Array(4)].map((_, i) => (
-                  <div key={`skel-${i}`} className="live-card exp-skeleton" />
+                  <div key={`skel-${i}`} className="live-card-wrapper">
+                    <div className="live-card-category" style={{ width: '60px', height: '20px', background: 'rgba(255,255,255,0.05)' }} />
+                    <div className="live-card exp-skeleton" />
+                  </div>
                 ))
               ) : (
                 topEvents.map((event) => (
-                  <div key={event.id} className="live-card" onClick={() => handleEventClick(event)}>
-                    <img src={event.image} alt={event.title} className="live-img" />
-                    <div 
-                      className="live-overlay" 
-                      style={{ background: `linear-gradient(to top, rgba(0,0,0,0.95) 0%, ${event.gradient || 'rgba(0,0,0,0.4)'} 60%, transparent 100%)` }} 
-                    />
-                    <div className="live-badge" style={{ background: 'rgba(192, 132, 252, 0.9)', boxShadow: '0 4px 12px rgba(192, 132, 252, 0.4)' }}>
-                      <div className="live-badge-dot" style={{ animation: 'none' }} /> UPCOMING
+                  <div key={event.id} className="live-card-wrapper">
+                    <div className="live-card-category">
+                      {event.type}
                     </div>
-                    <div className="live-content">
-                      <div style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', width: 'max-content', marginBottom: '8px' }}>
-                        {event.type}
+                    <div className="live-card" onClick={() => handleEventClick(event)}>
+                      <img src={event.image} alt={event.title} className="live-img" />
+                      <div 
+                        className="live-overlay" 
+                        style={{ background: `linear-gradient(to top, rgba(0,0,0,0.95) 0%, ${event.gradient || 'rgba(0,0,0,0.4)'} 60%, transparent 100%)` }} 
+                      />
+                      <div className="live-badge" style={{ background: 'rgba(192, 132, 252, 0.9)', boxShadow: '0 4px 12px rgba(192, 132, 252, 0.4)' }}>
+                        <div className="live-badge-dot" style={{ animation: 'none' }} /> UPCOMING
                       </div>
-                      <h3 className="live-title">{event.title}</h3>
-                      <div className="live-meta">
-                        <span>📍 {event.location}</span>
-                        <span>⏰ {event.time}</span>
+                      <div className="live-content">
+                        <h3 className="live-title">{event.title}</h3>
+                        <div className="live-meta">
+                          <span>📍 {event.location}</span>
+                          <span>⏰ {event.time}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -816,7 +885,7 @@ export default function ActivitiesPage() {
               )}
             </div>
 
-            <div className="exp-section-label" style={{ marginTop: 24 }}>
+            <div className="exp-section-label" style={{ marginTop: 32 }}>
               <span>✨</span> Pick your vibe
             </div>
             <div className="vibe-scroll">
@@ -844,14 +913,58 @@ export default function ActivitiesPage() {
                 </div>
               ))}
             </div>
+
+              <>
+                <div className="exp-section-label" style={{ marginTop: 32 }}>
+                  <span>🌍</span> Hop into random plans
+                </div>
+                {isRefreshing ? (
+                  <div className="live-scroll">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={`skel-pub-${i}`} className="live-card-wrapper">
+                        <div className="live-card-category" style={{ width: '80px', height: '20px', background: 'rgba(255,255,255,0.05)' }} />
+                        <div className="live-card exp-skeleton" />
+                      </div>
+                    ))}
+                  </div>
+                ) : publicPlans.length > 0 ? (
+                  <div className="live-scroll">
+                    {publicPlans.map((plan) => (
+                      <div key={plan.id} className="live-card-wrapper">
+                        <div className="live-card-category" style={{ background: 'rgba(52,211,153,0.15)', color: '#34d399' }}>
+                          {plan.type || 'Public Plan'}
+                        </div>
+                        <div className="live-card" onClick={() => handleEventClick(plan)}>
+                          <img src={plan.banner || `https://source.unsplash.com/random/800x600/?${plan.type || 'party'}`} alt={plan.title} className="live-img" />
+                          <div 
+                            className="live-overlay" 
+                            style={{ background: `linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(52,211,153,0.3) 60%, transparent 100%)` }} 
+                          />
+                          <div className="live-content">
+                            <h3 className="live-title">{plan.title}</h3>
+                            <div className="live-meta">
+                              <span>📍 {plan.location}</span>
+                              <span>⏰ {new Date(plan.date).toLocaleDateString()} {new Date(plan.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px', padding: '16px 0', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                    No public plans nearby yet. Be the first to start one! 🌍
+                  </div>
+                )}
+              </>
           </>
         )}
 
         {activeTab === "my_plans" && (
           <>
-            {loading ? (
+            {isRefreshing || loading ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {[...Array(6)].map((_, i) => <div key={i} className="exp-skeleton" style={{ width: '100%', aspectRatio: '16/4' }} />)}
+                {[...Array(6)].map((_, i) => <div key={`skel-my-${i}`} className="exp-skeleton" style={{ width: '100%', aspectRatio: '16/4' }} />)}
               </div>
             ) : myPlans.length === 0 ? (
               <div className="exp-empty">
@@ -944,6 +1057,7 @@ export default function ActivitiesPage() {
             )}
           </>
         )}
+        </div>
 
         {/* Floating Create Button */}
         <button

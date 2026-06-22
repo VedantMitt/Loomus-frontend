@@ -44,6 +44,7 @@ export default function CreateActivityPage() {
   const [location, setLocation] = useState(initialLocation || suggestion.location);
   const [description, setDescription] = useState(initialDesc || suggestion.description);
   const [banner, setBanner] = useState<File | null>(null);
+  const [isPublic, setIsPublic] = useState(false);
 
   // Set initial date and minimum allowed date
   useEffect(() => {
@@ -108,6 +109,7 @@ export default function CreateActivityPage() {
           title, type: categoryType || "other", date, location,
           description, banner: bannerUrl, mode: "offline",
           is_free: true, category: categoryType || "other",
+          is_public: isPublic
         }),
       });
 
@@ -259,6 +261,22 @@ export default function CreateActivityPage() {
                 <input type="file" accept="image/*" style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", zIndex: 10 }} onChange={e => setBanner(e.target.files?.[0] || null)} />
                 <div style={{ fontSize: 28, marginBottom: 4 }}>🖼️</div>
                 <div style={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}>{banner ? banner.name : "Click to upload"}</div>
+              </div>
+            </div>
+
+            <div className="wiz-group">
+              <label className="wiz-label">Visibility</label>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div onClick={() => setIsPublic(false)} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: `1px solid ${!isPublic ? 'rgba(192,132,252,0.8)' : 'rgba(255,255,255,0.1)'}`, background: !isPublic ? 'rgba(192,132,252,0.1)' : 'rgba(255,255,255,0.03)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.3s' }}>
+                  <div style={{ fontSize: '20px', marginBottom: '4px' }}>🔒</div>
+                  <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff' }}>Private</div>
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>Invite only</div>
+                </div>
+                <div onClick={() => setIsPublic(true)} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: `1px solid ${isPublic ? 'rgba(52,211,153,0.8)' : 'rgba(255,255,255,0.1)'}`, background: isPublic ? 'rgba(52,211,153,0.1)' : 'rgba(255,255,255,0.03)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.3s' }}>
+                  <div style={{ fontSize: '20px', marginBottom: '4px' }}>🌍</div>
+                  <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff' }}>Public</div>
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>Hop into random</div>
+                </div>
               </div>
             </div>
 

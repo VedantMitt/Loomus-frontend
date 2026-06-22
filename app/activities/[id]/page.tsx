@@ -26,6 +26,7 @@ type Activity = {
   my_rsvp: string | null;
   format: string;
   is_shared?: boolean;
+  is_public?: boolean;
 };
 
 type Submission = {
@@ -100,6 +101,7 @@ export default function LoomusActivityPage() {
   const [isEditingPlan, setIsEditingPlan] = useState(false);
   const [editDate, setEditDate] = useState("");
   const [editEndDate, setEditEndDate] = useState("");
+  const [editIsPublic, setEditIsPublic] = useState(false);
   const [minDate, setMinDate] = useState("");
   const [editItinerary, setEditItinerary] = useState<any[]>([]);
   const [savingPlan, setSavingPlan] = useState(false);
@@ -166,6 +168,7 @@ export default function LoomusActivityPage() {
         setIsHost(aData.host_user_id === myUserId);
         if (aData.date) setEditDate(new Date(aData.date).toISOString().slice(0,16));
         if (aData.end_date) setEditEndDate(new Date(aData.end_date).toISOString().slice(0,16));
+        if (aData.is_public !== undefined) setEditIsPublic(aData.is_public);
         if (aData.itinerary) setEditItinerary(aData.itinerary);
 
         const [sRes, cRes, mRes, anRes, pRes] = await Promise.all([
@@ -222,7 +225,8 @@ export default function LoomusActivityPage() {
         body: JSON.stringify({ 
           date: new Date(editDate).toISOString(),
           end_date: editEndDate ? new Date(editEndDate).toISOString() : null,
-          itinerary: editItinerary
+          itinerary: editItinerary,
+          is_public: editIsPublic
         })
       });
       if (res.ok) {
@@ -606,6 +610,22 @@ export default function LoomusActivityPage() {
                       </div>
                     </div>
 
+                    <div className="mb-4">
+                      <label className="text-xs text-gray-400 font-bold block mb-2">Visibility</label>
+                      <div className="flex gap-2">
+                        <div onClick={() => setEditIsPublic(false)} className={`flex-1 p-3 rounded-xl border ${!editIsPublic ? 'border-pink-500 bg-pink-500/10' : 'border-white/10 bg-white/5'} cursor-pointer transition-all text-center`}>
+                          <div className="text-lg mb-1">🔒</div>
+                          <div className="text-xs font-bold text-white">Private</div>
+                          <div className="text-[10px] text-gray-400">Invite only</div>
+                        </div>
+                        <div onClick={() => setEditIsPublic(true)} className={`flex-1 p-3 rounded-xl border ${editIsPublic ? 'border-green-500 bg-green-500/10' : 'border-white/10 bg-white/5'} cursor-pointer transition-all text-center`}>
+                          <div className="text-lg mb-1">🌍</div>
+                          <div className="text-xs font-bold text-white">Public</div>
+                          <div className="text-[10px] text-gray-400">Hop into random</div>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="flex gap-2 justify-end pt-2">
                       <button onClick={() => setIsEditingPlan(false)} className="text-xs font-bold px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10">Cancel</button>
                       <button onClick={handleSavePlan} disabled={savingPlan} className="text-xs font-bold px-4 py-2 rounded-lg bg-pink-500 hover:bg-pink-600 text-white">{savingPlan ? 'Saving...' : 'Save Plan'}</button>
@@ -759,12 +779,19 @@ export default function LoomusActivityPage() {
                 <div className="text-center py-8 text-gray-500 text-sm">No one's in yet. Be the first!</div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {members.map(m => (
-                    <div key={m.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                  {members.map(m => {
+                    const isPlanHost = activity.host_user_id === m.id;
+                    return (
+                    <div key={m.id} className={`flex items-center justify-between p-3 rounded-xl border ${isPlanHost ? 'bg-pink-500/5 border-pink-500/30' : 'bg-white/5 border-white/5'}`}>
                       <div className="flex items-center gap-3">
-                        <img src={m.profile_pic?.startsWith('/uploads') ? `${API}${m.profile_pic}` : m.profile_pic || `https://ui-avatars.com/api/?name=${m.name}&background=111&color=fff`} className="w-10 h-10 rounded-full" alt="" />
+                        <img src={m.profile_pic?.startsWith('/uploads') ? `${API}${m.profile_pic}` : m.profile_pic || `https://ui-avatars.com/api/?name=${m.name}&background=111&color=fff`} className={`w-10 h-10 rounded-full ${isPlanHost ? 'border-2 border-pink-500/50' : ''}`} alt="" />
                         <div>
-                          <div className="text-sm font-bold">{m.name}</div>
+                          <div className="text-sm font-bold flex items-center gap-2">
+                            {m.name}
+                            {isPlanHost && (
+                              <span className="text-[9px] uppercase tracking-wider font-bold bg-pink-500 text-white px-1.5 py-0.5 rounded">Host</span>
+                            )}
+                          </div>
                           <div className="text-[10px] text-gray-500">@{m.username}</div>
                         </div>
                       </div>
@@ -772,7 +799,7 @@ export default function LoomusActivityPage() {
                         {m.rsvp_status}
                       </span>
                     </div>
-                  ))}
+                  )})}
                 </div>
               )}
             </div>

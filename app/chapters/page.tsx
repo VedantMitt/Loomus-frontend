@@ -220,10 +220,6 @@ export default function ChaptersPage() {
       `}</style>
 
       <div className="chapters-container">
-        <div className="chap-header">
-          <h1 className="chap-title">Your <span>Chapters</span></h1>
-          <p className="chap-subtitle">A scrapbook of memories and experiences you've lived.</p>
-        </div>
 
         {loading ? (
           <div style={{ textAlign: "center", padding: "60px", color: "rgba(255,255,255,0.5)" }}>

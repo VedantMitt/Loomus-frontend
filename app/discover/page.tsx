@@ -34,6 +34,7 @@ export default function DiscoverPage() {
   const [showComments, setShowComments] = useState<Record<string, boolean>>({});
   const [comments, setComments] = useState<Record<string, any[]>>({});
   const [commentText, setCommentText] = useState<Record<string, string>>({});
+  const [activePhotoIndices, setActivePhotoIndices] = useState<Record<string, number>>({});
 
   const handleToggleLike = async (feedId: string) => {
     const isLiked = likes[feedId];
@@ -236,6 +237,27 @@ export default function DiscoverPage() {
                           {feedItem.shared_caption}
                         </div>
                       )}
+                      {feedItem.participant_previews && feedItem.participant_previews.length > 1 && (
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "10px" }}>
+                          <div style={{ display: "flex", alignItems: "center" }}>
+                            {feedItem.participant_previews.filter((p: any) => p.name !== feedItem.host_name).slice(0, 3).map((p: any, i: number) => (
+                              <img 
+                                key={i}
+                                src={p.profile_pic?.startsWith('/uploads') ? `${API}${p.profile_pic}` : p.profile_pic || `https://ui-avatars.com/api/?name=${p.name}&background=111&color=fff`}
+                                style={{
+                                  width: "22px", height: "22px", borderRadius: "50%",
+                                  border: "2px solid #1a1a1a", marginLeft: i > 0 ? "-8px" : "0",
+                                  objectFit: "cover"
+                                }}
+                                title={p.name}
+                              />
+                            ))}
+                          </div>
+                          <span style={{ fontSize: "12px", color: "#888", fontWeight: 600 }}>
+                            {`${feedItem.participant_previews.length - 1} crewmate${feedItem.participant_previews.length - 1 > 1 ? 's' : ''}`}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     {feedItem.host_id === myUserId && (
                       <button 
@@ -251,7 +273,17 @@ export default function DiscoverPage() {
                   </div>
                   
                   {feedItem.timeline_photos && feedItem.timeline_photos.length > 0 ? (
-                    <div style={{ display: "flex", gap: "16px", overflowX: "auto", paddingBottom: "16px" }} className="hide-scroll">
+                    <div style={{ position: "relative" }}>
+                      <div 
+                        onScroll={(e) => {
+                          const target = e.target as HTMLElement;
+                          // Use 300px as an approx item width for calculating index
+                          const index = Math.round(target.scrollLeft / 300);
+                          setActivePhotoIndices(p => ({ ...p, [feedItem.id]: Math.min(index, feedItem.timeline_photos.length - 1) }));
+                        }}
+                        style={{ display: "flex", gap: "16px", overflowX: "auto", paddingBottom: "16px", scrollSnapType: "x mandatory" }} 
+                        className="hide-scroll"
+                      >
                       {feedItem.timeline_photos.map((photo: any, i: number) => {
                         let locStr = feedItem.location?.split(',')[0] || "Unknown";
                         let timeStr = "";
@@ -267,7 +299,7 @@ export default function DiscoverPage() {
                         } catch(e) {}
                         if (photo.url === 'note') {
                           return (
-                            <div key={i} style={{ flex: "0 0 300px", height: "fit-content", padding: "20px", background: "rgba(255,255,255,0.05)", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.1)", display: "flex", flexDirection: "column", gap: "12px" }}>
+                            <div key={i} style={{ flex: "0 0 300px", height: "fit-content", padding: "20px", background: "rgba(255,255,255,0.05)", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.1)", display: "flex", flexDirection: "column", gap: "12px", scrollSnapAlign: "center" }}>
                               <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
                                 <img src={photo.author_pic?.startsWith('/uploads') ? `${API}${photo.author_pic}` : photo.author_pic || `https://ui-avatars.com/api/?name=${photo.author_name}&background=111&color=fff`} style={{ width: "40px", height: "40px", borderRadius: "50%", border: "2px solid rgba(255,255,255,0.1)", objectFit: "cover", flexShrink: 0 }} />
                                 <div>
@@ -291,7 +323,7 @@ export default function DiscoverPage() {
                         }
 
                         return (
-                          <div key={i} style={{ flex: "0 0 280px", aspectRatio: "3/4", borderRadius: "16px", overflow: "hidden", position: "relative", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 10px 30px rgba(0,0,0,0.5)" }}>
+                          <div key={i} style={{ flex: "0 0 280px", aspectRatio: "3/4", borderRadius: "16px", overflow: "hidden", position: "relative", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 10px 30px rgba(0,0,0,0.5)", scrollSnapAlign: "center" }}>
                             <img src={photo.url.startsWith('/uploads') ? `${API}${photo.url}` : photo.url} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 40%)", pointerEvents: "none" }} />
                             <div style={{ position: "absolute", bottom: "16px", left: "16px", right: "16px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
@@ -303,6 +335,24 @@ export default function DiscoverPage() {
                           </div>
                         );
                       })}
+                      </div>
+                      
+                      {feedItem.timeline_photos.length > 1 && (
+                        <div style={{ display: "flex", justifyContent: "center", gap: "6px", marginTop: "-4px", marginBottom: "16px" }}>
+                          {feedItem.timeline_photos.map((_: any, i: number) => {
+                            const isActive = (activePhotoIndices[feedItem.id] || 0) === i;
+                            return (
+                              <div key={i} style={{ 
+                                width: isActive ? "16px" : "6px", 
+                                height: "6px", 
+                                borderRadius: "3px", 
+                                background: isActive ? "#f472b6" : "rgba(255,255,255,0.2)",
+                                transition: "all 0.3s ease"
+                              }} />
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   ) : (
                      <div style={{ padding: "60px 20px", textAlign: "center", color: "#666", fontSize: "14px", background: "rgba(0,0,0,0.3)", borderRadius: "16px" }}>
@@ -311,28 +361,31 @@ export default function DiscoverPage() {
                   )}
 
                   <div style={{ marginTop: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ display: "flex", gap: "12px" }}>
+                    <div style={{ display: "flex", gap: "10px" }}>
                       <button 
                         onClick={() => handleToggleLike(feedItem.id)}
-                        className={`group flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border ${likes[feedItem.id] ? 'bg-pink-500/20 border-pink-500/50' : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-pink-500/30'}`}
+                        className={`group flex items-center gap-2 px-4 py-2 rounded-full transition-all border ${likes[feedItem.id] ? 'bg-pink-500/20 border-pink-500/40 shadow-[0_0_15px_rgba(236,72,153,0.15)]' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
                       >
-                        <Heart className={`w-4 h-4 transition-transform duration-200 group-hover:scale-125 ${likes[feedItem.id] ? 'fill-pink-500 text-pink-500' : 'text-gray-400 group-hover:text-pink-400'}`} />
-                        <span className={`text-xs font-bold ${likes[feedItem.id] ? 'text-pink-400' : 'text-gray-400 group-hover:text-pink-400'}`}>
-                          {likeCounts[feedItem.id] > 0 ? likeCounts[feedItem.id] : "Like"}
+                        <Heart className={`w-[18px] h-[18px] transition-transform duration-200 group-hover:scale-110 ${likes[feedItem.id] ? 'fill-pink-500 text-pink-500' : 'text-gray-300 group-hover:text-pink-400'}`} />
+                        <span className={`text-[13px] font-bold ${likes[feedItem.id] ? 'text-pink-400' : 'text-gray-300 group-hover:text-pink-400'}`}>
+                          {likeCounts[feedItem.id] > 0 ? likeCounts[feedItem.id] : "0"}
                         </span>
                       </button>
                       <button 
                         onClick={() => toggleComments(feedItem.id)}
-                        className={`group flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border ${showComments[feedItem.id] ? 'bg-blue-500/20 border-blue-500/50' : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-blue-500/30'}`}
+                        className={`group flex items-center gap-2 px-4 py-2 rounded-full transition-all border ${showComments[feedItem.id] ? 'bg-blue-500/20 border-blue-500/40 shadow-[0_0_15px_rgba(59,130,246,0.15)]' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
                       >
-                        <MessageCircle className={`w-4 h-4 transition-transform duration-200 group-hover:scale-125 ${showComments[feedItem.id] ? 'text-blue-400' : 'text-gray-400 group-hover:text-blue-400'}`} />
-                        <span className={`text-xs font-bold ${showComments[feedItem.id] ? 'text-blue-400' : 'text-gray-400 group-hover:text-blue-400'}`}>
-                          {comments[feedItem.id] ? (comments[feedItem.id].length > 0 ? comments[feedItem.id].length : "Comments") : (parseInt(feedItem.comment_count || '0', 10) > 0 ? feedItem.comment_count : "Comments")}
+                        <MessageCircle className={`w-[18px] h-[18px] transition-transform duration-200 group-hover:scale-110 ${showComments[feedItem.id] ? 'text-blue-400' : 'text-gray-300 group-hover:text-blue-400'}`} />
+                        <span className={`text-[13px] font-bold ${showComments[feedItem.id] ? 'text-blue-400' : 'text-gray-300 group-hover:text-blue-400'}`}>
+                          {comments[feedItem.id] ? (comments[feedItem.id].length > 0 ? comments[feedItem.id].length : "0") : (parseInt(feedItem.comment_count || '0', 10) > 0 ? feedItem.comment_count : "0")}
                         </span>
                       </button>
                     </div>
-                    <Link href={`/scrapbook/${feedItem.id}`} style={{ fontSize: "13px", fontWeight: 700, color: "#f472b6", textDecoration: "none", background: "rgba(244, 114, 182, 0.1)", padding: "10px 20px", borderRadius: "12px", border: "1px solid rgba(244, 114, 182, 0.2)", transition: "all 0.3s" }} className="hover:bg-pink-500/20 no-underline">
-                      Open Chapter ↗
+                    <Link 
+                      href={`/scrapbook/${feedItem.id}`} 
+                      className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-full font-bold text-[13px] text-white bg-gradient-to-r from-pink-500/20 to-purple-500/20 hover:from-pink-500/30 hover:to-purple-500/30 transition-all border border-white/10 hover:border-pink-500/30 no-underline shadow-lg shadow-black/20 whitespace-nowrap"
+                    >
+                      View <span style={{ opacity: 0.6 }}>↗</span>
                     </Link>
                   </div>
 

@@ -87,7 +87,7 @@ export default function Navbar() {
           setHasUnreadDMs(data.some((c: any) => parseInt(c.unread_count) > 0));
         }
       } catch (err) {
-        console.error("Failed to fetch alerts in Navbar", err);
+        console.warn("Failed to fetch alerts in Navbar", err);
       }
     };
 

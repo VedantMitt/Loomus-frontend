@@ -1,6 +1,7 @@
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import MobileNav from "@/components/MobileNav";
+import PullToRefresh from "@/components/PullToRefresh";
 import { RoomProvider } from "@/context/RoomContext";
 
 import { GoogleOAuthProvider } from "@react-oauth/google";
@@ -24,12 +25,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}>
           <RoomProvider>
             <Navbar />
-            {children}
+            <PullToRefresh>
+              {children}
+            </PullToRefresh>
             <MobileNav />
           </RoomProvider>
         </GoogleOAuthProvider>

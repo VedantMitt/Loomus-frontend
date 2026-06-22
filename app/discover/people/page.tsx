@@ -82,6 +82,16 @@ export default function PeopleDiscoverPage() {
     return () => clearTimeout(timeout);
   }, [search, fetchUsers]);
 
+  // Handle global pull-to-refresh
+  useEffect(() => {
+    const onRefresh = () => {
+      setLoading(true);
+      fetchUsers(search);
+    };
+    window.addEventListener("app_refresh", onRefresh);
+    return () => window.removeEventListener("app_refresh", onRefresh);
+  }, [fetchUsers, search]);
+
   return (
     <div>
       <style>{`

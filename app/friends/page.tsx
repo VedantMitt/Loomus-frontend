@@ -171,6 +171,16 @@ export default function FriendsPage() {
     }
   }, [fetchFriends, fetchRequests, fetchNotifications]);
 
+  useEffect(() => {
+    const onRefresh = () => {
+      fetchFriends();
+      fetchRequests();
+      fetchNotifications();
+    };
+    window.addEventListener("app_refresh", onRefresh);
+    return () => window.removeEventListener("app_refresh", onRefresh);
+  }, [fetchFriends, fetchRequests, fetchNotifications]);
+
   const handleStatusUpdate = (newStatus: string) => {
     if (currentUser) {
       const updatedUser = { 
@@ -230,7 +240,7 @@ export default function FriendsPage() {
         .search-container {
           position: relative;
           max-width: 650px;
-          margin: 0 auto 32px;
+          margin: 0 auto 16px;
           z-index: 100;
         }
         .search-input {
@@ -238,11 +248,11 @@ export default function FriendsPage() {
           background: rgba(255, 255, 255, 0.03);
           backdrop-filter: blur(25px);
           border: 1px solid rgba(255,255,255,0.08);
-          padding: 16px 24px 16px 52px;
+          padding: 12px 18px 12px 44px;
           border-radius: 20px;
           color: #fff;
           font-family: 'DM Sans', sans-serif;
-          font-size: 15px;
+          font-size: 14px;
           outline: none;
           transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
           box-shadow: 0 10px 40px rgba(0,0,0,0.3);
@@ -301,7 +311,7 @@ export default function FriendsPage() {
         .friends-container {
           max-width: 900px;
           margin: 0 auto;
-          padding: calc(60px + env(safe-area-inset-top, 0px)) 24px 100px;
+          padding: calc(50px + env(safe-area-inset-top, 0px)) 16px 100px;
           font-family: 'DM Sans', sans-serif;
           position: relative;
           z-index: 10;
@@ -310,8 +320,8 @@ export default function FriendsPage() {
         .fp-hero {
           position: relative;
           text-align: center;
-          margin-bottom: 48px;
-          padding-top: 24px;
+          margin-bottom: 20px;
+          padding-top: 8px;
         }
         .fp-hero::before {
           content: '';
@@ -328,7 +338,7 @@ export default function FriendsPage() {
 
         .fp-title {
           font-family: 'Syne', sans-serif;
-          font-size: 44px;
+          font-size: 28px;
           font-weight: 800;
           background: linear-gradient(135deg, #fff 0%, #34d399 50%, #0ea5e9 100%);
           -webkit-background-clip: text;
@@ -342,7 +352,7 @@ export default function FriendsPage() {
           display: flex;
           justify-content: center;
           gap: 12px;
-          margin-bottom: 40px;
+          margin-bottom: 16px;
           background: rgba(255, 255, 255, 0.04);
           padding: 6px;
           border-radius: 18px;
@@ -354,7 +364,7 @@ export default function FriendsPage() {
         }
 
         .fp-tab {
-          padding: 10px 24px;
+          padding: 8px 20px;
           background: transparent;
           border: none;
           color: #888;
@@ -389,12 +399,12 @@ export default function FriendsPage() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 28px;
+          padding: 16px;
           background: rgba(255, 255, 255, 0.03);
           backdrop-filter: blur(20px);
           border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 28px;
-          margin-bottom: 20px;
+          border-radius: 18px;
+          margin-bottom: 12px;
           transition: all 0.3s;
         }
         .req-card:hover {
@@ -431,17 +441,14 @@ export default function FriendsPage() {
         
         .fp-empty {
           text-align: center;
-          padding: 100px 40px;
+          padding: 60px 24px;
           background: rgba(255,255,255,0.02);
-          border-radius: 40px;
+          border-radius: 24px;
           border: 1px dashed rgba(255,255,255,0.1);
         }
       `}</style>
 
       <main className="friends-container">
-        <div className="fp-hero">
-          <h1 className="fp-title">Your Circle</h1>
-        </div>
 
         {/* 🔎 Search Bar + Floating Results */}
         <div className="search-container">
@@ -507,9 +514,13 @@ export default function FriendsPage() {
               onStatusUpdate={handleStatusUpdate} 
             />
             {loadingFriends ? (
-              <div className="fp-empty">Loading circle...</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {[...Array(5)].map((_, i) => (
+                  <div key={`skel-f-${i}`} className="exp-skeleton" style={{ width: '100%', height: '80px', borderRadius: '18px' }} />
+                ))}
+              </div>
             ) : friends.length > 0 ? (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10 }}>
                 {friends.map((f) => (
                   <FriendCard key={f.id} friend={f} onRemove={fetchFriends} />
                 ))}
@@ -525,7 +536,11 @@ export default function FriendsPage() {
           </>
         ) : (
           loadingRequests ? (
-            <div className="fp-empty">Checking incoming...</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {[...Array(3)].map((_, i) => (
+                <div key={`skel-req-${i}`} className="exp-skeleton" style={{ width: '100%', height: '90px', borderRadius: '18px' }} />
+              ))}
+            </div>
           ) : requests.length > 0 ? (
             <div>
               {requests.map((req) => {

@@ -219,7 +219,7 @@ export default function ProfilePage() {
   const isOwnProfile = currentUserId === user.id;
 
   return (
-    <div className="min-h-screen bg-black text-white px-4 pb-12" style={{ paddingTop: 'calc(32px + env(safe-area-inset-top, 0px))' }}>
+    <div className="min-h-screen bg-black text-white px-4 pb-12" style={{ paddingTop: '8px' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap');
 
@@ -342,15 +342,15 @@ export default function ProfilePage() {
             className="avatar"
           />
           <div style={{ textAlign: "left", flex: 1 }}>
-            <h1 style={{ fontSize: "24px", fontWeight: 700, margin: 0 }}>{user.name}</h1>
-            <p style={{ color: "#666", fontSize: "14px", marginTop: "2px" }}>@{user.username}</p>
+            <h1 style={{ fontSize: "20px", fontWeight: 700, margin: 0 }}>{user.name}</h1>
+            <p style={{ color: "#666", fontSize: "13px", marginTop: "2px" }}>@{user.username}</p>
 
             {user.bio && (
-              <p style={{ color: "#999", fontSize: "14px", marginTop: "8px", maxWidth: "400px" }}>
+              <p style={{ color: "#999", fontSize: "13px", marginTop: "4px", maxWidth: "400px" }}>
                 {user.bio}
               </p>
             )}
-            <div style={{ marginTop: "16px", display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "flex-start" }}>
+            <div style={{ marginTop: "10px", display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "flex-start" }}>
               {isOwnProfile ? (
                 <button
                   onClick={() => router.push("/profile/edit")}
@@ -485,7 +485,7 @@ export default function ProfilePage() {
 
         {/* Logout Button (Own Profile Only) */}
         {isOwnProfile && (
-          <div style={{ marginTop: "40px", display: "flex", justifyContent: "center" }}>
+          <div style={{ marginTop: "20px", display: "flex", justifyContent: "center" }}>
             <button
               onClick={() => {
                 localStorage.removeItem("token");

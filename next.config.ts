@@ -1,8 +1,10 @@
 import type { NextConfig } from "next";
 
+const isCapacitorBuild = process.env.CAPACITOR_BUILD === "true";
+
 const nextConfig: NextConfig = {
   images: {
-    unoptimized: process.env.CAPACITOR_BUILD ? true : false,
+    unoptimized: isCapacitorBuild ? true : false,
     remotePatterns: [
       {
         protocol: "https",
