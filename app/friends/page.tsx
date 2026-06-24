@@ -63,6 +63,29 @@ export default function FriendsPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchSuggestions, setSearchSuggestions] = useState<User[]>([]);
 
+  // Friend suggestions for empty state
+  const [suggestions, setSuggestions] = useState<User[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(true);
+
+  const fetchSuggestions = useCallback(async () => {
+    try {
+      setLoadingSuggestions(true);
+      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/users/discover`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSuggestions(data.slice(0, 6)); // Top 6 suggestions
+      }
+    } catch (err) {
+      console.error("Failed to fetch suggestions", err);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  }, []);
+
   const fetchSearchSuggestions = useCallback(
     async (searchTerm: string) => {
       if (!searchTerm.trim()) {
@@ -164,12 +187,13 @@ export default function FriendsPage() {
     fetchFriends();
     fetchRequests();
     fetchNotifications();
+    fetchSuggestions();
     
     const storedUser = localStorage.getItem("user");
-    if (storedUser) {
+    if (storedUser && storedUser !== "undefined") {
       setCurrentUser(JSON.parse(storedUser));
     }
-  }, [fetchFriends, fetchRequests, fetchNotifications]);
+  }, [fetchFriends, fetchRequests, fetchNotifications, fetchSuggestions]);
 
   useEffect(() => {
     const onRefresh = () => {
@@ -526,11 +550,59 @@ export default function FriendsPage() {
                 ))}
               </div>
             ) : (
-              <div className="fp-empty">
-                <div style={{ fontSize: 48, marginBottom: 20 }}>🤝</div>
-                <h2 style={{ color: "#eee", fontSize: 24, fontWeight: 800 }}>No friends yet</h2>
-                <p style={{ color: "#666", maxWidth: 400, margin: "12px auto 24px" }}>Start exploring the campus and build your dream team!</p>
-                <Link href="/discover" style={{ display: "inline-block", padding: "14px 32px", background: "#34d399", color: "#fff", borderRadius: 16, fontWeight: 800, textDecoration: "none", boxShadow: "0 10px 25px rgba(52, 211, 153, 0.25)" }}>Discover People</Link>
+              <div style={{ marginTop: 20 }}>
+                <div style={{ textAlign: "center", marginBottom: 24 }}>
+                  <h2 style={{ color: "#eee", fontSize: 22, fontWeight: 800 }}>Suggested Friends</h2>
+                  <p style={{ color: "#888", fontSize: 14 }}>People you might know</p>
+                </div>
+                {loadingSuggestions ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
+                    {[...Array(3)].map((_, i) => (
+                      <div key={`skel-sug-${i}`} className="exp-skeleton" style={{ width: '100%', maxWidth: '300px', height: '140px', borderRadius: '18px' }} />
+                    ))}
+                  </div>
+                ) : suggestions.length > 0 ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", justifyContent: "center" }}>
+                    {suggestions.map((user, i) => (
+                      <div key={user.id} style={{ 
+                        background: "rgba(255,255,255,0.03)", 
+                        border: "1px solid rgba(255,255,255,0.08)", 
+                        borderRadius: "20px", 
+                        padding: "16px", 
+                        width: "100%", 
+                        maxWidth: "340px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "14px"
+                      }}>
+                        <Link href={`/profile/${user.username}`}>
+                          <img 
+                            src={user.profile_pic ? (user.profile_pic.startsWith("/uploads") ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}${user.profile_pic}` : user.profile_pic) : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=0D1117&color=fff`} 
+                            alt="" 
+                            style={{ width: 60, height: 60, borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(255,255,255,0.1)" }} 
+                          />
+                        </Link>
+                        <div style={{ flex: 1 }}>
+                          <Link href={`/profile/${user.username}`} style={{ textDecoration: "none", color: "#fff", fontWeight: 700, fontSize: "16px" }}>
+                            {user.name}
+                          </Link>
+                          <div style={{ color: "#888", fontSize: "13px", marginTop: "2px" }}>@{user.username}</div>
+                          {user.college && <div style={{ color: "#34d399", fontSize: "12px", marginTop: "4px", fontWeight: 600 }}>{user.college}</div>}
+                        </div>
+                        <Link href={`/profile/${user.username}`} style={{ padding: "8px 16px", background: "#3b82f6", color: "#fff", textDecoration: "none", borderRadius: "12px", fontWeight: 700, fontSize: "13px", transition: "0.2s" }}>
+                          View
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="fp-empty">
+                    <div style={{ fontSize: 48, marginBottom: 20 }}>🤝</div>
+                    <h2 style={{ color: "#eee", fontSize: 24, fontWeight: 800 }}>No friends yet</h2>
+                    <p style={{ color: "#666", maxWidth: 400, margin: "12px auto 24px" }}>Start exploring the campus and build your dream team!</p>
+                    <Link href="/discover" style={{ display: "inline-block", padding: "14px 32px", background: "#34d399", color: "#fff", borderRadius: 16, fontWeight: 800, textDecoration: "none", boxShadow: "0 10px 25px rgba(52, 211, 153, 0.25)" }}>Discover People</Link>
+                  </div>
+                )}
               </div>
             )}
           </>

@@ -69,18 +69,15 @@ export default function Navbar() {
           fetch(`${API}/chat/conversations`, { headers: { Authorization: `Bearer ${token}` } })
         ]);
 
-        let hasAlert = false;
         if (reqRes.ok) {
           const data = await reqRes.json();
           setPendingRequests(data);
-          if (data.length > 0) hasAlert = true;
+          setHasPendingRequests(data.length > 0);
         }
         if (notifRes.ok) {
           const data = await notifRes.json();
           setNotifications(data);
-          if (data.length > 0) hasAlert = true;
         }
-        setHasPendingRequests(hasAlert);
 
         if (chatRes.ok) {
           const data = await chatRes.json();
@@ -128,7 +125,7 @@ export default function Navbar() {
       const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
       await fetch(`${API}/friends/accept/${id}`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
       setPendingRequests(prev => prev.filter(r => r.id !== id));
-      setHasPendingRequests(pendingRequests.length - 1 > 0 || notifications.length > 0);
+      setHasPendingRequests(pendingRequests.length - 1 > 0);
     } catch (err) { console.error(err); }
   };
 
@@ -139,7 +136,7 @@ export default function Navbar() {
       const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
       await fetch(`${API}/friends/remove/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       setPendingRequests(prev => prev.filter(r => r.id !== id));
-      setHasPendingRequests(pendingRequests.length - 1 > 0 || notifications.length > 0);
+      setHasPendingRequests(pendingRequests.length - 1 > 0);
     } catch (err) { console.error(err); }
   };
 
@@ -157,8 +154,8 @@ export default function Navbar() {
     { name: "Friends", href: "/friends" },
     { name: "Activities", href: "/activities" },
     { name: "Chapters", href: "/chapters" },
-    { name: "Play", href: "/play" },
-    { name: "Rooms", href: "/rooms" },
+    // { name: "Play", href: "/play" },
+    // { name: "Rooms", href: "/rooms" },
   ];
 
   return (

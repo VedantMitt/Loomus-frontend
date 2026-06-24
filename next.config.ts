@@ -17,9 +17,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  turbopack: {
-    root: ".",
-  },
   // Security headers
   async headers() {
     return [

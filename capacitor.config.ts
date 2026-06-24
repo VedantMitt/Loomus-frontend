@@ -7,8 +7,15 @@ const config: CapacitorConfig = {
   server: {
     // Change this to your live URL (e.g. Vercel) for the final production APK
     // url: 'https://campusconnect-frontend.vercel.app',
-    url: 'http://192.168.29.133:3000', // Real Device over WiFi
+    url: 'http://192.168.29.167:3000', // Real Device over WiFi
     cleartext: true
+  },
+  plugins: {
+    GoogleAuth: {
+      scopes: ['profile', 'email'],
+      serverClientId: '179896098236-k92cj68fkliirf291ruuu6sk6rp1e7q4.apps.googleusercontent.com',
+      forceCodeForRefreshToken: true,
+    },
   }
 };
 
