@@ -951,7 +951,7 @@ export default function ActivitiesPage() {
                       {event.type || "Hobby"}
                     </div>
                     <div className="live-card" onClick={() => handleEventClick(event)}>
-                      <img src={event.banner || event.image || `https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&h=400&fit=crop`} alt={event.title} className="live-img" />
+                      <img src={event.banner || (event as any).image || `https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&h=400&fit=crop`} alt={event.title} className="live-img" />
                       <div 
                         className="live-overlay" 
                         style={{ background: `linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(255,154,158,0.4) 60%, transparent 100%)` }} 
