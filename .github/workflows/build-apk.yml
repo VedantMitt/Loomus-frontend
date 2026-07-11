@@ -41,10 +41,18 @@ jobs:
           sudo apt-get update && sudo apt-get install -y dos2unix
           dos2unix ./gradlew
           chmod +x ./gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug > gradle_output.txt 2>&1
 
-      - name: Upload APK
+      - name: Upload Gradle Logs
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug.apk
+          name: gradle-logs
+          path: android/gradle_output.txt
+
+      - name: Upload APK
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
