@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { uploadSubmission } from "@/lib/uploadSubmission";
 import Link from "next/link";
@@ -27,7 +27,7 @@ const AI_SUGGESTIONS: Record<string, { title: string; description: string; locat
 
 type Friend = { id: string; name: string; username: string; profile_pic?: string };
 
-export default function CreateActivityPage() {
+function CreateActivityContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const categoryType = searchParams.get("type") || "";
@@ -571,5 +571,13 @@ export default function CreateActivityPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function CreateActivityPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>Loading...</div>}>
+      <CreateActivityContent />
+    </Suspense>
   );
 }
