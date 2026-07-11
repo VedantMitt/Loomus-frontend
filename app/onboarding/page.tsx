@@ -16,6 +16,11 @@ export default function OnboardingPage() {
   // Form Fields
   const [profilePic, setProfilePic] = useState<string | null>(null);
   const [bio, setBio] = useState("");
+  const [gender, setGender] = useState("");
+  const [dob, setDob] = useState("");
+  const [locationName, setLocationName] = useState("");
+  const [locationLat, setLocationLat] = useState<number | null>(null);
+  const [locationLng, setLocationLng] = useState<number | null>(null);
   const [interests, setInterests] = useState("");
   const [vibeTags, setVibeTags] = useState("");
   const [instagram, setInstagram] = useState("");
@@ -42,6 +47,25 @@ export default function OnboardingPage() {
       if (parsedUser.linkedin) setLinkedin(parsedUser.linkedin);
     }
   }, [router]);
+
+  useEffect(() => {
+    if (step === 3 && !locationName && !locationLat) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            setLocationLat(position.coords.latitude);
+            setLocationLng(position.coords.longitude);
+            // Optionally could reverse geocode here, but for now just set a generic message or keep it empty if we want them to enter city manually.
+            // Let's set it to a generic shared string so the form passes validation, but they can edit it.
+            setLocationName("GPS Location Shared");
+          },
+          (error) => {
+            console.log("Auto-location failed or denied", error);
+          }
+        );
+      }
+    }
+  }, [step]);
 
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -82,9 +106,20 @@ export default function OnboardingPage() {
     setLoading(true);
 
     const payload: any = {};
-    if (step === 2) payload.bio = bio;
-    if (step === 3) payload.interests = interests.split(",").map((s) => s.trim()).filter(Boolean);
-    if (step === 4) payload.vibe_tags = vibeTags.split(",").map((s) => s.trim()).filter(Boolean);
+    if (step === 2) {
+      payload.bio = bio;
+      payload.gender = gender;
+      payload.dob = dob;
+    }
+    if (step === 3) {
+      payload.location_name = locationName;
+      payload.location_lat = locationLat;
+      payload.location_lng = locationLng;
+    }
+    if (step === 4) {
+      payload.interests = interests.split(",").map((s) => s.trim()).filter(Boolean);
+      payload.vibe_tags = vibeTags.split(",").map((s) => s.trim()).filter(Boolean);
+    }
     if (step === 5) {
       payload.instagram = instagram;
       payload.linkedin = linkedin;
@@ -303,7 +338,7 @@ export default function OnboardingPage() {
             <h2 style={{ color: "#fff", fontSize: "22px", fontWeight: 600, marginBottom: "8px" }}>
               {step === 1 && "Add a Profile Picture 📸"}
               {step === 2 && "Tell us about yourself 📝"}
-              {step === 3 && "What are you into? 🎯"}
+              {step === 3 && "Where are you located? 📍"}
               {step === 4 && "Pick your vibe ✨"}
               {step === 5 && "Connect Socials 🔗"}
             </h2>
@@ -347,15 +382,81 @@ export default function OnboardingPage() {
               <label className="lbl">Bio</label>
               <textarea
                 className="inp"
-                style={{ resize: "none", height: "120px" }}
+                style={{ resize: "none", height: "80px" }}
                 placeholder="CSE '26 | Building cool things"
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
+              />
+              <label className="lbl">Gender</label>
+              <select 
+                className="inp" 
+                value={gender} 
+                onChange={(e) => setGender(e.target.value)}
+                style={{ appearance: "none", cursor: "pointer" }}
+              >
+                <option value="" disabled>Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Non-Binary">Non-Binary</option>
+                <option value="Other">Other</option>
+                <option value="Prefer not to say">Prefer not to say</option>
+              </select>
+              <label className="lbl">Date of Birth</label>
+              <input
+                className="inp"
+                type="date"
+                value={dob}
+                onChange={(e) => setDob(e.target.value)}
+                style={{ colorScheme: "dark" }}
               />
             </>
           )}
 
           {step === 3 && (
+            <>
+              <div style={{ textAlign: "center", marginBottom: "16px" }}>
+                <button 
+                  className="btn" 
+                  style={{ background: "#222", border: "1px solid #333", color: "#ccc" }}
+                  onClick={() => {
+                    if (navigator.geolocation) {
+                      setLoading(true);
+                      navigator.geolocation.getCurrentPosition(
+                        async (position) => {
+                          setLocationLat(position.coords.latitude);
+                          setLocationLng(position.coords.longitude);
+                          // Option to reverse geocode here if desired, otherwise just show a success message
+                          setLocationName("Location Shared Successfully");
+                          setLoading(false);
+                        },
+                        (error) => {
+                          console.error("Error getting location", error);
+                          alert("Could not get location. Please enter it manually.");
+                          setLoading(false);
+                        }
+                      );
+                    } else {
+                      alert("Geolocation is not supported by this browser.");
+                    }
+                  }}
+                  type="button"
+                >
+                  📍 Share Current Location
+                </button>
+              </div>
+              
+              <label className="lbl">Or Enter Manually (City, Country)</label>
+              <input
+                className="inp"
+                type="text"
+                placeholder="New York, USA"
+                value={locationName}
+                onChange={(e) => setLocationName(e.target.value)}
+              />
+            </>
+          )}
+
+          {step === 4 && (
             <>
               <label className="lbl">Interests (Comma separated)</label>
               <input
@@ -365,11 +466,6 @@ export default function OnboardingPage() {
                 value={interests}
                 onChange={(e) => setInterests(e.target.value)}
               />
-            </>
-          )}
-
-          {step === 4 && (
-            <>
               <label className="lbl">Vibe Tags (Comma separated)</label>
               <input
                 className="inp"
@@ -402,18 +498,24 @@ export default function OnboardingPage() {
             </>
           )}
 
-          <button className="btn" onClick={handleSaveAndContinue} disabled={loading || (step === 1 && !profilePic && !loading)}>
+          <button 
+            className="btn" 
+            onClick={handleSaveAndContinue} 
+            disabled={loading || (step === 1 && !profilePic && !loading) || (step === 3 && !locationName)}
+          >
             {loading ? <Loader2 size={18} className="animate-spin" /> : null}
             {loading ? "Saving..." : step === 5 ? "Complete Setup" : "Continue"}
           </button>
           
-          <button 
-            className="skip-btn" 
-            onClick={skipStep} 
-            disabled={loading}
-          >
-            Skip for now
-          </button>
+          {step !== 3 && (
+            <button 
+              className="skip-btn" 
+              onClick={skipStep} 
+              disabled={loading}
+            >
+              Skip for now
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -206,12 +206,40 @@ export default function ActivitiesPage() {
   const [myPlans, setMyPlans] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(false);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
-  const [topEvents, setTopEvents] = useState<any[]>([]);
+  const [topEvents, setTopEvents] = useState<any[]>(TOP_LIVE_EVENTS);
+  const [hobbyMeetups, setHobbyMeetups] = useState<Activity[]>([]);
   const [publicPlans, setPublicPlans] = useState<Activity[]>([]);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [planToDelete, setPlanToDelete] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [userPreferences, setUserPreferences] = useState<string[]>([]);
+
+  // Calculate frontend sorting based on preferences for top events
+  const getRelevance = (itemText: string) => {
+    if (!userPreferences.length) return 0;
+    const text = itemText.toLowerCase();
+    let score = 0;
+    userPreferences.forEach(pref => {
+      const words = pref.split(/[\s,]+/);
+      words.forEach(word => {
+        if (word.length > 2 && text.includes(word)) score++;
+      });
+    });
+    return score;
+  };
+
+  const sortedTopEvents = [...topEvents].sort((a, b) => {
+    const scoreA = getRelevance((a.title || "") + " " + (a.type || "") + " " + (a.location || ""));
+    const scoreB = getRelevance((b.title || "") + " " + (b.type || "") + " " + (b.location || ""));
+    return scoreB - scoreA;
+  });
+
+  const sortedCategories = [...EXPERIENCE_CATEGORIES].sort((a, b) => {
+    const scoreA = getRelevance(a.label + " " + a.vibe + " " + a.aiSuggestion);
+    const scoreB = getRelevance(b.label + " " + b.vibe + " " + b.aiSuggestion);
+    return scoreB - scoreA;
+  });
 
   useEffect(() => {
     const onRefresh = () => {
@@ -231,13 +259,23 @@ export default function ActivitiesPage() {
         setMyUserId(payload.userId || payload.id);
       } catch (e) {}
     }
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        const prefs = [...(user.interests || []), ...(user.vibe_tags || [])].map((p: string) => p.toLowerCase());
+        setUserPreferences(prefs);
+      } catch (e) {}
+    }
   }, []);
 
   useEffect(() => {
     const fetchHotEvents = async () => {
       try {
+        const token = localStorage.getItem("token");
+        const headers: any = token ? { Authorization: `Bearer ${token}` } : {};
         const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-        const res = await fetch(`${API}/ai/hot-events`);
+        const res = await fetch(`${API}/ai/hot-events`, { headers });
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
@@ -285,12 +323,20 @@ export default function ActivitiesPage() {
       if (!token) return;
       try {
         const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-        const res = await fetch(`${API}/activities?is_public=true&status=upcoming`, {
+        const res = await fetch(`${API}/suggestions`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
           const data = await res.json();
-          setPublicPlans(data);
+          setPublicPlans(data.activities || []);
+        }
+
+        const hobbyRes = await fetch(`${API}/activities?is_public=true&type=hobby`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (hobbyRes.ok) {
+          const hobbyData = await hobbyRes.json();
+          setHobbyMeetups(hobbyData || []);
         }
       } catch (err) {
         console.error("Failed to fetch public plans", err);
@@ -489,6 +535,7 @@ export default function ActivitiesPage() {
           object-fit: cover;
           z-index: 0;
           transition: transform 0.5s;
+          color: transparent;
         }
         .live-card:hover .live-img { transform: scale(1.05); }
         .live-overlay {
@@ -831,13 +878,13 @@ export default function ActivitiesPage() {
             className={`exp-tab ${activeTab === "discover" ? "active" : ""}`}
             onClick={() => setActiveTab("discover")}
           >
-            ✨ Start a Plan
+            ✨ Start a Loom
           </button>
           <button
             className={`exp-tab ${activeTab === "my_plans" ? "active" : ""}`}
             onClick={() => setActiveTab("my_plans")}
           >
-            📋 My Plans
+            📋 My Looms
           </button>
         </div>
 
@@ -882,6 +929,50 @@ export default function ActivitiesPage() {
                     </div>
                   </div>
                 ))
+              )}
+            </div>
+            <div className="exp-section-label" style={{ marginTop: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingRight: '20px' }}>
+              <div><span className="glow-icon">🎨</span> Hobbies based meetups</div>
+              <button onClick={() => router.push('/activities/create?type=hobby')} style={{ background: 'rgba(255,154,158,0.2)', color: '#ff9a9e', border: 'none', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '18px', paddingBottom: '2px' }}>+</button>
+            </div>
+            
+            <div className="live-scroll">
+              {isRefreshing ? (
+                [...Array(3)].map((_, i) => (
+                  <div key={`skel-hobby-${i}`} className="live-card-wrapper">
+                    <div className="live-card-category" style={{ width: '60px', height: '20px', background: 'rgba(255,255,255,0.05)' }} />
+                    <div className="live-card exp-skeleton" />
+                  </div>
+                ))
+              ) : hobbyMeetups.length > 0 ? (
+                hobbyMeetups.map((event) => (
+                  <div key={event.id} className="live-card-wrapper">
+                    <div className="live-card-category">
+                      {event.type || "Hobby"}
+                    </div>
+                    <div className="live-card" onClick={() => handleEventClick(event)}>
+                      <img src={event.banner || event.image || `https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&h=400&fit=crop`} alt={event.title} className="live-img" />
+                      <div 
+                        className="live-overlay" 
+                        style={{ background: `linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(255,154,158,0.4) 60%, transparent 100%)` }} 
+                      />
+                      <div className="live-badge" style={{ background: 'rgba(255, 154, 158, 0.9)', boxShadow: '0 4px 12px rgba(255, 154, 158, 0.4)' }}>
+                        <div className="live-badge-dot" style={{ animation: 'none' }} /> MEETUP
+                      </div>
+                      <div className="live-content">
+                        <h3 className="live-title">{event.title}</h3>
+                        <div className="live-meta">
+                          <span>📍 {event.location}</span>
+                          <span>⏰ {event.time || (new Date(event.date).toLocaleDateString() + ' ' + new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div style={{ padding: '20px', color: 'rgba(255,255,255,0.4)', fontSize: '13px', fontStyle: 'italic', width: '100%', textAlign: 'center' }}>
+                  No hobby meetups yet. Be the first to host one!
+                </div>
               )}
             </div>
 
@@ -979,10 +1070,9 @@ export default function ActivitiesPage() {
                 {myPlans.map((plan) => {
                   const d = new Date(plan.date);
                   const now = new Date();
-                  const end = plan.end_date ? new Date(plan.end_date) : new Date(d.getTime() + 24 * 60 * 60 * 1000);
-                  const isUpcoming = d > now;
-                  const isLive = now >= d && now <= end;
-                  const isPast = now > end;
+                  const isUpcoming = d > now && !plan.end_date;
+                  const isPast = !!plan.end_date;
+                  const isLive = !isUpcoming && !isPast;
                   const previews = plan.participant_previews || [];
 
                   return (

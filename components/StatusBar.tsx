@@ -217,9 +217,9 @@ export default function StatusBar({ friends, onStatusUpdate, currentUser }: Stat
 
         .sb-status-bubble {
           position: absolute;
-          top: -12px;
+          top: -48px;
           left: 50%;
-          transform: translateX(-50%) scale(0.8);
+          transform: translateX(-50%) translateY(-5px) scale(1);
           background: linear-gradient(135deg, rgba(52, 211, 153, 0.95), rgba(16, 185, 129, 0.95));
           backdrop-filter: blur(12px);
           padding: 6px 14px;
@@ -229,18 +229,13 @@ export default function StatusBar({ friends, onStatusUpdate, currentUser }: Stat
           color: #fff;
           white-space: nowrap;
           border: 1px solid rgba(255, 255, 255, 0.2);
-          opacity: 0;
+          opacity: 1;
           transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
           max-width: 140px;
           overflow: hidden;
           text-overflow: ellipsis;
           z-index: 100;
           box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
-        }
-        .sb-item:hover .sb-status-bubble {
-          opacity: 1;
-          top: -48px;
-          transform: translateX(-50%) translateY(-5px) scale(1);
         }
 
         .sb-reply-hint {

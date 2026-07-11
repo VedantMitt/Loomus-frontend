@@ -587,7 +587,6 @@ export default function FriendsPage() {
                             {user.name}
                           </Link>
                           <div style={{ color: "#888", fontSize: "13px", marginTop: "2px" }}>@{user.username}</div>
-                          {user.college && <div style={{ color: "#34d399", fontSize: "12px", marginTop: "4px", fontWeight: 600 }}>{user.college}</div>}
                         </div>
                         <Link href={`/profile/${user.username}`} style={{ padding: "8px 16px", background: "#3b82f6", color: "#fff", textDecoration: "none", borderRadius: "12px", fontWeight: 700, fontSize: "13px", transition: "0.2s" }}>
                           View

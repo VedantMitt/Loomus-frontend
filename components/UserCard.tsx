@@ -189,9 +189,6 @@ export default function UserCard({ user, index = 0 }: { user: User; index?: numb
           <div>
             <p className="dc-name">{user.name}</p>
             <p className="dc-username">@{user.username}</p>
-            <p className="dc-college">
-              {user.college}{user.year ? ` '${user.year.toString().slice(-2)}` : ""}
-            </p>
           </div>
         </Link>
 

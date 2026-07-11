@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
+import LocationAutocomplete from "./LocationAutocomplete";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -15,6 +16,10 @@ export default function Navbar() {
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isInvisible, setIsInvisible] = useState(false);
+  const [globalLocation, setGlobalLocation] = useState("");
+  
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [locationSearchVal, setLocationSearchVal] = useState("");
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -51,10 +56,26 @@ export default function Navbar() {
 
     checkUser();
 
+    checkUser();
+
+    const storedLoc = localStorage.getItem("global_location");
+    if (storedLoc) {
+      setGlobalLocation(storedLoc);
+    } else {
+      setGlobalLocation("Delhi, India");
+      localStorage.setItem("global_location", "Delhi, India");
+    }
+
     // Custom event listener for instant auth state updates without route changes
     window.addEventListener("auth-change", checkUser);
     return () => window.removeEventListener("auth-change", checkUser);
   }, [pathname]);
+
+  const handleGlobalLocationChange = (val: string) => {
+    setGlobalLocation(val);
+    localStorage.setItem("global_location", val);
+    window.dispatchEvent(new CustomEvent("global_location_change", { detail: val }));
+  };
 
   useEffect(() => {
     const fetchAlerts = async () => {
@@ -218,6 +239,34 @@ export default function Navbar() {
           -webkit-text-fill-color: transparent;
           background-clip: text;
           margin-left: 0.5px;
+        }
+
+        .nav-location-selector {
+          display: flex;
+          align-items: center;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 99px;
+          padding: 4px 12px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          margin-left: 20px;
+        }
+        .nav-location-selector:hover {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(244,114,182,0.4);
+        }
+        .nav-location-input {
+          background: transparent !important;
+          border: none !important;
+          color: white !important;
+          font-size: 13px !important;
+          outline: none !important;
+          width: 140px;
+          text-overflow: ellipsis;
+        }
+        .nav-location-input::placeholder {
+          color: rgba(255,255,255,0.4);
         }
 
         .nav-links {
@@ -429,9 +478,23 @@ export default function Navbar() {
 
       <div className={`nav-wrapper ${scrolled ? "scrolled" : ""}`}>
         <div className="nav-container">
-          <Link href="/" className="nav-logo">
-            Loom<span>us</span>
-          </Link>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <Link href="/" className="nav-logo">
+              Loom<span>us</span>
+            </Link>
+            <button className="nav-location-selector" onClick={() => setShowLocationModal(true)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6, color: '#f472b6', flexShrink: 0 }}>
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+              <span style={{ fontSize: 13, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>
+                {globalLocation}
+              </span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 6, color: 'rgba(255,255,255,0.5)', flexShrink: 0 }}>
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+          </div>
  
           <div className="nav-links">
             {navLinks.map((link) => (
@@ -637,9 +700,23 @@ export default function Navbar() {
       </div>
 
       <div className="mobile-top-nav">
-        <Link href="/" className="nav-logo" style={{ fontSize: "22px" }}>
-          Loom<span>us</span>
-        </Link>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <Link href="/" className="nav-logo" style={{ fontSize: "20px" }}>
+            Loom<span>us</span>
+          </Link>
+          <button style={{ display: 'flex', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => setShowLocationModal(true)}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 4, color: '#f472b6', flexShrink: 0 }}>
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100px', textAlign: 'left' }}>
+              {globalLocation}
+            </span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 2, color: 'rgba(255,255,255,0.5)', flexShrink: 0 }}>
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+        </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <Link href="/chat" className="mtn-btn">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -765,6 +842,61 @@ export default function Navbar() {
       </div>
 
       <div className="nav-spacer" />
+      
+      {showLocationModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }} onClick={() => setShowLocationModal(false)}>
+          <div style={{ background: 'rgba(13, 13, 17, 0.85)', backdropFilter: 'blur(40px)', width: '100%', maxWidth: '380px', borderRadius: '28px', padding: '28px', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 30px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1)' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ margin: 0, color: '#fff', fontSize: '20px', fontWeight: 800, fontFamily: "'Syne', sans-serif" }}>Set Location</h3>
+              <button onClick={() => setShowLocationModal(false)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#a8a29e', fontSize: '18px', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.color='#fff'} onMouseOut={e => e.currentTarget.style.color='#a8a29e'}>✕</button>
+            </div>
+            
+            <button 
+              onClick={() => {
+                handleGlobalLocationChange("Current Location");
+                setShowLocationModal(false);
+              }}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '14px', background: 'linear-gradient(145deg, rgba(244,114,182,0.15), rgba(192,132,252,0.1))', border: '1px solid rgba(244,114,182,0.3)', padding: '16px 20px', borderRadius: '20px', cursor: 'pointer', transition: 'all 0.3s ease', marginBottom: '24px', color: '#fff', fontWeight: 700, fontSize: '15px', boxShadow: '0 8px 24px rgba(244,114,182,0.15)' }}
+              onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(244,114,182,0.25)'; e.currentTarget.style.borderColor = 'rgba(244,114,182,0.5)'; }}
+              onMouseOut={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(244,114,182,0.15)'; e.currentTarget.style.borderColor = 'rgba(244,114,182,0.3)'; }}
+            >
+              <div style={{ background: 'rgba(244,114,182,0.2)', padding: '8px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f472b6' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </div>
+              Use current location
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
+              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>or search manually</div>
+              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
+            </div>
+
+            <div style={{ position: 'relative' }}>
+              <div style={{ position: 'absolute', left: '16px', top: '24px', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)', pointerEvents: 'none', zIndex: 10 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </div>
+              <LocationAutocomplete 
+                value={locationSearchVal} 
+                onChange={setLocationSearchVal}
+                onSelect={(val) => {
+                  handleGlobalLocationChange(val);
+                  setShowLocationModal(false);
+                  setLocationSearchVal("");
+                }}
+                placeholder="Search for your city..."
+                inputClassName="w-full bg-[rgba(255,255,255,0.03)] border border-white/10 rounded-2xl pl-[44px] pr-4 py-[14px] text-[15px] outline-none focus:border-[#c084fc] focus:bg-[rgba(255,255,255,0.06)] text-white transition-all placeholder-white/30"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

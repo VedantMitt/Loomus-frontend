@@ -20,18 +20,75 @@ export default function ChaptersPage() {
   const [chapters, setChapters] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [chapterToDelete, setChapterToDelete] = useState<string | null>(null);
+  const [snapMenuFor, setSnapMenuFor] = useState<string | null>(null);
+  const [uploadingChapId, setUploadingChapId] = useState<string | null>(null);
+
+  const handleQuickSnap = async (file: File, source: 'camera' | 'gallery', chapId: string) => {
+    setUploadingChapId(chapId);
+    setSnapMenuFor(null);
+    try {
+      const token = localStorage.getItem("token");
+      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      let lat = 0, lng = 0;
+      let locStr = "Unknown";
+      try {
+        const pos = await new Promise<GeolocationPosition>((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 3000 }));
+        lat = pos.coords.latitude; lng = pos.coords.longitude;
+        const geoRes = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`);
+        if (geoRes.ok) {
+          const geoData = await geoRes.json();
+          if (geoData.features?.[0]) locStr = geoData.features[0].place_name.split(',')[0];
+        }
+      } catch (e) {}
+
+      const ext = file.name.split('.').pop() || 'jpg';
+      const fname = `snap_${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+      const psRes = await fetch(`${API}/upload/presigned?filename=${fname}&contentType=${file.type}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!psRes.ok) throw new Error("Presigned URL failed");
+      const { url, key } = await psRes.json();
+      
+      const s3Res = await fetch(url, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
+      if (!s3Res.ok) throw new Error("S3 upload failed");
+      const fileUrl = `${process.env.NEXT_PUBLIC_S3_PUBLIC_URL}/${key}`;
+
+      const meta = { location: locStr, time: new Date().toISOString(), source };
+      const postRes = await fetch(`${API}/activities/${chapId}/submissions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ content_url: fileUrl, description: JSON.stringify(meta) })
+      });
+      if (!postRes.ok) throw new Error("Submit failed");
+      
+      alert("Snap added to scrapbook!");
+    } catch (err) {
+      console.error(err);
+      alert("Upload failed.");
+    } finally {
+      setUploadingChapId(null);
+    }
+  };
 
   useEffect(() => {
     const fetchChapters = async () => {
       try {
         const token = localStorage.getItem("token");
         const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-        // Fetch past activities the user joined
-        const res = await fetch(`${API}/activities?status=past&tab=my`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
+        const res = await fetch(`${API}/activities?tab=my`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
         if (res.ok) {
-          const data = await res.json();
+          const allData = await res.json();
+          const data = allData.map((c: any) => {
+            const isPast = !!c.end_date;
+            const isLive = !isPast;
+            return { ...c, _isLive: isLive };
+          });
+          
+          data.sort((a: any, b: any) => {
+            if (a._isLive && !b._isLive) return -1;
+            if (!a._isLive && b._isLive) return 1;
+            return new Date(b.date).getTime() - new Date(a.date).getTime();
+          });
           setChapters(data);
         }
       } catch (err) {
@@ -243,15 +300,26 @@ export default function ChaptersPage() {
               // Random rotation between -4deg and 4deg for scrapbook feel
               const rotation = (Math.random() * 8) - 4;
               
+              const isLive = (chap as any)._isLive;
               return (
                 <Link 
                   key={chap.id} 
                   href={`/scrapbook/${chap.id}`} 
-                  className="polaroid group"
-                  style={{ transform: `rotate(${rotation}deg)` }}
+                  className="polaroid group relative"
+                  style={{ 
+                    transform: `rotate(${rotation}deg)`,
+                    ...(isLive ? { boxShadow: '0 0 35px rgba(239, 68, 68, 0.4)', border: '1px solid rgba(239, 68, 68, 0.5)' } : {})
+                  }}
                 >
                   <div className="polaroid-tape"></div>
                   
+                  {isLive && (
+                    <div className="absolute top-2 left-3 z-20 flex items-center gap-2 bg-red-500/20 backdrop-blur-sm border border-red-500/50 text-red-100 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
+                      <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
+                      Live Now
+                    </div>
+                  )}
+
                   <button 
                     className="chap-delete"
                     onClick={(e) => {
@@ -266,8 +334,45 @@ export default function ChaptersPage() {
                   <div className="polaroid-img-wrapper">
                     <img src={bannerUrl} alt={chap.title} className="polaroid-img" />
                   </div>
-                  <div className="polaroid-caption">{chap.title}</div>
+                  <div className="polaroid-caption pr-12">{chap.title}</div>
                   <div className="polaroid-date">{formatDate(chap.date)} • {chap.member_count} Crew</div>
+
+                  {isLive && (
+                    <div className="absolute bottom-6 right-6 z-20 flex flex-col items-end" onClick={(e) => e.preventDefault()}>
+                      {snapMenuFor === chap.id && (
+                        <div className="mb-2 bg-[#111] border border-white/10 rounded-2xl p-2 flex flex-col gap-1 shadow-2xl animate-fade-in-up">
+                          <input type="file" accept="image/*" capture="environment" className="hidden" id={`cam-${chap.id}`} onChange={e => { if(e.target.files?.[0]) handleQuickSnap(e.target.files[0], 'camera', chap.id); }} />
+                          <input type="file" accept="image/*" className="hidden" id={`gal-${chap.id}`} onChange={e => { if(e.target.files?.[0]) handleQuickSnap(e.target.files[0], 'gallery', chap.id); }} />
+                          
+                          <label htmlFor={`cam-${chap.id}`} className="bg-pink-500/20 hover:bg-pink-500/40 text-pink-300 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-colors border border-pink-500/30">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                            Live Camera
+                          </label>
+                          <label htmlFor={`gal-${chap.id}`} className="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-colors border border-white/10">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                            Camera Roll
+                          </label>
+                        </div>
+                      )}
+                      
+                      <button
+                        className={`w-12 h-12 bg-pink-500 hover:bg-pink-600 rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(236,72,153,0.5)] transition-all ${uploadingChapId === chap.id ? 'opacity-80' : 'hover:scale-110 active:scale-95'}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (uploadingChapId === chap.id) return;
+                          setSnapMenuFor(snapMenuFor === chap.id ? null : chap.id);
+                        }}
+                        title="Snap a moment"
+                      >
+                        {uploadingChapId === chap.id ? (
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        ) : (
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                        )}
+                      </button>
+                    </div>
+                  )}
                 </Link>
               );
             })}

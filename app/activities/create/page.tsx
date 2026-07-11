@@ -46,6 +46,76 @@ export default function CreateActivityPage() {
   const [banner, setBanner] = useState<File | null>(null);
   const [isPublic, setIsPublic] = useState(false);
 
+  const [places, setPlaces] = useState<any[]>([]);
+  const [loadingPlaces, setLoadingPlaces] = useState(false);
+  const [currentCoords, setCurrentCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [searchCityName, setSearchCityName] = useState("");
+
+  const handleCitySearch = async (val: string) => {
+    setSearchCityName(val);
+    if (!val) return;
+    try {
+      setLoadingPlaces(true);
+      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const res = await fetch(`${API}/places/search?q=${encodeURIComponent(val)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCurrentCoords({ lat: data.lat, lng: data.lng });
+      }
+    } catch (err) {
+      console.warn(err);
+    } finally {
+      setLoadingPlaces(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleGlobalChange = (e: any) => {
+      handleCitySearch(e.detail);
+    };
+    window.addEventListener("global_location_change", handleGlobalChange);
+
+    const stored = localStorage.getItem("global_location");
+    if (stored) {
+      handleCitySearch(stored);
+    } else if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => setCurrentCoords({ lat: position.coords.latitude, lng: position.coords.longitude }),
+        (error) => setCurrentCoords({ lat: 28.6139, lng: 77.2090 })
+      );
+    } else {
+      setCurrentCoords({ lat: 28.6139, lng: 77.2090 });
+    }
+
+    return () => window.removeEventListener("global_location_change", handleGlobalChange);
+  }, []);
+
+  useEffect(() => {
+    if (!currentCoords || !categoryType) return;
+    const fetchPlaces = async () => {
+      try {
+        setLoadingPlaces(true);
+        const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        const res = await fetch(`${API}/places?type=${categoryType}&lat=${currentCoords.lat}&lng=${currentCoords.lng}`);
+        if (res.ok) {
+          const data = await res.json();
+          setPlaces(data.places || []);
+        }
+      } catch (err) {
+        console.warn(err);
+      } finally {
+        setLoadingPlaces(false);
+      }
+    };
+    fetchPlaces();
+  }, [currentCoords, categoryType]);
+
+  const handleSelectPlace = (place: any) => {
+    const formattedTitle = categoryType.charAt(0).toUpperCase() + categoryType.slice(1).replace("_", " ");
+    setTitle(`${formattedTitle} at ${place.name}`);
+    setLocation(place.name + ", " + place.location);
+  };
+
   // Set initial date and minimum allowed date
   useEffect(() => {
     const d = new Date();
@@ -91,6 +161,11 @@ export default function CreateActivityPage() {
   }, [friendSearch, step, API, token]);
 
   const createActivity = async () => {
+    if (createdId) {
+      setStep(2);
+      return;
+    }
+    
     if (!title.trim()) return setError("Enter a name for your plan");
     if (!date) return setError("Pick a date & time");
     if (!location.trim()) return setError("Add a location");
@@ -180,17 +255,124 @@ export default function CreateActivityPage() {
         .wiz-friend-name { font-size: 14px; font-weight: 600; color: #fff; }
         .wiz-friend-user { font-size: 12px; color: #666; }
         .wiz-invite-btn { padding: 6px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+        
+        .places-slider { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 20px; margin-bottom: 24px; scroll-snap-type: x mandatory; }
+        .places-slider::-webkit-scrollbar { height: 6px; }
+        .places-slider::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 6px; }
+        
+        .place-slide { 
+          flex: 0 0 240px; 
+          height: 300px;
+          scroll-snap-align: start; 
+          border-radius: 20px; 
+          overflow: hidden; 
+          cursor: pointer; 
+          transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+          position: relative;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+          border: 1px solid rgba(255,255,255,0.1);
+        }
+        .place-slide:hover { 
+          border-color: rgba(192,132,252,0.6); 
+          transform: translateY(-6px) scale(1.02); 
+          box-shadow: 0 20px 40px rgba(192,132,252,0.25); 
+        }
+        .place-slide-img { 
+          position: absolute;
+          inset: 0;
+          width: 100%; 
+          height: 100%; 
+          object-fit: cover; 
+          z-index: 1;
+          transition: transform 0.6s ease;
+        }
+        .place-slide:hover .place-slide-img {
+          transform: scale(1.08);
+        }
+        .place-slide-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
+          z-index: 2;
+        }
+        .place-slide-info { 
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          padding: 20px; 
+          z-index: 3;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .place-slide-name { 
+          font-family: 'Syne', sans-serif;
+          font-size: 20px; 
+          font-weight: 800; 
+          color: #fff; 
+          margin: 0; 
+          white-space: normal;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden; 
+          line-height: 1.1;
+          text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+        }
+        .place-slide-meta { 
+          display: flex; 
+          align-items: center;
+          gap: 8px;
+        }
+        .place-slide-badge {
+          background: rgba(255,255,255,0.15);
+          backdrop-filter: blur(8px);
+          padding: 4px 10px;
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 700;
+          color: #fff;
+          border: 1px solid rgba(255,255,255,0.1);
+        }
+        .place-slide-rating {
+          color: #f59e0b;
+          font-weight: 800;
+          font-size: 12px;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        .place-slide-location {
+          font-size: 12px;
+          color: rgba(255,255,255,0.6);
+          white-space: nowrap; 
+          overflow: hidden; 
+          text-overflow: ellipsis;
+        }
+
         @media (max-width: 640px) { .wiz-card { padding: 24px; } }
       `}</style>
 
       <div className="wiz-card">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <h1 className="wiz-title">
-            {step === 1 && "Plan Your Experience"}
-            {step === 2 && "Invite Friends"}
-            {step === 3 && "Discuss & Finalize"}
-            {step === 4 && "Capture Memories"}
-          </h1>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {step > 1 && (
+              <button 
+                onClick={() => setStep(step - 1)} 
+                style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+                title="Go back"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </button>
+            )}
+            <h1 className="wiz-title">
+              {step === 1 && "Plan Your Experience"}
+              {step === 2 && "Invite Friends"}
+              {step === 3 && "Discuss & Finalize"}
+              {step === 4 && "Capture Memories"}
+            </h1>
+          </div>
           <Link href="/activities" style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.4)", textDecoration: "none" }}>✕</Link>
         </div>
 
@@ -220,6 +402,38 @@ export default function CreateActivityPage() {
           <>
             {categoryType && AI_SUGGESTIONS[categoryType] && (
               <div className="wiz-ai-badge">✨ AI-suggested plan for {categoryType.replace("_", " ")}</div>
+            )}
+
+            {places.length > 0 && (
+              <div className="wiz-group" style={{ marginBottom: 32 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <label className="wiz-label" style={{ margin: 0, fontSize: '18px', color: '#fff' }}>Suggested Spots Near You</label>
+                  {loadingPlaces && <span style={{ fontSize: 12, color: '#c084fc', fontWeight: 'bold' }}>Finding spots...</span>}
+                </div>
+                <div className="places-slider">
+                  {places.map((place, idx) => (
+                    <div key={place.id || idx} className="place-slide" onClick={() => handleSelectPlace(place)}>
+                      <img 
+                        src={place.image} 
+                        alt={place.name} 
+                        className="place-slide-img" 
+                        onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&h=400&fit=crop'; }} 
+                      />
+                      <div className="place-slide-overlay" />
+                      <div className="place-slide-info">
+                        <h4 className="place-slide-name">{place.name}</h4>
+                        <div className="place-slide-meta">
+                          <span className="place-slide-badge">{place.opening_hours}</span>
+                          <span className="place-slide-rating">⭐ {place.rating}</span>
+                        </div>
+                        <div className="place-slide-location">
+                          📍 {place.location}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
 
             <div className="wiz-group">
@@ -281,7 +495,7 @@ export default function CreateActivityPage() {
             </div>
 
             <button className="wiz-btn" onClick={createActivity} disabled={submitting}>
-              {submitting ? "Creating..." : "Create & Invite Friends →"}
+              {createdId ? "Next →" : (submitting ? "Creating..." : "Create & Invite Friends →")}
             </button>
           </>
         )}
@@ -332,14 +546,9 @@ export default function CreateActivityPage() {
               </div>
             )}
 
-            <div style={{ display: "flex", gap: 12 }}>
-              <button className="wiz-btn wiz-btn-secondary" style={{ flex: 1 }} onClick={() => setStep(3)}>
-                Skip for now
-              </button>
-              <button className="wiz-btn" style={{ flex: 1 }} onClick={() => setStep(3)}>
-                Next: Discuss →
-              </button>
-            </div>
+            <button className="wiz-btn" onClick={() => setStep(3)}>
+              Next: Discuss →
+            </button>
           </>
         )}
 
@@ -355,9 +564,6 @@ export default function CreateActivityPage() {
               <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
                 <button className="wiz-btn" style={{ width: "auto", padding: "14px 32px" }} onClick={goToActivity}>
                   Open Plan Page 💬
-                </button>
-                <button className="wiz-btn wiz-btn-secondary" style={{ width: "auto", padding: "14px 32px" }} onClick={() => router.push("/activities")}>
-                  Done ✓
                 </button>
               </div>
             </div>

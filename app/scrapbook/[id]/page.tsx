@@ -66,6 +66,29 @@ export default function ScrapbookStoryPage() {
     setSharing(false);
   };
 
+  const handleSetCover = async (content_url: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/activities/${id}/cover`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ cover_url: content_url })
+      });
+      if (res.ok) {
+        alert("Cover image updated!");
+        setActivity(prev => prev ? { ...prev, banner: content_url } : prev);
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to update cover.");
+      }
+    } catch (e) {
+      alert("Error setting cover");
+    }
+  };
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -113,26 +136,6 @@ export default function ScrapbookStoryPage() {
             <p className="text-xs text-gray-400">Scrapbook Story</p>
           </div>
         </div>
-        {activity.host_id === myUserId && (
-          activity.is_shared ? (
-            <button 
-              onClick={handleUnshare}
-              disabled={sharing}
-              className="text-xs font-bold px-3 py-1.5 rounded-full bg-pink-500/10 text-pink-400 border border-pink-500/20 hover:bg-pink-500 hover:text-white transition-all disabled:opacity-50"
-              title="Click to remove from feed"
-            >
-              {sharing ? 'Removing...' : '✓ Shared to Feed'}
-            </button>
-          ) : (
-            <button 
-              onClick={() => router.push(`/activities/${id}/share`)}
-              disabled={sharing}
-              className="text-xs font-bold px-4 py-2 rounded-full bg-white text-black hover:bg-gray-200 transition-colors flex items-center gap-2 disabled:opacity-50"
-            >
-              Post to Feed
-            </button>
-          )
-        )}
       </div>
 
       <div className="max-w-2xl mx-auto p-4 md:p-8 relative z-10 pb-32">
@@ -179,8 +182,19 @@ export default function ScrapbookStoryPage() {
                             {meta?.note}
                           </p>
                         ) : (
-                          <div className="relative rounded-xl overflow-hidden border border-white/10 shadow-lg">
+                          <div 
+                            className="relative rounded-xl overflow-hidden border border-white/10"
+                            style={meta?.source === 'gallery' ? { boxShadow: '0 0 35px rgba(80, 125, 42, 0.8)' } : meta?.source === 'camera' ? { boxShadow: '0 0 35px rgba(239, 68, 68, 0.8)' } : { boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' }}
+                          >
                             <img src={s.content_url.startsWith('/uploads') ? `${API}${s.content_url}` : s.content_url} className="w-full max-h-[500px] object-cover" alt="Memory" />
+                            {myUserId === activity.host_id && (
+                              <button 
+                                onClick={() => handleSetCover(s.content_url)}
+                                className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 text-xs font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                Set as Cover
+                              </button>
+                            )}
                             {meta?.location && (
                               <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
                                 <span className="text-xs font-bold text-pink-300">📍 {meta.location}</span>

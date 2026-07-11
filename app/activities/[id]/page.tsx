@@ -94,16 +94,17 @@ export default function LoomusActivityPage() {
   const [loading, setLoading] = useState(true);
   const [isHost, setIsHost] = useState(false);
   const [activeTab, setActiveTab] = useState<"plan" | "crew" | "discussion" | "capture">("plan");
-  const [noteText, setNoteText] = useState("");
+  
   const [isWritingNote, setIsWritingNote] = useState(false);
+  const [noteText, setNoteText] = useState("");
 
   // Plan Edit State
   const [isEditingPlan, setIsEditingPlan] = useState(false);
   const [editDate, setEditDate] = useState("");
-  const [editEndDate, setEditEndDate] = useState("");
-  const [editIsPublic, setEditIsPublic] = useState(false);
-  const [minDate, setMinDate] = useState("");
+  const [editIsPublic, setEditIsPublic] = useState(true);
   const [editItinerary, setEditItinerary] = useState<any[]>([]);
+  const [editDescription, setEditDescription] = useState("");
+  const [minDate, setMinDate] = useState("");
   const [savingPlan, setSavingPlan] = useState(false);
 
   useEffect(() => {
@@ -116,7 +117,7 @@ export default function LoomusActivityPage() {
   const possibleDays = useMemo(() => {
     if (!editDate) return [];
     const start = new Date(editDate);
-    const end = editEndDate ? new Date(editEndDate) : new Date(editDate);
+    const end = new Date(editDate);
     const days = [];
     let current = new Date(start);
     current.setHours(0,0,0,0);
@@ -131,7 +132,7 @@ export default function LoomusActivityPage() {
       count++;
     }
     return days;
-  }, [editDate, editEndDate]);
+  }, [editDate]);
 
   // Inputs
   const [commentText, setCommentText] = useState("");
@@ -167,9 +168,9 @@ export default function LoomusActivityPage() {
         setActivity(aData);
         setIsHost(aData.host_user_id === myUserId);
         if (aData.date) setEditDate(new Date(aData.date).toISOString().slice(0,16));
-        if (aData.end_date) setEditEndDate(new Date(aData.end_date).toISOString().slice(0,16));
         if (aData.is_public !== undefined) setEditIsPublic(aData.is_public);
         if (aData.itinerary) setEditItinerary(aData.itinerary);
+        if (aData.description) setEditDescription(aData.description);
 
         const [sRes, cRes, mRes, anRes, pRes] = await Promise.all([
           fetch(`${API}/activities/${id}/submissions`),
@@ -224,9 +225,9 @@ export default function LoomusActivityPage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ 
           date: new Date(editDate).toISOString(),
-          end_date: editEndDate ? new Date(editEndDate).toISOString() : null,
           itinerary: editItinerary,
-          is_public: editIsPublic
+          is_public: editIsPublic,
+          description: editDescription
         })
       });
       if (res.ok) {
@@ -239,7 +240,7 @@ export default function LoomusActivityPage() {
   };
 
   const handleEndPlan = async () => {
-    if (!confirm("Are you sure you want to end this plan right now?")) return;
+    if (!confirm("Are you sure you want to complete this loom right now?")) return;
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`${API}/activities/${id}`, {
@@ -497,57 +498,71 @@ export default function LoomusActivityPage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 -mt-2 relative z-10">
-        
-        {/* RSVP & Crew Preview */}
-        <div className="glass-panel rounded-2xl p-4 md:p-6 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="flex -space-x-3">
-              {goingMembers.slice(0, 5).map((m, i) => (
-                <img key={i} src={m.profile_pic?.startsWith('/uploads') ? `${API}${m.profile_pic}` : m.profile_pic || `https://ui-avatars.com/api/?name=${m.name}&background=111&color=fff`} className="w-10 h-10 rounded-full border-2 border-[#141414] object-cover" alt={m.name} />
-              ))}
-              {goingMembers.length > 5 && (
-                <div className="w-10 h-10 rounded-full border-2 border-[#141414] bg-white/10 flex items-center justify-center text-xs font-bold">
-                  +{goingMembers.length - 5}
-                </div>
-              )}
-              {goingMembers.length === 0 && <div className="text-sm text-gray-500 italic ml-2">No one joined yet...</div>}
-            </div>
-            {goingMembers.length > 0 && <div className="text-sm font-semibold">{goingMembers.length} Going</div>}
-          </div>
 
-          {!isPastPlan && (
-            <div className="flex gap-3">
-              <button 
-                onClick={() => {
-                  if (activity.my_rsvp === 'going') {
-                    setShowLeaveModal(true);
-                  } else {
-                    handleRsvp('going');
-                  }
-                }}
-                className={`px-6 py-2.5 rounded-xl font-bold transition-all ${activity.my_rsvp === 'going' ? 'bg-white/10 text-white hover:bg-white/20 hover:text-red-400' : 'bg-pink-500 text-white shadow-lg shadow-pink-500/20 hover:scale-105'}`}
-              >
-                {activity.my_rsvp === 'going' ? "I'm Out 🏃" : "Join Plan"}
-              </button>
-              <button 
-                onClick={() => setShowInviteModal(true)}
-                className="px-6 py-2.5 rounded-xl font-bold bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
-              >
-                💌 Invite
-              </button>
-            </div>
-          )}
-        </div>
+        <input 
+          type="file" 
+          accept="image/*"
+          capture="environment"
+          onChange={(e) => {
+            if (e.target.files?.[0]) {
+              setFile(e.target.files[0]);
+            }
+          }} 
+          className="hidden" 
+          id="camera-upload" 
+        />
+        {!isPastPlan && (
+          <div className="glass-panel rounded-2xl p-4 mb-6 flex flex-col md:flex-row md:items-center gap-4">
+             <div className="flex items-center gap-3">
+               {!file && !isWritingNote ? (
+                 <>
+                   <label htmlFor="camera-upload" className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2.5 px-5 rounded-xl cursor-pointer transition-all shadow-md flex items-center gap-2">
+                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                     Snap a Moment
+                   </label>
+                   <button onClick={() => setIsWritingNote(true)} className="bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold py-2.5 px-5 rounded-xl transition-all flex items-center gap-2">
+                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                     Note
+                   </button>
+                 </>
+               ) : isWritingNote ? (
+                 <div className="flex items-center gap-3 w-full">
+                   <input 
+                     placeholder="Write your note..."
+                     className="flex-1 bg-black/50 border border-pink-500/50 rounded-xl px-4 py-2.5 text-white outline-none focus:border-pink-500 text-sm"
+                     value={noteText}
+                     onChange={e => setNoteText(e.target.value)}
+                     autoFocus
+                   />
+                   <button onClick={handleCapturePost} disabled={submitting || !noteText.trim()} className="bg-pink-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm hover:bg-pink-600">
+                     {submitting ? "..." : "Post"}
+                   </button>
+                   <button onClick={() => { setIsWritingNote(false); setNoteText(""); }} className="bg-white/5 border border-white/10 text-white font-bold py-2.5 px-4 rounded-xl text-sm hover:bg-white/10">Cancel</button>
+                 </div>
+               ) : (
+                 <div className="flex items-center gap-3">
+                   <div className="w-10 h-10 rounded-lg overflow-hidden border border-pink-500/50">
+                     <img src={URL.createObjectURL(file!)} className="w-full h-full object-cover" alt="Preview" />
+                   </div>
+                   <button onClick={handleCapturePost} disabled={submitting} className="bg-pink-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm hover:bg-pink-600">
+                     {submitting ? "..." : "Post"}
+                   </button>
+                   <button onClick={() => setFile(null)} className="bg-white/5 border border-white/10 text-white font-bold py-2.5 px-4 rounded-xl text-sm hover:bg-white/10">Cancel</button>
+                 </div>
+               )}
+             </div>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-2 border-b border-white/10 mb-6 overflow-x-auto hide-scroll">
-          {["plan", "crew", "discussion", "capture"].map(t => (
+          {["plan", "crew", "discussion"].map(t => (
             <button 
               key={t}
               onClick={() => setActiveTab(t as any)}
               className={`tab-btn capitalize ${activeTab === t ? 'active' : ''}`}
             >
-              {t === 'capture' ? '📸 Scrapbook' : t === 'plan' ? '📝 Plan' : t === 'crew' ? '🫂 Crew' : '💬 Discussion'}
+              {t === 'plan' ? '📝 Plan' : t === 'crew' ? '🫂 Crew' : '💬 Discussion'}
             </button>
           ))}
         </div>
@@ -564,7 +579,7 @@ export default function LoomusActivityPage() {
                   {isHost && !isEditingPlan && !isPastPlan && (
                     <div className="flex gap-2">
                       <button onClick={() => setIsEditingPlan(true)} className="bg-white/10 hover:bg-white/20 text-xs font-bold px-3 py-1.5 rounded-lg transition-all">Edit Plan</button>
-                      <button onClick={handleEndPlan} className="bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-xs font-bold px-3 py-1.5 rounded-lg transition-all border border-orange-500/20 hover:border-orange-500/50">End Plan</button>
+                      <button onClick={handleEndPlan} className="bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-xs font-bold px-3 py-1.5 rounded-lg transition-all border border-orange-500/20 hover:border-orange-500/50">End Loom</button>
                     </div>
                   )}
                 </div>
@@ -572,14 +587,20 @@ export default function LoomusActivityPage() {
                 {isEditingPlan ? (
                   <div className="space-y-4 mb-4">
                     <div className="grid grid-cols-2 gap-4">
-                       <div className="flex-1">
+                      <div className="col-span-2">
                         <label className="text-xs text-white/50 mb-1 block">Start Date/Time</label>
                         <input type="datetime-local" value={editDate} min={minDate} onChange={e => setEditDate(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-pink-500" />
                       </div>
-                      <div className="flex-1">
-                        <label className="text-xs text-white/50 mb-1 block">End Date/Time (Optional)</label>
-                        <input type="datetime-local" value={editEndDate} min={minDate} onChange={e => setEditEndDate(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-pink-500" />
-                      </div>
+                    </div>
+                    
+                    <div className="mb-4">
+                      <label className="text-xs text-white/50 mb-1 block">Description</label>
+                      <textarea 
+                        value={editDescription} 
+                        onChange={e => setEditDescription(e.target.value)} 
+                        className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-pink-500 min-h-[100px] text-white"
+                        placeholder="Describe the vibe, the plan, the energy..."
+                      />
                     </div>
                     
                     <div>
@@ -804,114 +825,14 @@ export default function LoomusActivityPage() {
               )}
             </div>
           )}
-          {/* CAPTURE TAB */}
-          {activeTab === 'capture' && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="glass-panel rounded-2xl p-6 mb-6 flex flex-col items-center justify-center text-center border-dashed border-2 border-white/10 hover:border-pink-500/50 transition-all relative overflow-hidden">
-                <div className="absolute top-4 right-4 z-10">
-                  {!activity.is_shared ? (
-                    <Link 
-                      href={`/activities/${activity.id}/share`}
-                      className="text-xs font-bold px-4 py-2 rounded-lg bg-pink-500 hover:bg-pink-600 text-white shadow-[0_0_15px_rgba(236,72,153,0.4)] transition-all flex items-center gap-2"
-                    >
-                      <span>↗</span> Share to Feed
-                    </Link>
-                  ) : (
-                    <button 
-                      disabled={true}
-                      className="text-xs font-bold px-4 py-2 rounded-lg transition-all bg-green-500/20 text-green-400 border border-green-500/30 cursor-default"
-                    >
-                      ✓ Shared to Feed
-                    </button>
-                  )}
-                </div>
-                <div className="text-4xl mb-3 mt-4">📸</div>
-                <h3 className="syne font-bold text-xl mb-1 text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-500">
-                  Chapter: {activity.title}
-                </h3>
-                <p className="text-xs text-gray-400 mb-4 max-w-sm">Live camera only. Capture the vibe, right here, right now.</p>
-                <input 
-                  type="file" 
-                  accept="image/*"
-                  capture="environment"
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) {
-                      setFile(e.target.files[0]);
-                    }
-                  }} 
-                  className="hidden" 
-                  id="camera-upload" 
-                />
-                {(() => {
-                  const isFinished = activity.end_date ? new Date(activity.end_date).getTime() < new Date().getTime() : false;
-                  
-                  if (isFinished) {
-                    return (
-                      <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10">
-                        <p className="text-sm font-bold text-gray-300 mb-1">🏁 Plan Finished</p>
-                        <p className="text-xs text-gray-500">Camera and notes are disabled because this plan has ended.</p>
-                      </div>
-                    );
-                  }
+        </div>
 
-                  if (!file && !isWritingNote) {
-                    return (
-                      <div className="flex items-center gap-4 mt-2">
-                        <label htmlFor="camera-upload" className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-full cursor-pointer transition-all shadow-[0_0_20px_rgba(236,72,153,0.3)] hover:shadow-[0_0_30px_rgba(236,72,153,0.5)] hover:scale-105 active:scale-95 flex items-center gap-2">
-                          <span className="text-xl">🔴</span> Snap a Moment
-                        </label>
-                        <button onClick={() => setIsWritingNote(true)} className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-6 rounded-full transition-all flex items-center gap-2">
-                          📝 Note
-                        </button>
-                      </div>
-                    );
-                  }
-
-                  if (isWritingNote) {
-                    return (
-
-                      <div className="flex flex-col items-center gap-4 w-full">
-                        <textarea 
-                          placeholder="Write your scrapbook note here..."
-                          className="w-full max-w-[300px] h-[150px] bg-black/50 border border-pink-500/50 rounded-xl p-4 text-white resize-none outline-none focus:border-pink-500"
-                          value={noteText}
-                          onChange={e => setNoteText(e.target.value)}
-                          autoFocus
-                        />
-                        <div className="flex items-center gap-3">
-                          <button onClick={handleCapturePost} disabled={submitting || !noteText.trim()} className="bg-pink-500 text-white font-bold py-2 px-6 rounded-full text-sm hover:bg-pink-600 shadow-[0_0_15px_rgba(236,72,153,0.4)] disabled:opacity-50 disabled:cursor-not-allowed">
-                            {submitting ? "Processing..." : "Post Note"}
-                          </button>
-                          <button onClick={() => { setIsWritingNote(false); setNoteText(""); }} className="bg-white/10 text-white font-bold py-2 px-4 rounded-full text-sm hover:bg-white/20">Cancel</button>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div className="flex flex-col items-center gap-4 w-full">
-                      <div className="relative w-full max-w-[200px] aspect-[3/4] rounded-xl overflow-hidden border-2 border-pink-500/50">
-                        <img src={URL.createObjectURL(file!)} className="w-full h-full object-cover" alt="Preview" />
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <button onClick={handleCapturePost} disabled={submitting} className="bg-pink-500 text-white font-bold py-2 px-6 rounded-full text-sm hover:bg-pink-600 shadow-[0_0_15px_rgba(236,72,153,0.4)]">
-                          {submitting ? "Uploading..." : "Post to Scrapbook"}
-                        </button>
-                        <button onClick={() => setFile(null)} className="bg-white/10 text-white font-bold py-2 px-4 rounded-full text-sm hover:bg-white/20">Cancel</button>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-
-              <div className="scrapbook-grid">
-                {submissions.length === 0 ? (
-                  <div className="col-span-full py-12 text-center text-gray-500 text-sm flex flex-col items-center gap-2">
-                    <span className="text-3xl">🎞️</span>
-                    <span>Chapter is empty. Snap some memories.</span>
-                  </div>
-                ) : (
-                  submissions.map((s, i) => {
+        {/* Global Scrapbook Feed */}
+        {submissions.length > 0 && (
+          <div className="mt-8 pt-8 border-t border-white/10">
+            <h3 className="syne text-xl font-bold text-white mb-6">📸 Chapter Memories</h3>
+            <div className="scrapbook-grid">
+              {submissions.map((s, i) => {
                     let meta: any = null;
                     try {
                       if (s.description && s.description.startsWith('{')) {
@@ -964,13 +885,10 @@ export default function LoomusActivityPage() {
                         )}
                       </div>
                     );
-                  })
-                )}
-              </div>
+                  })}
             </div>
-          )}
-
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Invite Modal */}

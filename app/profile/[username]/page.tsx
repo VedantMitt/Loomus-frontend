@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { Settings } from "lucide-react";
 
 type User = {
   id: string;
@@ -14,6 +15,18 @@ type User = {
   status_updated_at?: string;
   friends_if?: string;
   profile_pic?: string;
+  followers_count?: number;
+  chapters_count?: number;
+  looms_count?: number;
+};
+
+type Snap = {
+  id: string;
+  content_url: string;
+  description: string;
+  created_at: string;
+  activity_title?: string;
+  activity_id?: string;
 };
 
 export default function ProfilePage() {
@@ -21,6 +34,9 @@ export default function ProfilePage() {
   const router = useRouter();
 
   const [user, setUser] = useState<User | null>(null);
+  const [snaps, setSnaps] = useState<Snap[]>([]);
+  const [chapters, setChapters] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<"posts" | "chapters">("posts");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [friendStatus, setFriendStatus] = useState<"none" | "friends" | "request_sent" | "request_received" | "loading">("loading");
@@ -40,20 +56,36 @@ export default function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    async function fetchUser() {
+    async function fetchData() {
       try {
         const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-        const res = await fetch(`${API}/users/${username}`);
-        if (!res.ok) throw new Error("User not found");
-        const data = await res.json();
-        setUser(data);
+        const [userRes, snapsRes, chaptersRes] = await Promise.all([
+          fetch(`${API}/users/${username}`),
+          fetch(`${API}/users/${username}/snaps`),
+          fetch(`${API}/users/${username}/chapters`)
+        ]);
+        
+        if (!userRes.ok) throw new Error("User not found");
+        
+        const userData = await userRes.json();
+        setUser(userData);
+
+        if (snapsRes.ok) {
+          const snapsData = await snapsRes.json();
+          setSnaps(snapsData);
+        }
+
+        if (chaptersRes.ok) {
+          const chaptersData = await chaptersRes.json();
+          setChapters(chaptersData);
+        }
       } catch (err) {
         console.error("Profile fetch failed:", err);
       } finally {
         setLoading(false);
       }
     }
-    fetchUser();
+    fetchData();
   }, [username]);
 
   // Check friendship status
@@ -228,7 +260,7 @@ export default function ProfilePage() {
         .profile-header {
           display: flex;
           flex-direction: row;
-          align-items: center;
+          align-items: flex-start;
           gap: 20px;
           padding: 24px;
           background: linear-gradient(145deg, rgba(40, 40, 40, 0.6), rgba(15, 15, 15, 0.8));
@@ -345,6 +377,21 @@ export default function ProfilePage() {
             <h1 style={{ fontSize: "20px", fontWeight: 700, margin: 0 }}>{user.name}</h1>
             <p style={{ color: "#666", fontSize: "13px", marginTop: "2px" }}>@{user.username}</p>
 
+            <div style={{ display: 'flex', gap: '20px', marginTop: '12px', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '16px', fontWeight: 700, color: '#fff', lineHeight: 1 }}>{user.followers_count || 0}</span>
+                <span style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '4px' }}>Followers</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '16px', fontWeight: 700, color: '#fff', lineHeight: 1 }}>{user.chapters_count || 0}</span>
+                <span style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '4px' }}>Chapters</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '16px', fontWeight: 700, color: '#fff', lineHeight: 1 }}>{user.looms_count || 0}</span>
+                <span style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '4px' }}>Looms</span>
+              </div>
+            </div>
+
             {user.bio && (
               <p style={{ color: "#999", fontSize: "13px", marginTop: "4px", maxWidth: "400px" }}>
                 {user.bio}
@@ -352,21 +399,40 @@ export default function ProfilePage() {
             )}
             <div style={{ marginTop: "10px", display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "flex-start" }}>
               {isOwnProfile ? (
-                <button
-                  onClick={() => router.push("/profile/edit")}
-                  style={{
-                    padding: "8px 20px",
-                    borderRadius: "8px",
-                    background: "#ffffff",
-                    color: "#000",
-                    border: "none",
-                    fontWeight: 600,
-                    fontSize: "13px",
-                    cursor: "pointer",
-                  }}
-                >
-                  Edit Profile
-                </button>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <button
+                    onClick={() => router.push("/profile/edit")}
+                    style={{
+                      padding: "8px 20px",
+                      borderRadius: "8px",
+                      background: "#ffffff",
+                      color: "#000",
+                      border: "none",
+                      fontWeight: 600,
+                      fontSize: "13px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Edit Profile
+                  </button>
+                  <button
+                    onClick={() => router.push("/preferences")}
+                    style={{
+                      padding: "8px",
+                      borderRadius: "8px",
+                      background: "#222",
+                      color: "#fff",
+                      border: "none",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                    title="My Preferences"
+                  >
+                    <Settings size={18} />
+                  </button>
+                </div>
               ) : (
                 <>
                   {friendStatus === "loading" ? (
@@ -422,64 +488,113 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Current Status */}
-        <div className="profile-card">
-          <div className="section-title">📡 Current Status</div>
-          {user.current_status ? (
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-              <div className="status-pill">
-                <div className="status-dot" />
-                {user.current_status}
+        {/* Tabs */}
+        <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', marginTop: '24px' }}>
+          <button 
+            onClick={() => setActiveTab('posts')}
+            style={{ 
+              flex: 1, padding: '12px', background: 'transparent', border: 'none', 
+              color: activeTab === 'posts' ? '#fff' : '#888',
+              fontWeight: activeTab === 'posts' ? 'bold' : 'normal',
+              borderBottom: activeTab === 'posts' ? '2px solid #fff' : '2px solid transparent',
+              cursor: 'pointer', transition: 'all 0.2s'
+            }}
+          >
+            Posts
+          </button>
+          <button 
+            onClick={() => setActiveTab('chapters')}
+            style={{ 
+              flex: 1, padding: '12px', background: 'transparent', border: 'none', 
+              color: activeTab === 'chapters' ? '#fff' : '#888',
+              fontWeight: activeTab === 'chapters' ? 'bold' : 'normal',
+              borderBottom: activeTab === 'chapters' ? '2px solid #fff' : '2px solid transparent',
+              cursor: 'pointer', transition: 'all 0.2s'
+            }}
+          >
+            Chapters
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        <div style={{ marginTop: "2px" }}>
+          {activeTab === 'posts' && (
+            snaps.length > 0 ? (
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: "2px"
+              }}>
+                {snaps.map((snap) => (
+                  <div key={snap.id} style={{
+                    aspectRatio: "1/1",
+                    background: "#222",
+                    position: "relative",
+                    cursor: "pointer",
+                    overflow: "hidden"
+                  }} onClick={() => router.push(`/profile/${username}/feed#${snap.id}`)}>
+                    {snap.content_url.endsWith('.mp4') ? (
+                      <video
+                        src={snap.content_url.startsWith('http') ? snap.content_url : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${snap.content_url}`}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        muted
+                        loop
+                        autoPlay
+                        playsInline
+                      />
+                    ) : (
+                      <img 
+                        src={snap.content_url.startsWith('http') ? snap.content_url : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${snap.content_url}`}
+                        alt={snap.description || "Snap"}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    )}
+                  </div>
+                ))}
               </div>
-              {user.status_updated_at && (
-                <span style={{ fontSize: "11px", color: "#555" }}>
-                  {(() => {
-                    const hoursLeft = Math.max(0, 24 - Math.floor((Date.now() - new Date(user.status_updated_at).getTime()) / 3600000));
-                    return hoursLeft > 0 ? `${hoursLeft}h left` : "expiring soon";
-                  })()}
-                </span>
-              )}
-            </div>
-          ) : (
-            <p className="empty-text">No status set</p>
+            ) : (
+              <div style={{ textAlign: "center", padding: "40px 20px", color: "#666" }}>
+                <p style={{ fontSize: "14px" }}>No snaps posted yet</p>
+              </div>
+            )
           )}
-        </div>
 
-        {/* I'm into... */}
-        <div className="profile-card">
-          <div className="section-title">🎯 I'm into...</div>
-          <div>
-            {user.interests?.length ? (
-              user.interests.map((item, i) => (
-                <span key={i} className="tag tag-blue">{item}</span>
-              ))
+          {activeTab === 'chapters' && (
+            chapters.length > 0 ? (
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gap: "16px",
+                padding: "16px",
+                background: "rgba(255,255,255,0.02)"
+              }}>
+                {chapters.map((chapter, i) => {
+                  const rotate = (i % 5) - 2;
+                  return (
+                    <div key={chapter.id} onClick={() => router.push(`/scrapbook/${chapter.id}`)} style={{
+                      background: '#fff', padding: '8px 8px 30px', borderRadius: '4px', 
+                      boxShadow: '0 8px 16px rgba(0,0,0,0.4)', cursor: 'pointer',
+                      transform: `rotate(${rotate}deg)`,
+                      transition: 'transform 0.2s',
+                      display: 'flex', flexDirection: 'column'
+                    }} onMouseEnter={(e) => e.currentTarget.style.transform = `scale(1.05) rotate(0deg)`} onMouseLeave={(e) => e.currentTarget.style.transform = `scale(1) rotate(${rotate}deg)`}>
+                      <img 
+                        src={chapter.media_url?.startsWith('/uploads') ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${chapter.media_url}` : chapter.media_url || `https://source.unsplash.com/random/400x400/?${chapter.type || 'party'}`}
+                        alt={chapter.title}
+                        style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", backgroundColor: '#eee', borderRadius: '2px' }}
+                      />
+                      <div style={{ color: '#111', fontWeight: 800, fontSize: '13px', marginTop: '12px', textAlign: 'center', fontFamily: "'Syne', sans-serif" }}>
+                        {chapter.title}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             ) : (
-              <p className="empty-text">Nothing added yet</p>
-            )}
-          </div>
-        </div>
-
-        {/* Vibe Tags */}
-        <div className="profile-card">
-          <div className="section-title">✨ Vibe Tags</div>
-          <div>
-            {user.vibe_tags?.length ? (
-              user.vibe_tags.map((tag, i) => (
-                <span key={i} className="tag tag-purple">{tag}</span>
-              ))
-            ) : (
-              <p className="empty-text">No vibes yet</p>
-            )}
-          </div>
-        </div>
-
-        {/* We are friends if... */}
-        <div className="profile-card">
-          <div className="section-title">🤝 We are friends if...</div>
-          {user.friends_if ? (
-            <div className="friends-if-text">{user.friends_if}</div>
-          ) : (
-            <p className="empty-text">Not filled in yet</p>
+              <div style={{ textAlign: "center", padding: "40px 20px", color: "#666" }}>
+                <p style={{ fontSize: "14px" }}>No chapters created yet</p>
+              </div>
+            )
           )}
         </div>
 

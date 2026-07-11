@@ -161,8 +161,13 @@ export default function AuthPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ identifier: loginIdentifier, password: loginPassword }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      let data;
+      try {
+        data = await res.json();
+      } catch (e) {
+        throw new Error("Failed to communicate with server");
+      }
+      if (!res.ok) throw new Error(data.error || "Login failed. Please try again.");
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       router.push(`/profile/${data.user.username}`);
@@ -195,8 +200,13 @@ export default function AuthPage() {
           password: regPassword,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      let data;
+      try {
+        data = await res.json();
+      } catch (e) {
+        throw new Error("Failed to communicate with server");
+      }
+      if (!res.ok) throw new Error(data.error || "Registration failed.");
       setPendingEmail(regEmail);
       setScreen("otp");
     } catch (err: any) {
