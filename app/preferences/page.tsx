@@ -111,7 +111,7 @@ export default function PreferencesPage() {
           <button onClick={() => router.back()} style={{ background: "transparent", border: "none", color: "#fff", cursor: "pointer", marginRight: "16px" }}>
             <ArrowLeft size={24} />
           </button>
-          <h1 style={{ fontSize: "24px", fontWeight: 700, m: 0 }}>My Preferences</h1>
+          <h1 style={{ fontSize: "24px", fontWeight: 700, margin: 0 }}>My Preferences</h1>
         </div>
 
         <p style={{ color: "#888", marginBottom: "32px", fontSize: "14px" }}>

@@ -963,7 +963,7 @@ export default function ActivitiesPage() {
                         <h3 className="live-title">{event.title}</h3>
                         <div className="live-meta">
                           <span>📍 {event.location}</span>
-                          <span>⏰ {event.time || (new Date(event.date).toLocaleDateString() + ' ' + new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))}</span>
+                          <span>⏰ {(event as any).time || (new Date(event.date).toLocaleDateString() + ' ' + new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))}</span>
                         </div>
                       </div>
                     </div>

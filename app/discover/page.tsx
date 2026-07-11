@@ -107,7 +107,7 @@ export default function DiscoverPage() {
 
     try {
       const token = localStorage.getItem("token");
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
       if (isLiked) {
         await fetch(`${API}/comments/${commentId}/like`, { method: "DELETE", headers });
       } else {
