@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Heart, MessageCircle } from "lucide-react";
+import { Heart, MessageCircle, Trash2 } from "lucide-react";
 
 type Snap = {
   id: string;
@@ -28,6 +28,19 @@ export default function UserFeedPage() {
   // Mock likes/comments for UI matching
   const [likes, setLikes] = useState<Record<string, boolean>>({});
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
+  
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      setCurrentUserId(payload.id);
+    } catch (err) {
+      console.error("Token decode error");
+    }
+  }, []);
 
   useEffect(() => {
     async function fetchData() {
@@ -60,6 +73,29 @@ export default function UserFeedPage() {
     const isLiked = likes[id];
     setLikes(p => ({ ...p, [id]: !isLiked }));
     setLikeCounts(p => ({ ...p, [id]: (p[id] || 0) + (isLiked ? -1 : 1) }));
+  };
+
+  const handleDelete = async (snapId: string) => {
+    if (!confirm("Are you sure you want to delete this post?")) return;
+
+    try {
+      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/submissions/${snapId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        setSnaps(prev => prev.filter(s => s.id !== snapId));
+      } else {
+        alert("Failed to delete post");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error deleting post");
+    }
   };
 
   if (loading) {
@@ -99,6 +135,16 @@ export default function UserFeedPage() {
               <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)" }}>
                 {new Date(snap.created_at).toLocaleDateString()}
               </div>
+              
+              {currentUserId === user?.id && (
+                <button 
+                  onClick={() => handleDelete(snap.id)}
+                  style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", marginLeft: "8px", padding: "8px" }}
+                  title="Delete post"
+                >
+                  <Trash2 size={18} />
+                </button>
+              )}
             </div>
 
             {/* Post Title */}
