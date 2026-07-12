@@ -44,8 +44,10 @@ function CreateActivityContent() {
   const [location, setLocation] = useState(initialLocation || suggestion.location);
   const [description, setDescription] = useState(initialDesc || suggestion.description);
   const [banner, setBanner] = useState<File | null>(null);
-  const [isPublic, setIsPublic] = useState(false);
+  const [isPublic, setIsPublic] = useState(categoryType === "hobby");
 
+  const [hobbyTag, setHobbyTag] = useState<string>("");
+  const [customHobby, setCustomHobby] = useState<string>("");
   const [places, setPlaces] = useState<any[]>([]);
   const [loadingPlaces, setLoadingPlaces] = useState(false);
   const [currentCoords, setCurrentCoords] = useState<{lat: number, lng: number} | null>(null);
@@ -169,6 +171,11 @@ function CreateActivityContent() {
     if (!title.trim()) return setError("Enter a name for your plan");
     if (!date) return setError("Pick a date & time");
     if (!location.trim()) return setError("Add a location");
+
+    if (categoryType === "hobby") {
+      if (!hobbyTag) return setError("Please select a hobby tag");
+      if (hobbyTag === "Other" && !customHobby.trim()) return setError("Please specify your custom hobby");
+    }
 
     try {
       setSubmitting(true);
@@ -402,6 +409,54 @@ function CreateActivityContent() {
           <>
             {categoryType && AI_SUGGESTIONS[categoryType] && (
               <div className="wiz-ai-badge">✨ AI-suggested plan for {categoryType.replace("_", " ")}</div>
+            )}
+
+            {categoryType === "hobby" && (
+              <div className="wiz-group">
+                <label className="wiz-label">Pick a Hobby *</label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                  {["Photography", "Music", "Reading", "Gaming", "Art", "Sports", "Other"].map(tag => (
+                    <button
+                      key={tag}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setHobbyTag(tag);
+                        if (tag !== "Other") {
+                          setTitle(`${tag} Meetup`);
+                        } else {
+                          setTitle("");
+                        }
+                      }}
+                      style={{
+                        padding: "8px 16px",
+                        borderRadius: "20px",
+                        border: hobbyTag === tag ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
+                        background: hobbyTag === tag ? "rgba(244,114,182,0.1)" : "rgba(255,255,255,0.03)",
+                        color: hobbyTag === tag ? "#f472b6" : "#fff",
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        transition: "all 0.2s"
+                      }}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+                {hobbyTag === "Other" && (
+                  <div style={{ marginTop: "12px" }}>
+                    <input
+                      className="wiz-input"
+                      placeholder="Type your hobby..."
+                      value={customHobby}
+                      onChange={e => {
+                        setCustomHobby(e.target.value);
+                        setTitle(`${e.target.value} Meetup`);
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
             )}
 
             {places.length > 0 && (
