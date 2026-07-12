@@ -441,7 +441,14 @@ export default function ChaptersPage() {
                     <img src={bannerUrl} alt={chap.title} className="polaroid-img" />
                   </div>
                   <div className="polaroid-caption pr-12">{chap.title}</div>
-                  <div className="polaroid-date">{formatDate(chap.date)} • {chap.member_count} Crew</div>
+                  <div className="polaroid-date flex items-center justify-center gap-1.5">
+                    {formatDate(chap.date)} • {chap.member_count} Crew
+                    {chap.is_public ? (
+                      <span title="Public" style={{ fontSize: "12px", opacity: 0.8 }}>🌍</span>
+                    ) : (
+                      <span title="Private" style={{ fontSize: "12px", opacity: 0.8 }}>🔒</span>
+                    )}
+                  </div>
 
                   {isLive && (
                     <div className="absolute bottom-6 right-6 z-20 flex flex-col items-end" onClick={(e) => e.stopPropagation()}>
