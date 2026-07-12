@@ -32,6 +32,8 @@ export default function ScrapbookStoryPage() {
   const [loading, setLoading] = useState(true);
   const [sharing, setSharing] = useState(false);
   const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [snapMenuOpen, setSnapMenuOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   useEffect(() => {
@@ -43,6 +45,57 @@ export default function ScrapbookStoryPage() {
       }
     } catch(e) {}
   }, []);
+
+  const handleQuickSnap = async (file: File, source: 'camera' | 'gallery') => {
+    setUploading(true);
+    setSnapMenuOpen(false);
+    try {
+      const token = localStorage.getItem("token");
+      let lat = 0, lng = 0;
+      let locStr = "Unknown";
+      try {
+        const pos = await new Promise<GeolocationPosition>((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 3000 }));
+        lat = pos.coords.latitude; lng = pos.coords.longitude;
+        const geoRes = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`);
+        if (geoRes.ok) {
+          const geoData = await geoRes.json();
+          if (geoData.features?.[0]) locStr = geoData.features[0].place_name.split(',')[0];
+        }
+      } catch (e) {}
+
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const upRes = await fetch(`${API}/upload/image`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      if (!upRes.ok) throw new Error("Upload failed");
+      const { url } = await upRes.json();
+
+      const meta = { location: locStr, time: new Date().toISOString(), source };
+      const postRes = await fetch(`${API}/activities/${id}/submissions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ content_url: url, description: JSON.stringify(meta) })
+      });
+      if (!postRes.ok) throw new Error("Submit failed");
+      
+      const newSub = await postRes.json();
+      // append the new submission to the UI
+      setSubmissions(prev => [...prev, {
+        ...newSub,
+        name: "You", // placeholder until refresh
+      }]);
+      alert("Snap added to scrapbook!");
+    } catch (err) {
+      console.error(err);
+      alert("Upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleUnshare = async () => {
     if (!confirm("Remove this chapter from the public feed?")) return;
@@ -215,6 +268,44 @@ export default function ScrapbookStoryPage() {
           </div>
         )}
       </div>
+
+      {/* Add Snap Button (Only if myUserId === activity.host_id) */}
+      {myUserId === activity.host_id && (
+        <div className="fixed bottom-24 right-6 z-50 flex flex-col items-end">
+          {snapMenuOpen && (
+            <div className="mb-2 bg-[#111] border border-white/10 rounded-2xl p-2 flex flex-col gap-1 shadow-2xl animate-fade-in-up">
+              <input type="file" accept="image/*" capture="environment" className="hidden" id="cam-scrapbook" onChange={e => { if(e.target.files?.[0]) handleQuickSnap(e.target.files[0], 'camera'); }} />
+              <input type="file" accept="image/*" className="hidden" id="gal-scrapbook" onChange={e => { if(e.target.files?.[0]) handleQuickSnap(e.target.files[0], 'gallery'); }} />
+              
+              <label htmlFor="cam-scrapbook" className="bg-pink-500/20 hover:bg-pink-500/40 text-pink-300 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-colors border border-pink-500/30">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                Live Camera
+              </label>
+              <label htmlFor="gal-scrapbook" className="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-colors border border-white/10">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                Camera Roll
+              </label>
+            </div>
+          )}
+          
+          <button
+            className={`w-14 h-14 bg-pink-500 hover:bg-pink-600 rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(236,72,153,0.5)] transition-all ${uploading ? 'opacity-80' : 'hover:scale-110 active:scale-95'}`}
+            onClick={(e) => {
+              e.preventDefault();
+              if (uploading) return;
+              setSnapMenuOpen(!snapMenuOpen);
+            }}
+            title="Snap a moment"
+          >
+            {uploading ? (
+              <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            ) : (
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+            )}
+          </button>
+        </div>
+      )}
+
     </div>
   );
 }
