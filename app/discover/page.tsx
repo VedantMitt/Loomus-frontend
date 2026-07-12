@@ -22,6 +22,22 @@ type User = {
   mutual_count?: number;
 };
 
+function timeAgo(dateParam: string | Date | null) {
+  if (!dateParam) return "";
+  const date = typeof dateParam === 'object' ? dateParam : new Date(dateParam);
+  const now = new Date();
+  const seconds = Math.round((now.getTime() - date.getTime()) / 1000);
+  const minutes = Math.round(seconds / 60);
+  const hours = Math.round(minutes / 60);
+  const days = Math.round(hours / 24);
+
+  if (seconds < 60) return `just now`;
+  else if (minutes < 60) return `${minutes} mins ago`;
+  else if (hours < 24) return `${hours} hours ago`;
+  else if (days < 7) return `${days} days ago`;
+  else return date.toLocaleDateString();
+}
+
 export default function DiscoverPage() {
   const [recommendedUsers, setRecommendedUsers] = useState<User[]>([]);
   const [suggestedPeople, setSuggestedPeople] = useState<User[]>([]);
@@ -328,7 +344,13 @@ export default function DiscoverPage() {
                     />
                     <div style={{ flex: 1, paddingRight: "40px" }}>
                       <div style={{ fontWeight: 700, fontSize: "16px", color: "#fff" }}>{feedItem.host_name}</div>
-                      <div style={{ fontSize: "13px", color: "#888" }}>Shared a chapter • {feedItem.title}</div>
+                      <div style={{ fontSize: "13px", color: "#888" }}>
+                        {feedItem.timeline_photos && feedItem.timeline_photos.length > 0 && feedItem.timeline_photos[0].created_at ? (
+                          <>{feedItem.timeline_photos[0].author_name} added to the story • {timeAgo(feedItem.timeline_photos[0].created_at)}</>
+                        ) : (
+                          <>Shared a chapter • {feedItem.title}</>
+                        )}
+                      </div>
                       {feedItem.shared_caption && (
                         <div style={{ marginTop: "8px", fontSize: "14px", color: "#eee", lineHeight: "1.4" }}>
                           {feedItem.shared_caption}
