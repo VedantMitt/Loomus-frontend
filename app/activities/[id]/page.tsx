@@ -1090,8 +1090,12 @@ export default function LoomusActivityPage() {
               </button>
             </div>
           </div>
+          </div>
         </div>
       )}
+      </>
+        );
+      })()}
     </div>
   );
 }
