@@ -157,10 +157,10 @@ export default function ChaptersPage() {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
-        body: JSON.stringify({ banner: imageUrl })
+        body: JSON.stringify({ chapter_cover: imageUrl })
       });
       if (res.ok) {
-        setChapters(prev => prev.map(c => c.id === chapterId ? { ...c, banner: imageUrl } : c));
+        setChapters(prev => prev.map(c => c.id === chapterId ? { ...c, media_url: imageUrl } : c));
         setCoverModalFor(null);
       }
     } catch (err) {
@@ -446,7 +446,7 @@ export default function ChaptersPage() {
                   {isLive && (
                     <div className="absolute bottom-6 right-6 z-20 flex flex-col items-end" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-end gap-2">
-                        <input type="file" accept="image/*" className="hidden" id={`gal-${chap.id}`} onChange={e => { if(e.target.files?.[0]) handleQuickSnap(e.target.files[0], 'gallery', chap.id); }} />
+                        <input type="file" accept="image/*" className="hidden" id={`gal-${chap.id}`} onClick={e => e.stopPropagation()} onChange={e => { if(e.target.files?.[0]) handleQuickSnap(e.target.files[0], 'gallery', chap.id); }} />
                         <button
                           onClick={(e) => {
                             e.preventDefault();
@@ -459,7 +459,7 @@ export default function ChaptersPage() {
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                         </button>
 
-                        <input type="file" accept="image/*" capture="environment" className="hidden" id={`cam-${chap.id}`} onChange={e => { if(e.target.files?.[0]) handleQuickSnap(e.target.files[0], 'camera', chap.id); }} />
+                        <input type="file" accept="image/*" capture="environment" className="hidden" id={`cam-${chap.id}`} onClick={e => e.stopPropagation()} onChange={e => { if(e.target.files?.[0]) handleQuickSnap(e.target.files[0], 'camera', chap.id); }} />
                         <button
                           onClick={(e) => {
                             e.preventDefault();

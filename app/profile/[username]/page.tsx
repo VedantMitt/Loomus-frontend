@@ -42,6 +42,7 @@ export default function ProfilePage() {
   const [friendStatus, setFriendStatus] = useState<"none" | "friends" | "request_sent" | "request_received" | "loading">("loading");
   
   const [isHoveringFriend, setIsHoveringFriend] = useState(false);
+  const [isHoveringRequest, setIsHoveringRequest] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
 
   useEffect(() => {
@@ -172,6 +173,26 @@ export default function ProfilePage() {
       }
     } catch {
       setFriendStatus("friends");
+    }
+  };
+
+  const handleCancelRequest = async () => {
+    if (!user) return;
+    try {
+      setFriendStatus("loading");
+      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/friends/remove/${user.id}`, {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        setFriendStatus("none");
+      } else {
+        setFriendStatus("request_sent");
+      }
+    } catch {
+      setFriendStatus("request_sent");
     }
   };
 
@@ -449,8 +470,13 @@ export default function ProfilePage() {
                       {isHoveringFriend ? "Remove Friend" : "✓ Friends"}
                     </button>
                   ) : friendStatus === "request_sent" ? (
-                    <button style={{ padding: "8px 20px", borderRadius: "8px", background: "rgba(255, 255, 255, 0.1)", color: "#ccc", border: "1px solid rgba(255, 255, 255, 0.2)", fontWeight: 600, fontSize: "13px", cursor: "default" }}>
-                      Request Sent
+                    <button 
+                      onClick={handleCancelRequest}
+                      onMouseEnter={() => setIsHoveringRequest(true)}
+                      onMouseLeave={() => setIsHoveringRequest(false)}
+                      style={{ padding: "8px 20px", borderRadius: "8px", background: isHoveringRequest ? "rgba(239, 68, 68, 0.15)" : "rgba(255, 255, 255, 0.1)", color: isHoveringRequest ? "#ef4444" : "#ccc", border: isHoveringRequest ? "1px solid rgba(239, 68, 68, 0.2)" : "1px solid rgba(255, 255, 255, 0.2)", fontWeight: 600, fontSize: "13px", cursor: "pointer", transition: "all 0.2s" }}
+                    >
+                      {isHoveringRequest ? "Cancel Request" : "Request Sent"}
                     </button>
                   ) : friendStatus === "request_received" ? (
                     <button onClick={handleAcceptFriend} style={{ padding: "8px 20px", borderRadius: "8px", background: "#34d399", color: "#000", border: "none", fontWeight: 600, fontSize: "13px", cursor: "pointer" }}>
