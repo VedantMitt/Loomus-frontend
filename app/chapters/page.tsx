@@ -444,21 +444,30 @@ export default function ChaptersPage() {
                   <div className="polaroid-date">{formatDate(chap.date)} • {chap.member_count} Crew</div>
 
                   {isLive && (
-                    <div className="absolute bottom-6 right-6 z-20 flex flex-col items-end" onClick={(e) => e.preventDefault()}>
+                    <div className="absolute bottom-6 right-6 z-20 flex flex-col items-end">
                       <div className="flex items-end gap-2">
                         <input type="file" accept="image/*" className="hidden" id={`gal-${chap.id}`} onChange={e => { if(e.target.files?.[0]) handleQuickSnap(e.target.files[0], 'gallery', chap.id); }} />
-                        <label
-                          htmlFor={`gal-${chap.id}`}
-                          className="w-10 h-10 bg-black/60 backdrop-blur-md hover:bg-black/80 border border-white/10 rounded-full flex items-center justify-center text-white shadow-lg transition-all cursor-pointer mb-1 hover:scale-110 active:scale-95"
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            document.getElementById(`gal-${chap.id}`)?.click();
+                          }}
+                          className="w-10 h-10 bg-black/60 backdrop-blur-md hover:bg-black/80 border border-white/10 rounded-full flex items-center justify-center text-white shadow-lg transition-all mb-1 hover:scale-110 active:scale-95"
                           title="Camera Roll"
                         >
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                        </label>
+                        </button>
 
                         <input type="file" accept="image/*" capture="environment" className="hidden" id={`cam-${chap.id}`} onChange={e => { if(e.target.files?.[0]) handleQuickSnap(e.target.files[0], 'camera', chap.id); }} />
-                        <label
-                          htmlFor={`cam-${chap.id}`}
-                          className={`w-12 h-12 bg-pink-500 hover:bg-pink-600 rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(236,72,153,0.5)] transition-all cursor-pointer ${uploadingChapId === chap.id ? 'opacity-80' : 'hover:scale-110 active:scale-95'}`}
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (uploadingChapId === chap.id) return;
+                            document.getElementById(`cam-${chap.id}`)?.click();
+                          }}
+                          className={`w-12 h-12 bg-pink-500 hover:bg-pink-600 rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(236,72,153,0.5)] transition-all ${uploadingChapId === chap.id ? 'opacity-80' : 'hover:scale-110 active:scale-95'}`}
                           title="Snap a moment"
                         >
                           {uploadingChapId === chap.id ? (
@@ -466,7 +475,7 @@ export default function ChaptersPage() {
                           ) : (
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
                           )}
-                        </label>
+                        </button>
                       </div>
                     </div>
                   )}
