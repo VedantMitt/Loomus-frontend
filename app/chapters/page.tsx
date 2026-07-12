@@ -14,6 +14,7 @@ type Activity = {
   host_name: string;
   host_pic?: string;
   member_count: number;
+  is_public?: boolean;
 };
 
 export default function ChaptersPage() {
@@ -22,6 +23,12 @@ export default function ChaptersPage() {
   const [chapterToDelete, setChapterToDelete] = useState<string | null>(null);
   const [snapMenuFor, setSnapMenuFor] = useState<string | null>(null);
   const [uploadingChapId, setUploadingChapId] = useState<string | null>(null);
+
+  // New states for chapter options menu and cover modal
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [coverModalFor, setCoverModalFor] = useState<Activity | null>(null);
+  const [chapterSnaps, setChapterSnaps] = useState<any[]>([]);
+  const [loadingSnaps, setLoadingSnaps] = useState(false);
 
   const handleQuickSnap = async (file: File, source: 'camera' | 'gallery', chapId: string) => {
     setUploadingChapId(chapId);
@@ -99,6 +106,97 @@ export default function ChaptersPage() {
     };
     fetchChapters();
   }, []);
+
+  const handleToggleVisibility = async (chapter: Activity) => {
+    try {
+      const token = localStorage.getItem("token");
+      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const res = await fetch(`${API}/activities/${chapter.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ is_public: !chapter.is_public })
+      });
+      if (res.ok) {
+        setChapters(prev => prev.map(c => c.id === chapter.id ? { ...c, is_public: !c.is_public } : c));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setOpenMenuId(null);
+  };
+
+  const openCoverModal = async (chapter: Activity) => {
+    setCoverModalFor(chapter);
+    setOpenMenuId(null);
+    setLoadingSnaps(true);
+    setChapterSnaps([]);
+    try {
+      const token = localStorage.getItem("token");
+      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const res = await fetch(`${API}/activities/${chapter.id}/submissions`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setChapterSnaps(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingSnaps(false);
+    }
+  };
+
+  const handleUpdateCover = async (chapterId: string, imageUrl: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const res = await fetch(`${API}/activities/${chapterId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ banner: imageUrl })
+      });
+      if (res.ok) {
+        setChapters(prev => prev.map(c => c.id === chapterId ? { ...c, banner: imageUrl } : c));
+        setCoverModalFor(null);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUploadCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !coverModalFor) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      
+      const ext = file.name.split('.').pop() || 'jpg';
+      const fname = `cover_${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+      const psRes = await fetch(`${API}/upload/presigned?filename=${fname}&contentType=${file.type}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!psRes.ok) throw new Error("Presigned URL failed");
+      const { url, key } = await psRes.json();
+      
+      const s3Res = await fetch(url, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
+      if (!s3Res.ok) throw new Error("S3 upload failed");
+      const fileUrl = `${process.env.NEXT_PUBLIC_S3_PUBLIC_URL}/${key}`;
+
+      await handleUpdateCover(coverModalFor.id, fileUrl);
+    } catch (err) {
+      console.error(err);
+      alert("Upload failed.");
+    }
+  };
 
   const handleDeleteChapter = async () => {
     if (!chapterToDelete) return;
@@ -320,16 +418,28 @@ export default function ChaptersPage() {
                     </div>
                   )}
 
-                  <button 
-                    className="chap-delete"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setChapterToDelete(chap.id);
-                    }}
-                    title="Delete Chapter"
-                  >
-                    🗑️
-                  </button>
+                  <div className="absolute top-2 right-2 z-30" onClick={e => e.preventDefault()}>
+                    <button 
+                      onClick={() => setOpenMenuId(openMenuId === chap.id ? null : chap.id)}
+                      className="w-8 h-8 flex items-center justify-center bg-black/40 backdrop-blur-md hover:bg-black/60 text-white rounded-full transition-colors border border-white/10"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+                    </button>
+                    {openMenuId === chap.id && (
+                      <div className="absolute top-10 right-0 w-48 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-fade-in-up">
+                        <button onClick={() => openCoverModal(chap)} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-2 transition-colors">
+                          <span style={{ fontSize: 16 }}>🖼️</span> Change Cover
+                        </button>
+                        <button onClick={() => handleToggleVisibility(chap)} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-2 transition-colors">
+                          <span style={{ fontSize: 16 }}>👁️</span> Make {chap.is_public ? "Private" : "Public"}
+                        </button>
+                        <div className="h-[1px] bg-white/10 w-full" />
+                        <button onClick={() => { setChapterToDelete(chap.id); setOpenMenuId(null); }} className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors">
+                          <span style={{ fontSize: 16 }}>🗑️</span> Delete Chapter
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
                   <div className="polaroid-img-wrapper">
                     <img src={bannerUrl} alt={chap.title} className="polaroid-img" />
@@ -400,6 +510,59 @@ export default function ChaptersPage() {
               >
                 Delete
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Cover Modal */}
+      {coverModalFor && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl relative">
+            <button 
+              onClick={() => setCoverModalFor(null)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-full text-white transition-colors"
+            >
+              ✕
+            </button>
+            <h2 className="text-2xl font-bold mb-4 font-['Syne'] text-white">Change Cover</h2>
+            <p className="text-sm text-gray-400 mb-6">Select a memory from this chapter or upload a new one.</p>
+            
+            <div className="flex-1 overflow-y-auto pr-2 min-h-[200px]">
+              {loadingSnaps ? (
+                <div className="text-center p-10 text-white/50">Loading memories...</div>
+              ) : chapterSnaps.length === 0 ? (
+                <div className="text-center p-10 text-white/50 border border-dashed border-white/10 rounded-xl">
+                  No memories yet. Upload a photo below!
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-3">
+                  {chapterSnaps.map((snap, idx) => {
+                    const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+                    const snapUrl = snap.content_url.startsWith("/uploads") ? `${API}${snap.content_url}` : snap.content_url;
+                    return (
+                      <div 
+                        key={idx} 
+                        onClick={() => handleUpdateCover(coverModalFor.id, snapUrl)}
+                        className="aspect-square rounded-xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-pink-500 hover:scale-95 transition-all bg-black/50"
+                      >
+                        <img src={snapUrl} className="w-full h-full object-cover" alt="snap" />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-white/10">
+              <input type="file" accept="image/*" className="hidden" id="upload-cover" onChange={handleUploadCover} />
+              <label 
+                htmlFor="upload-cover" 
+                className="w-full py-4 rounded-xl font-bold text-sm bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:opacity-90 transition-opacity cursor-pointer flex items-center justify-center gap-2"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                Upload from Gallery
+              </label>
             </div>
           </div>
         </div>
