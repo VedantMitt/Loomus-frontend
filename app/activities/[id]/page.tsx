@@ -149,6 +149,11 @@ export default function LoomusActivityPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
+  const [showLoomMenu, setShowLoomMenu] = useState(false);
+  const [showEditDetailsModal, setShowEditDetailsModal] = useState(false);
+  const [editLoomTitle, setEditLoomTitle] = useState("");
+  const [editLoomVenue, setEditLoomVenue] = useState("");
+  const [savingDetails, setSavingDetails] = useState(false);
 
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -167,6 +172,8 @@ export default function LoomusActivityPage() {
         const aData = await aRes.json();
         setActivity(aData);
         setIsHost(aData.host_user_id === myUserId);
+        if (aData.title) setEditLoomTitle(aData.title);
+        if (aData.location) setEditLoomVenue(aData.location);
         if (aData.date) setEditDate(new Date(aData.date).toISOString().slice(0,16));
         if (aData.is_public !== undefined) setEditIsPublic(aData.is_public);
         if (aData.itinerary) setEditItinerary(aData.itinerary);
@@ -440,6 +447,27 @@ export default function LoomusActivityPage() {
   if (loading) return <div className="h-screen flex items-center justify-center bg-[#0a0a0a]"><div className="animate-pulse w-12 h-12 rounded-full bg-pink-500/50" /></div>;
   if (!activity) return <div className="h-screen flex items-center justify-center bg-[#0a0a0a] text-white">Plan vanished.</div>;
 
+  const handleSaveDetails = async () => {
+    setSavingDetails(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/activities/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ title: editLoomTitle, location: editLoomVenue })
+      });
+      if (res.ok) {
+        setActivity(prev => prev ? { ...prev, title: editLoomTitle, location: editLoomVenue } : null);
+        setShowEditDetailsModal(false);
+      } else {
+        alert("Failed to save details");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setSavingDetails(false);
+  };
+
   const d = new Date(activity.date);
   const formattedDate = d.toLocaleString("en-US", { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   const goingMembers = members.filter(m => m.rsvp_status === 'going');
@@ -483,6 +511,41 @@ export default function LoomusActivityPage() {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/50 to-transparent" />
         
+        <div className="absolute top-6 right-6 flex items-center gap-3 z-20">
+          {isPastPlan && (
+            <Link href={`/scrapbook/${id}`} className="bg-black/60 hover:bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 text-xs font-bold text-white transition-all shadow-lg flex items-center gap-2">
+               📸 View Connected Chapter
+            </Link>
+          )}
+          <div className="relative">
+            <button onClick={() => setShowLoomMenu(!showLoomMenu)} className="w-10 h-10 bg-black/60 backdrop-blur-md hover:bg-black/80 border border-white/10 rounded-full flex items-center justify-center text-white shadow-lg transition-all">
+              <span className="text-xl leading-none -mt-2">...</span>
+            </button>
+            {showLoomMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-black/90 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl z-50">
+                {isHost && (
+                  <button onClick={() => { setShowEditDetailsModal(true); setShowLoomMenu(false); }} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-2 transition-colors">
+                    📝 Edit Details
+                  </button>
+                )}
+                <button onClick={() => { setShowInviteModal(true); setShowLoomMenu(false); }} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-2 transition-colors">
+                  ✉️ Invite
+                </button>
+                {!isHost && (
+                  <button onClick={() => { setShowLeaveModal(true); setShowLoomMenu(false); }} className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors">
+                    🚪 Leave Loom
+                  </button>
+                )}
+                {isHost && (
+                  <button onClick={() => { setShowDeletePlanModal(true); setShowLoomMenu(false); }} className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors">
+                    🗑️ Delete Loom
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="absolute bottom-0 left-0 right-0 p-6 max-w-4xl mx-auto">
           <div className="inline-block px-3 py-1 mb-3 text-xs font-bold uppercase tracking-wider text-pink-300 bg-pink-500/20 rounded-full border border-pink-500/30">
             {activity.type}
@@ -732,10 +795,18 @@ export default function LoomusActivityPage() {
               )}
 
               {isHost && (
-                <div className="flex justify-end pt-4">
-                  <button onClick={() => setShowDeletePlanModal(true)} className="text-xs font-bold text-red-500/70 hover:text-red-500 border border-red-500/20 hover:border-red-500/50 px-4 py-2 rounded-lg transition-all">
-                    Delete Plan
-                  </button>
+                <div className="flex justify-end pt-4 mt-6 border-t border-white/5">
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-xs text-gray-500 italic">the plan can be edited</span>
+                    <div className="flex gap-2">
+                      <button onClick={() => setIsEditingPlan(true)} className="text-xs font-bold text-white hover:text-pink-300 border border-white/20 hover:border-pink-500/50 px-4 py-2 rounded-lg transition-all">
+                        Edit Plan
+                      </button>
+                      <button onClick={() => setShowDeletePlanModal(true)} className="text-xs font-bold text-red-500/70 hover:text-red-500 border border-red-500/20 hover:border-red-500/50 px-4 py-2 rounded-lg transition-all">
+                        Delete Plan
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -791,7 +862,7 @@ export default function LoomusActivityPage() {
                 <h3 className="syne text-xl font-bold text-white">The Crew</h3>
                 {!isPastPlan && (
                   <button onClick={() => setShowInviteModal(true)} className="text-xs font-bold bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-all">
-                    + Add Friends
+                    + Invite
                   </button>
                 )}
               </div>
@@ -987,9 +1058,40 @@ export default function LoomusActivityPage() {
           </div>
         </div>
       )}
-      </>
-        );
-      })()}
+
+      {/* Edit Details Modal */}
+      {showEditDetailsModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#111] border border-white/10 rounded-3xl p-6 w-full max-w-md shadow-2xl">
+            <h2 className="text-xl font-bold mb-4 font-['Syne'] text-white">Edit Details</h2>
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="text-xs text-white/50 mb-1 block">Rename Loom</label>
+                <input 
+                  type="text" 
+                  value={editLoomTitle} 
+                  onChange={e => setEditLoomTitle(e.target.value)} 
+                  className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-pink-500 text-white" 
+                />
+              </div>
+              <div>
+                <label className="text-xs text-white/50 mb-1 block">Change Venue</label>
+                <LocationAutocomplete 
+                  value={editLoomVenue} 
+                  onChange={setEditLoomVenue} 
+                  className="w-full"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setShowEditDetailsModal(false)} className="text-sm font-bold text-gray-400 hover:text-white px-4 py-2 transition-colors">Cancel</button>
+              <button onClick={handleSaveDetails} disabled={savingDetails} className="bg-pink-500 hover:bg-pink-600 text-white text-sm font-bold px-6 py-2 rounded-xl transition-all disabled:opacity-50">
+                {savingDetails ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
