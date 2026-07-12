@@ -214,6 +214,7 @@ export default function ActivitiesPage() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [userPreferences, setUserPreferences] = useState<string[]>([]);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   // Calculate frontend sorting based on preferences for top events
   const getRelevance = (itemText: string) => {
@@ -1098,19 +1099,34 @@ export default function ActivitiesPage() {
                         </div>
                       )}
                       
-                      {isPast && plan.host_id === myUserId && (
+                      <div className="absolute top-4 right-4 z-30" onClick={e => e.preventDefault()}>
                         <button 
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setPlanToDelete(plan.id);
-                          }}
-                          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-red-500/10 text-red-500/40 hover:bg-red-500 hover:text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-20"
+                          onClick={() => setOpenMenuId(openMenuId === plan.id ? null : plan.id)}
+                          className="w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center text-white backdrop-blur-md transition-colors"
                         >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                          </svg>
+                          <span className="text-xl leading-none -translate-y-[2px]">...</span>
                         </button>
-                      )}
+                        {openMenuId === plan.id && (
+                          <div className="absolute right-0 mt-2 w-40 bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-40">
+                            {plan.host_id === myUserId && (
+                              <button 
+                                onClick={() => { setPlanToDelete(plan.id); setOpenMenuId(null); }} 
+                                className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors"
+                              >
+                                🗑️ Delete Plan
+                              </button>
+                            )}
+                            {plan.host_id !== myUserId && (
+                              <button 
+                                onClick={() => { router.push(`/activities/${plan.id}`); setOpenMenuId(null); }} 
+                                className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
+                              >
+                                🚪 View & Leave
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
 
                       <div className="plan-title">{plan.title}</div>
                       <div className="plan-meta">
