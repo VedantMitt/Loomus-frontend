@@ -83,14 +83,12 @@ export default function ChaptersPage() {
         if (res.ok) {
           const allData = await res.json();
           const data = allData.map((c: any) => {
-            const isPast = !!c.end_date;
+            const isPast = !!c.end_date || new Date(c.date) < new Date();
             const isLive = !isPast;
             return { ...c, _isLive: isLive };
-          });
+          }).filter((c: any) => !c._isLive);
           
           data.sort((a: any, b: any) => {
-            if (a._isLive && !b._isLive) return -1;
-            if (!a._isLive && b._isLive) return 1;
             return new Date(b.date).getTime() - new Date(a.date).getTime();
           });
           setChapters(data);
