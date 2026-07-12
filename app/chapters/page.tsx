@@ -48,23 +48,22 @@ export default function ChaptersPage() {
         }
       } catch (e) {}
 
-      const ext = file.name.split('.').pop() || 'jpg';
-      const fname = `snap_${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
-      const psRes = await fetch(`${API}/upload/presigned?filename=${fname}&contentType=${file.type}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const upRes = await fetch(`${API}/upload/image`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
       });
-      if (!psRes.ok) throw new Error("Presigned URL failed");
-      const { url, key } = await psRes.json();
-      
-      const s3Res = await fetch(url, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
-      if (!s3Res.ok) throw new Error("S3 upload failed");
-      const fileUrl = `${process.env.NEXT_PUBLIC_S3_PUBLIC_URL}/${key}`;
+      if (!upRes.ok) throw new Error("Upload failed");
+      const { url } = await upRes.json();
 
       const meta = { location: locStr, time: new Date().toISOString(), source };
       const postRes = await fetch(`${API}/activities/${chapId}/submissions`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ content_url: fileUrl, description: JSON.stringify(meta) })
+        body: JSON.stringify({ content_url: url, description: JSON.stringify(meta) })
       });
       if (!postRes.ok) throw new Error("Submit failed");
       
@@ -179,19 +178,18 @@ export default function ChaptersPage() {
       const token = localStorage.getItem("token");
       const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
       
-      const ext = file.name.split('.').pop() || 'jpg';
-      const fname = `cover_${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
-      const psRes = await fetch(`${API}/upload/presigned?filename=${fname}&contentType=${file.type}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!psRes.ok) throw new Error("Presigned URL failed");
-      const { url, key } = await psRes.json();
-      
-      const s3Res = await fetch(url, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
-      if (!s3Res.ok) throw new Error("S3 upload failed");
-      const fileUrl = `${process.env.NEXT_PUBLIC_S3_PUBLIC_URL}/${key}`;
+      const formData = new FormData();
+      formData.append("image", file);
 
-      await handleUpdateCover(coverModalFor.id, fileUrl);
+      const upRes = await fetch(`${API}/upload/image`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      if (!upRes.ok) throw new Error("Upload failed");
+      const { url } = await upRes.json();
+
+      await handleUpdateCover(coverModalFor.id, url);
     } catch (err) {
       console.error(err);
       alert("Upload failed.");
