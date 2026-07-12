@@ -60,10 +60,12 @@ export default function ProfilePage() {
     async function fetchData() {
       try {
         const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        const token = localStorage.getItem("token");
+        const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
         const [userRes, snapsRes, chaptersRes] = await Promise.all([
           fetch(`${API}/users/${username}`),
           fetch(`${API}/users/${username}/snaps`),
-          fetch(`${API}/users/${username}/chapters`)
+          fetch(`${API}/users/${username}/chapters`, { headers })
         ]);
         
         if (!userRes.ok) throw new Error("User not found");
