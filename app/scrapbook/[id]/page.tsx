@@ -189,7 +189,7 @@ export default function ScrapbookStoryPage() {
         </div>
         <div>
           <button onClick={() => router.push(`/activities/${id}`)} className="text-xs font-bold text-white bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition-all flex items-center gap-2">
-            View Connected Loom
+            View Loom
           </button>
         </div>
       </div>

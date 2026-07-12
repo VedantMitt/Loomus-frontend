@@ -1109,12 +1109,26 @@ export default function ActivitiesPage() {
                         {openMenuId === plan.id && (
                           <div className="absolute right-0 mt-2 w-40 bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-40">
                             {plan.host_id === myUserId && (
-                              <button 
-                                onClick={() => { setPlanToDelete(plan.id); setOpenMenuId(null); }} 
-                                className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors"
-                              >
-                                🗑️ Delete Plan
-                              </button>
+                              <>
+                                <button 
+                                  onClick={() => { router.push(`/activities/${plan.id}?modal=edit`); setOpenMenuId(null); }} 
+                                  className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
+                                >
+                                  📝 Edit Details
+                                </button>
+                                <button 
+                                  onClick={() => { router.push(`/activities/${plan.id}?modal=invite`); setOpenMenuId(null); }} 
+                                  className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
+                                >
+                                  ✉️ Invite
+                                </button>
+                                <button 
+                                  onClick={() => { setPlanToDelete(plan.id); setOpenMenuId(null); }} 
+                                  className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors border-t border-white/5"
+                                >
+                                  🗑️ Delete Plan
+                                </button>
+                              </>
                             )}
                             {plan.host_id !== myUserId && (
                               <button 

@@ -111,6 +111,16 @@ export default function LoomusActivityPage() {
     const d = new Date();
     const tzOffset = d.getTimezoneOffset() * 60000;
     setMinDate(new Date(d.getTime() - tzOffset).toISOString().slice(0, 16));
+
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const modal = urlParams.get('modal');
+      if (modal === 'edit') {
+        setShowEditDetailsModal(true);
+      } else if (modal === 'invite') {
+        setShowInviteModal(true);
+      }
+    }
   }, []);
 
   // Compute possible days based on editDate and editEndDate
@@ -514,7 +524,7 @@ export default function LoomusActivityPage() {
         <div className="absolute top-6 right-6 flex items-center gap-3 z-20">
           {isPastPlan && (
             <Link href={`/scrapbook/${id}`} className="bg-black/60 hover:bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 text-xs font-bold text-white transition-all shadow-lg flex items-center gap-2">
-               📸 View Connected Chapter
+               📸 View Chapter
             </Link>
           )}
           <div className="relative">
