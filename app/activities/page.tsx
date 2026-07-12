@@ -350,7 +350,7 @@ export default function ActivitiesPage() {
     try {
       const token = localStorage.getItem("token");
       const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-      const res = await fetch(`${API}/activities/${planToDelete}`, {
+      const res = await fetch(`${API}/activities/${planToDelete}?type=loom`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });

@@ -260,7 +260,7 @@ export default function LoomusActivityPage() {
   const handleDeletePlan = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${API}/activities/${id}`, {
+      const res = await fetch(`${API}/activities/${id}?type=loom`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });

@@ -105,7 +105,7 @@ export default function ChaptersPage() {
     try {
       const token = localStorage.getItem("token");
       const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-      const res = await fetch(`${API}/activities/${chapterToDelete}`, {
+      const res = await fetch(`${API}/activities/${chapterToDelete}?type=chapter`, {
         method: "DELETE",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
