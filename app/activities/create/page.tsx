@@ -533,21 +533,23 @@ function CreateActivityContent() {
               </div>
             </div>
 
-            <div className="wiz-group">
-              <label className="wiz-label">Visibility</label>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div onClick={() => setIsPublic(false)} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: `1px solid ${!isPublic ? 'rgba(192,132,252,0.8)' : 'rgba(255,255,255,0.1)'}`, background: !isPublic ? 'rgba(192,132,252,0.1)' : 'rgba(255,255,255,0.03)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.3s' }}>
-                  <div style={{ fontSize: '20px', marginBottom: '4px' }}>🔒</div>
-                  <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff' }}>Private</div>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>Invite only</div>
-                </div>
-                <div onClick={() => setIsPublic(true)} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: `1px solid ${isPublic ? 'rgba(52,211,153,0.8)' : 'rgba(255,255,255,0.1)'}`, background: isPublic ? 'rgba(52,211,153,0.1)' : 'rgba(255,255,255,0.03)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.3s' }}>
-                  <div style={{ fontSize: '20px', marginBottom: '4px' }}>🌍</div>
-                  <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff' }}>Public</div>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>Hop into random</div>
+            {categoryType !== "hobby" && (
+              <div className="wiz-group">
+                <label className="wiz-label">Visibility</label>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div onClick={() => setIsPublic(false)} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: `1px solid ${!isPublic ? 'rgba(192,132,252,0.8)' : 'rgba(255,255,255,0.1)'}`, background: !isPublic ? 'rgba(192,132,252,0.1)' : 'rgba(255,255,255,0.03)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.3s' }}>
+                    <div style={{ fontSize: '20px', marginBottom: '4px' }}>🔒</div>
+                    <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff' }}>Private</div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>Invite only</div>
+                  </div>
+                  <div onClick={() => setIsPublic(true)} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: `1px solid ${isPublic ? 'rgba(52,211,153,0.8)' : 'rgba(255,255,255,0.1)'}`, background: isPublic ? 'rgba(52,211,153,0.1)' : 'rgba(255,255,255,0.03)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.3s' }}>
+                    <div style={{ fontSize: '20px', marginBottom: '4px' }}>🌍</div>
+                    <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff' }}>Public</div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>Hop into random</div>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <button className="wiz-btn" onClick={createActivity} disabled={submitting}>
               {createdId ? "Next →" : (submitting ? "Creating..." : "Create & Invite Friends →")}
