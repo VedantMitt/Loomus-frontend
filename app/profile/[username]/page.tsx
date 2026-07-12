@@ -579,7 +579,7 @@ export default function ProfilePage() {
                       display: 'flex', flexDirection: 'column'
                     }} onMouseEnter={(e) => e.currentTarget.style.transform = `scale(1.05) rotate(0deg)`} onMouseLeave={(e) => e.currentTarget.style.transform = `scale(1) rotate(${rotate}deg)`}>
                       <img 
-                        src={chapter.media_url?.startsWith('/uploads') ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${chapter.media_url}` : chapter.media_url || `https://source.unsplash.com/random/400x400/?${chapter.type || 'party'}`}
+                        src={chapter.media_url?.startsWith('/uploads') ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${chapter.media_url}` : chapter.media_url || `https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=600&auto=format&fit=crop`}
                         alt={chapter.title}
                         style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", backgroundColor: '#eee', borderRadius: '2px' }}
                       />
