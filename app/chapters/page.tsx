@@ -444,7 +444,7 @@ export default function ChaptersPage() {
                   <div className="polaroid-date">{formatDate(chap.date)} • {chap.member_count} Crew</div>
 
                   {isLive && (
-                    <div className="absolute bottom-6 right-6 z-20 flex flex-col items-end">
+                    <div className="absolute bottom-6 right-6 z-20 flex flex-col items-end" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-end gap-2">
                         <input type="file" accept="image/*" className="hidden" id={`gal-${chap.id}`} onChange={e => { if(e.target.files?.[0]) handleQuickSnap(e.target.files[0], 'gallery', chap.id); }} />
                         <button
