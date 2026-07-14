@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.campusconnect.app',
-  appName: 'CampusConnect',
+  appName: 'Loomus',
   // webDir: 'out', // Not needed when pointing to live URL
   server: {
     // Change this to your live URL (e.g. Vercel) for the final production APK

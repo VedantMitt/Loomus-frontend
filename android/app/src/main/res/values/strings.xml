@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">CampusConnect</string>
-    <string name="title_activity_main">CampusConnect</string>
+    <string name="app_name">Loomus</string>
+    <string name="title_activity_main">Loomus</string>
     <string name="package_name">com.campusconnect.app</string>
     <string name="custom_url_scheme">com.campusconnect.app</string>
     <string name="server_client_id">179896098236-k92cj68fkliirf291ruuu6sk6rp1e7q4.apps.googleusercontent.com</string>
