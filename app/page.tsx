@@ -1,9 +1,23 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
 export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      router.replace("/feed");
+    } else {
+      router.replace("/login");
+    }
+  }, [router]);
+
   return (
-    <main className="min-h-screen flex items-center justify-center">
-      <h1 className="text-3xl font-bold">
-        Loomus 🚀
-      </h1>
+    <main className="min-h-screen bg-black flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
     </main>
   );
 }
