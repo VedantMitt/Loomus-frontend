@@ -9,9 +9,9 @@ export default function Home() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      router.replace("/feed");
+      router.replace("/activities");
     } else {
-      router.replace("/login");
+      router.replace("/auth/login");
     }
   }, [router]);
 
