@@ -272,9 +272,44 @@ export default function ScrapbookStoryPage() {
 
                     {/* Content Bubble */}
                     <div className="flex-1 pt-2">
-                      <div className="flex items-baseline gap-2 mb-2">
-                        <span className="font-bold text-sm text-pink-100">{s.name}</span>
-                        <span className="text-xs text-gray-500">{timeStr}</span>
+                      <div className="flex items-center gap-2 mb-2 relative z-20">
+                        <div className="flex items-baseline gap-2">
+                          <span className="font-bold text-sm text-pink-100">{s.name}</span>
+                          <span className="text-xs text-gray-500">{timeStr}</span>
+                        </div>
+                        {myUserId === s.user_id && (
+                          <div className="relative ml-2">
+                            <button 
+                              onClick={() => setOpenMenuId(openMenuId === s.id ? null : s.id)}
+                              className="p-1.5 flex items-center justify-center hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors"
+                            >
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg>
+                            </button>
+                            {openMenuId === s.id && (
+                              <div className="absolute top-8 left-0 w-44 bg-[#111] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+                                <button 
+                                  onClick={() => { 
+                                    let curLoc = "";
+                                    try { curLoc = JSON.parse(s.description || '{}').location || ""; } catch(e){}
+                                    setNewLocation(curLoc);
+                                    setEditLocationSub(s); 
+                                    setOpenMenuId(null); 
+                                  }} 
+                                  className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
+                                >
+                                  <span style={{ fontSize: 14 }}>📍</span> Edit Location
+                                </button>
+                                <div className="h-[1px] bg-white/10 w-full" />
+                                <button 
+                                  onClick={() => { handleDeleteSubmission(s.id); setOpenMenuId(null); }} 
+                                  className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors"
+                                >
+                                  <span style={{ fontSize: 14 }}>🗑️</span> Delete Memory
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                       
                       <div className={`p-1 rounded-2xl transition-all duration-300 ${isNote ? 'bg-white/5 border border-white/10 p-4 hover:bg-white/10' : 'hover:scale-[1.02]'}`}>
@@ -295,39 +330,6 @@ export default function ScrapbookStoryPage() {
                               >
                                 Set as Cover
                               </button>
-                            )}
-                            {myUserId === s.user_id && (
-                              <div className={`absolute top-3 ${myUserId === activity.host_id ? 'right-32' : 'right-3'} z-20`}>
-                                <button 
-                                  onClick={() => setOpenMenuId(openMenuId === s.id ? null : s.id)}
-                                  className="w-8 h-8 flex items-center justify-center bg-black/60 hover:bg-black/80 backdrop-blur-md rounded-full border border-white/10 text-white transition-all shadow-lg"
-                                >
-                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg>
-                                </button>
-                                {openMenuId === s.id && (
-                                  <div className="absolute top-10 right-0 w-44 bg-[#111] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
-                                    <button 
-                                      onClick={() => { 
-                                        let curLoc = "";
-                                        try { curLoc = JSON.parse(s.description || '{}').location || ""; } catch(e){}
-                                        setNewLocation(curLoc);
-                                        setEditLocationSub(s); 
-                                        setOpenMenuId(null); 
-                                      }} 
-                                      className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
-                                    >
-                                      <span style={{ fontSize: 14 }}>📍</span> Edit Location
-                                    </button>
-                                    <div className="h-[1px] bg-white/10 w-full" />
-                                    <button 
-                                      onClick={() => { handleDeleteSubmission(s.id); setOpenMenuId(null); }} 
-                                      className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors"
-                                    >
-                                      <span style={{ fontSize: 14 }}>🗑️</span> Delete Memory
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
                             )}
                             {meta?.location && (
                               <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
