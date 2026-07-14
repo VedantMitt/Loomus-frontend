@@ -465,7 +465,7 @@ export default function ChaptersPage() {
                         </button>
                         <div className="h-[1px] bg-white/10 w-full" />
                         <button onClick={() => { setChapterToDelete(chap.id); setOpenMenuId(null); }} className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors">
-                          <span style={{ fontSize: 16 }}>🗑️</span> Delete Chapter
+                          <span style={{ fontSize: 16 }}>🗑️</span> Delete Chapter For Me
                         </button>
                       </div>
                     )}
@@ -531,8 +531,8 @@ export default function ChaptersPage() {
       {chapterToDelete && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl text-center">
-            <h2 className="text-xl font-bold mb-2 font-['Syne'] text-white">Delete Chapter?</h2>
-            <p className="text-sm text-gray-400 mb-6">Are you sure you want to delete this chapter? This cannot be undone.</p>
+            <h2 className="text-xl font-bold mb-2 font-['Syne'] text-white">Delete Chapter For Me?</h2>
+            <p className="text-sm text-gray-400 mb-6">Are you sure you want to remove this chapter from your view? It will still be visible to other crewmates.</p>
             
             <div className="flex gap-3">
               <button 

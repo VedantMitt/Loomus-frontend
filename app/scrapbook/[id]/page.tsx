@@ -21,6 +21,7 @@ type Submission = {
   name: string;
   profile_pic?: string;
   created_at: string;
+  user_id?: string;
 };
 
 export default function ScrapbookStoryPage() {
@@ -140,6 +141,25 @@ export default function ScrapbookStoryPage() {
     }
   };
 
+  const handleDeleteSubmission = async (subId: string) => {
+    if (!confirm("Are you sure you want to delete this photo?")) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/submissions/${subId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setSubmissions(prev => prev.filter(s => s.id !== subId));
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to delete.");
+      }
+    } catch (e) {
+      alert("Error deleting photo");
+    }
+  };
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -249,6 +269,14 @@ export default function ScrapbookStoryPage() {
                                 className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 text-xs font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity"
                               >
                                 Set as Cover
+                              </button>
+                            )}
+                            {myUserId === s.user_id && (
+                              <button 
+                                onClick={() => handleDeleteSubmission(s.id)}
+                                className={`absolute top-3 ${myUserId === activity.host_id ? 'right-28' : 'right-3'} bg-black/60 hover:bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 text-xs font-bold text-red-400 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1`}
+                              >
+                                <span style={{ fontSize: 12 }}>🗑️</span> Delete
                               </button>
                             )}
                             {meta?.location && (
