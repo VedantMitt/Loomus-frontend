@@ -34,6 +34,9 @@ export default function ScrapbookStoryPage() {
   const [sharing, setSharing] = useState(false);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [editLocationSub, setEditLocationSub] = useState<Submission | null>(null);
+  const [newLocation, setNewLocation] = useState("");
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   useEffect(() => {
@@ -160,6 +163,28 @@ export default function ScrapbookStoryPage() {
     }
   };
 
+  const handleUpdateLocation = async () => {
+    if (!editLocationSub) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/submissions/${editLocationSub.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ location: newLocation })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSubmissions(prev => prev.map(s => s.id === editLocationSub.id ? { ...s, description: data.description } : s));
+        setEditLocationSub(null);
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to update location.");
+      }
+    } catch (e) {
+      alert("Error updating location");
+    }
+  };
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -272,12 +297,37 @@ export default function ScrapbookStoryPage() {
                               </button>
                             )}
                             {myUserId === s.user_id && (
-                              <button 
-                                onClick={() => handleDeleteSubmission(s.id)}
-                                className={`absolute top-3 ${myUserId === activity.host_id ? 'right-28' : 'right-3'} bg-black/60 hover:bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 text-xs font-bold text-red-400 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1`}
-                              >
-                                <span style={{ fontSize: 12 }}>🗑️</span> Delete
-                              </button>
+                              <div className={`absolute top-3 ${myUserId === activity.host_id ? 'right-32' : 'right-3'} z-20`}>
+                                <button 
+                                  onClick={() => setOpenMenuId(openMenuId === s.id ? null : s.id)}
+                                  className="w-8 h-8 flex items-center justify-center bg-black/60 hover:bg-black/80 backdrop-blur-md rounded-full border border-white/10 text-white transition-all shadow-lg"
+                                >
+                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg>
+                                </button>
+                                {openMenuId === s.id && (
+                                  <div className="absolute top-10 right-0 w-44 bg-[#111] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+                                    <button 
+                                      onClick={() => { 
+                                        let curLoc = "";
+                                        try { curLoc = JSON.parse(s.description || '{}').location || ""; } catch(e){}
+                                        setNewLocation(curLoc);
+                                        setEditLocationSub(s); 
+                                        setOpenMenuId(null); 
+                                      }} 
+                                      className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
+                                    >
+                                      <span style={{ fontSize: 14 }}>📍</span> Edit Location
+                                    </button>
+                                    <div className="h-[1px] bg-white/10 w-full" />
+                                    <button 
+                                      onClick={() => { handleDeleteSubmission(s.id); setOpenMenuId(null); }} 
+                                      className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors"
+                                    >
+                                      <span style={{ fontSize: 14 }}>🗑️</span> Delete Memory
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
                             )}
                             {meta?.location && (
                               <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
@@ -333,6 +383,29 @@ export default function ScrapbookStoryPage() {
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
             )}
           </button>
+        </div>
+      )}
+
+      {/* Edit Location Modal */}
+      {editLocationSub && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#111] border border-white/10 rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+            <h2 className="text-xl font-bold mb-4 font-['Syne'] text-white">Edit Location</h2>
+            <input 
+              type="text" 
+              value={newLocation} 
+              onChange={e => setNewLocation(e.target.value)} 
+              className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-pink-500 mb-6 text-white" 
+              placeholder="E.g. Central Park"
+              autoFocus
+            />
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setEditLocationSub(null)} className="text-sm font-bold text-gray-400 hover:text-white px-4 py-2 transition-colors">Cancel</button>
+              <button onClick={handleUpdateLocation} disabled={!newLocation.trim()} className="bg-pink-500 hover:bg-pink-600 text-white text-sm font-bold px-6 py-2 rounded-xl transition-all disabled:opacity-50">
+                Save
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
