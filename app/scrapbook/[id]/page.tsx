@@ -286,7 +286,7 @@ export default function ScrapbookStoryPage() {
                               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg>
                             </button>
                             {openMenuId === s.id && (
-                              <div className="absolute top-8 left-0 w-44 bg-[#111] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+                              <div className="absolute top-8 right-0 w-44 bg-[#111] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
                                 <button 
                                   onClick={() => { 
                                     let curLoc = "";
