@@ -44,7 +44,7 @@ function CreateActivityContent() {
   const [location, setLocation] = useState(initialLocation || suggestion.location);
   const [description, setDescription] = useState(initialDesc || suggestion.description);
   const [banner, setBanner] = useState<File | null>(null);
-  const [isPublic, setIsPublic] = useState(categoryType === "hobby");
+  const [isPublic, setIsPublic] = useState(true);
 
   const [hobbyTag, setHobbyTag] = useState<string>("");
   const [customHobby, setCustomHobby] = useState<string>("");
