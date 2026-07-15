@@ -280,9 +280,20 @@ export default function ActivitiesPage() {
         const res = await fetch(`${API}/ai/hot-events`, { headers });
         if (res.ok) {
           const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) {
-            setTopEvents(data);
-            return;
+          if (Array.isArray(data)) {
+            // If API returns some events, but fewer than 4, pad with the hardcoded top live events
+            const combined = [...data];
+            let i = 0;
+            while (combined.length < 4 && i < TOP_LIVE_EVENTS.length) {
+              if (!combined.find((e) => e.id === TOP_LIVE_EVENTS[i].id)) {
+                combined.push(TOP_LIVE_EVENTS[i]);
+              }
+              i++;
+            }
+            if (combined.length > 0) {
+              setTopEvents(combined);
+              return;
+            }
           }
         }
         setTopEvents(TOP_LIVE_EVENTS);
