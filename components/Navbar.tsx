@@ -22,12 +22,17 @@ export default function Navbar() {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationSearchVal, setLocationSearchVal] = useState("");
 
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const desktopDropdownRef = useRef<HTMLDivElement>(null);
+  const mobileDropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const clickInDesktop = desktopDropdownRef.current && desktopDropdownRef.current.contains(target);
+      const clickInMobile = mobileDropdownRef.current && mobileDropdownRef.current.contains(target);
+      
+      if (!clickInDesktop && !clickInMobile) {
         setShowDropdown(false);
       }
     };
@@ -523,7 +528,7 @@ export default function Navbar() {
                   {hasUnreadDMs && <div className="notif-dot" />}
                 </Link>
  
-                <div style={{ position: "relative" }} ref={dropdownRef}>
+                <div style={{ position: "relative" }} ref={desktopDropdownRef}>
                   <button className="nav-action-btn" onClick={(e) => {
                     e.stopPropagation();
                     setShowDropdown(!showDropdown);
@@ -744,7 +749,7 @@ export default function Navbar() {
             </svg>
             {hasUnreadDMs && <div className="notif-dot" style={{ width: 8, height: 8, top: -2, right: -2, border: "2px solid #141414" }} />}
           </Link>
-          <div style={{ position: "relative" }} ref={dropdownRef}>
+          <div style={{ position: "relative" }} ref={mobileDropdownRef}>
             <button className="mtn-btn" onClick={(e) => {
               e.stopPropagation();
               setShowDropdown(!showDropdown);
