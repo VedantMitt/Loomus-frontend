@@ -609,18 +609,19 @@ export default function Navbar() {
                                  {(n.type === 'game_invite' || n.type === 'room_invite' || n.type === 'activity_invite') && !n.is_read ? (
                                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                                       <button 
-                                        onClick={(e) => { 
+                                        onClick={async (e) => { 
                                           e.stopPropagation();
                                           e.preventDefault();
                                           
-                                          // Fire and forget the RSVP request
                                           if (n.type === 'activity_invite') {
-                                            const token = localStorage.getItem("token");
-                                            fetch(`${API}/activities/${meta?.activity_id}/rsvp`, {
-                                              method: "POST",
-                                              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                                              body: JSON.stringify({ status: 'going' })
-                                            }).catch(console.error);
+                                            try {
+                                              const token = localStorage.getItem("token");
+                                              await fetch(`${API}/activities/${meta?.activity_id}/rsvp`, {
+                                                method: "POST",
+                                                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                                                body: JSON.stringify({ status: 'going' })
+                                              });
+                                            } catch (e) { console.error(e); }
                                           }
                                           
                                           markNotifRead(n.id); 
@@ -831,18 +832,19 @@ export default function Navbar() {
                             {(n.type === 'game_invite' || n.type === 'room_invite' || n.type === 'activity_invite') && !n.is_read ? (
                               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                                 <button 
-                                  onClick={(e) => { 
+                                  onClick={async (e) => { 
                                     e.stopPropagation();
                                     e.preventDefault();
                                     
-                                    // Fire and forget the RSVP request
                                     if (n.type === 'activity_invite') {
-                                      const token = localStorage.getItem("token");
-                                      fetch(`${API}/activities/${meta?.activity_id}/rsvp`, {
-                                        method: "POST",
-                                        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                                        body: JSON.stringify({ status: 'going' })
-                                      }).catch(console.error);
+                                      try {
+                                        const token = localStorage.getItem("token");
+                                        await fetch(`${API}/activities/${meta?.activity_id}/rsvp`, {
+                                          method: "POST",
+                                          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                                          body: JSON.stringify({ status: 'going' })
+                                        });
+                                      } catch (e) { console.error(e); }
                                     }
                                     
                                     markNotifRead(n.id); 
