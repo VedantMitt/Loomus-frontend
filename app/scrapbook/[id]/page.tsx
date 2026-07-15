@@ -90,6 +90,13 @@ export default function ScrapbookStoryPage() {
         ...newSub,
         name: "You", // placeholder until refresh
       }]);
+      
+      // Refresh activity to get updated cover if it changed
+      fetch(`${API}/activities/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(res => res.ok && res.json())
+        .then(data => data && setActivity(data))
+        .catch(console.error);
+
       alert("Snap added to scrapbook!");
     } catch (err) {
       console.error(err);
@@ -154,6 +161,11 @@ export default function ScrapbookStoryPage() {
       });
       if (res.ok) {
         setSubmissions(prev => prev.filter(s => s.id !== subId));
+        // Refresh activity to get updated cover if it changed
+        fetch(`${API}/activities/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+          .then(res => res.ok && res.json())
+          .then(data => data && setActivity(data))
+          .catch(console.error);
       } else {
         const err = await res.json();
         alert(err.error || "Failed to delete.");

@@ -374,6 +374,13 @@ export default function LoomusActivityPage() {
           }
           return [newSub, ...prev];
         });
+        
+        // Refresh activity to get updated cover if it changed
+        fetch(`${API}/activities/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+          .then(res => res.ok && res.json())
+          .then(data => data && setActivity(data))
+          .catch(console.error);
+
         setFile(null);
         setIsWritingNote(false);
         setNoteText("");
