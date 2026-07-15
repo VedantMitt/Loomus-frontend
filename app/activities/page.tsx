@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import NebulaBackground from "@/components/NebulaBackground";
+import HobbyAnimatedBg from "@/components/HobbyAnimatedBg";
 
 type Activity = {
   id: string;
@@ -952,10 +953,10 @@ export default function ActivitiesPage() {
                       {event.type || "Hobby"}
                     </div>
                     <div className="live-card" onClick={() => handleEventClick(event)}>
-                      <img src={event.banner || (event as any).image || `https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&h=400&fit=crop`} alt={event.title} className="live-img" />
+                      <HobbyAnimatedBg seed={event.id ? event.id.charCodeAt(0) : 0} />
                       <div 
                         className="live-overlay" 
-                        style={{ background: `linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(255,154,158,0.4) 60%, transparent 100%)` }} 
+                        style={{ background: `linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)` }} 
                       />
                       <div className="live-badge" style={{ background: 'rgba(255, 154, 158, 0.9)', boxShadow: '0 4px 12px rgba(255, 154, 158, 0.4)' }}>
                         <div className="live-badge-dot" style={{ animation: 'none' }} /> MEETUP
