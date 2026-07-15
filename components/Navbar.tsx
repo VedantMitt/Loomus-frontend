@@ -605,11 +605,11 @@ export default function Navbar() {
                                       )}
                                    </Link>
                                  </div>
-                                 {(n.type === 'game_invite' || n.type === 'room_invite') && !n.is_read ? (
+                                 {(n.type === 'game_invite' || n.type === 'room_invite' || n.type === 'activity_invite') && !n.is_read ? (
                                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                                       <button 
                                         onClick={() => { window.location.href = link; markNotifRead(n.id); setShowDropdown(false); }} 
-                                        style={{ padding: "5px 10px", background: n.type === 'game_invite' ? "#f472b6" : "#06b6d4", color: "#fff", border: "none", borderRadius: "8px", fontSize: "10px", fontWeight: 800, cursor: "pointer" }}
+                                        style={{ padding: "5px 10px", background: (n.type === 'game_invite' || n.type === 'activity_invite') ? "#f472b6" : "#06b6d4", color: "#fff", border: "none", borderRadius: "8px", fontSize: "10px", fontWeight: 800, cursor: "pointer" }}
                                       >
                                         Join
                                       </button>
