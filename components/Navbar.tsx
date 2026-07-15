@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import LocationAutocomplete from "./LocationAutocomplete";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [scrolled, setScrolled] = useState(false);
   const [hasPendingRequests, setHasPendingRequests] = useState(false);
@@ -608,20 +609,23 @@ export default function Navbar() {
                                  {(n.type === 'game_invite' || n.type === 'room_invite' || n.type === 'activity_invite') && !n.is_read ? (
                                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                                       <button 
-                                        onClick={async () => { 
+                                        onClick={(e) => { 
+                                          e.stopPropagation();
+                                          e.preventDefault();
+                                          
+                                          // Fire and forget the RSVP request
                                           if (n.type === 'activity_invite') {
-                                            try {
-                                              const token = localStorage.getItem("token");
-                                              await fetch(`${API}/activities/${meta?.activity_id}/rsvp`, {
-                                                method: "POST",
-                                                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                                                body: JSON.stringify({ status: 'going' })
-                                              });
-                                            } catch (e) { console.error(e); }
+                                            const token = localStorage.getItem("token");
+                                            fetch(`${API}/activities/${meta?.activity_id}/rsvp`, {
+                                              method: "POST",
+                                              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                                              body: JSON.stringify({ status: 'going' })
+                                            }).catch(console.error);
                                           }
-                                          window.location.href = link; 
+                                          
                                           markNotifRead(n.id); 
                                           setShowDropdown(false); 
+                                          router.push(link); 
                                         }} 
                                         style={{ padding: "5px 10px", background: (n.type === 'game_invite' || n.type === 'activity_invite') ? "#f472b6" : "#06b6d4", color: "#fff", border: "none", borderRadius: "8px", fontSize: "10px", fontWeight: 800, cursor: "pointer" }}
                                       >
@@ -827,20 +831,23 @@ export default function Navbar() {
                             {(n.type === 'game_invite' || n.type === 'room_invite' || n.type === 'activity_invite') && !n.is_read ? (
                               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                                 <button 
-                                  onClick={async () => { 
+                                  onClick={(e) => { 
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    
+                                    // Fire and forget the RSVP request
                                     if (n.type === 'activity_invite') {
-                                      try {
-                                        const token = localStorage.getItem("token");
-                                        await fetch(`${API}/activities/${meta?.activity_id}/rsvp`, {
-                                          method: "POST",
-                                          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                                          body: JSON.stringify({ status: 'going' })
-                                        });
-                                      } catch (e) { console.error(e); }
+                                      const token = localStorage.getItem("token");
+                                      fetch(`${API}/activities/${meta?.activity_id}/rsvp`, {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                                        body: JSON.stringify({ status: 'going' })
+                                      }).catch(console.error);
                                     }
-                                    window.location.href = link; 
+                                    
                                     markNotifRead(n.id); 
                                     setShowDropdown(false); 
+                                    router.push(link); 
                                   }} 
                                   style={{ padding: "5px 10px", background: (n.type === 'game_invite' || n.type === 'activity_invite') ? "#f472b6" : "#06b6d4", color: "#fff", border: "none", borderRadius: "8px", fontSize: "10px", fontWeight: 800, cursor: "pointer" }}
                                 >
