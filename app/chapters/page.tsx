@@ -11,6 +11,7 @@ type Activity = {
   date: string;
   location: string;
   banner?: string;
+  chapter_cover?: string;
   host_name: string;
   host_pic?: string;
   member_count: number;
@@ -418,8 +419,9 @@ export default function ChaptersPage() {
           <div className="scrapbook-grid">
             {chapters.map((chap, i) => {
               const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-              const bannerUrl = chap.banner 
-                ? (chap.banner.startsWith("/uploads") ? `${API}${chap.banner}` : chap.banner)
+              const actualCover = chap.chapter_cover || chap.banner;
+              const bannerUrl = actualCover 
+                ? (actualCover.startsWith("/uploads") ? `${API}${actualCover}` : actualCover)
                 : `https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=600&auto=format&fit=crop`;
               
               // Random rotation between -4deg and 4deg for scrapbook feel
