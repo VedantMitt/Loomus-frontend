@@ -608,7 +608,21 @@ export default function Navbar() {
                                  {(n.type === 'game_invite' || n.type === 'room_invite' || n.type === 'activity_invite') && !n.is_read ? (
                                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                                       <button 
-                                        onClick={() => { window.location.href = link; markNotifRead(n.id); setShowDropdown(false); }} 
+                                        onClick={async () => { 
+                                          if (n.type === 'activity_invite') {
+                                            try {
+                                              const token = localStorage.getItem("token");
+                                              await fetch(`${API}/activities/${meta?.activity_id}/rsvp`, {
+                                                method: "POST",
+                                                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                                                body: JSON.stringify({ status: 'going' })
+                                              });
+                                            } catch (e) { console.error(e); }
+                                          }
+                                          window.location.href = link; 
+                                          markNotifRead(n.id); 
+                                          setShowDropdown(false); 
+                                        }} 
                                         style={{ padding: "5px 10px", background: (n.type === 'game_invite' || n.type === 'activity_invite') ? "#f472b6" : "#06b6d4", color: "#fff", border: "none", borderRadius: "8px", fontSize: "10px", fontWeight: 800, cursor: "pointer" }}
                                       >
                                         Join
@@ -813,7 +827,21 @@ export default function Navbar() {
                             {(n.type === 'game_invite' || n.type === 'room_invite' || n.type === 'activity_invite') && !n.is_read ? (
                               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                                 <button 
-                                  onClick={() => { window.location.href = link; markNotifRead(n.id); setShowDropdown(false); }} 
+                                  onClick={async () => { 
+                                    if (n.type === 'activity_invite') {
+                                      try {
+                                        const token = localStorage.getItem("token");
+                                        await fetch(`${API}/activities/${meta?.activity_id}/rsvp`, {
+                                          method: "POST",
+                                          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                                          body: JSON.stringify({ status: 'going' })
+                                        });
+                                      } catch (e) { console.error(e); }
+                                    }
+                                    window.location.href = link; 
+                                    markNotifRead(n.id); 
+                                    setShowDropdown(false); 
+                                  }} 
                                   style={{ padding: "5px 10px", background: (n.type === 'game_invite' || n.type === 'activity_invite') ? "#f472b6" : "#06b6d4", color: "#fff", border: "none", borderRadius: "8px", fontSize: "10px", fontWeight: 800, cursor: "pointer" }}
                                 >
                                   Join
