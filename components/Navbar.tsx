@@ -167,7 +167,7 @@ export default function Navbar() {
     } catch (err) { console.error(err); }
   };
 
-  const hideNavOn = ["/auth/login", "/login"];
+  const hideNavOn = ["/", "/auth/login", "/login"];
   if (hideNavOn.includes(pathname)) return null;
 
   const handleLogout = () => {

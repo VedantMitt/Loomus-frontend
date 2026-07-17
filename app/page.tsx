@@ -45,7 +45,7 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-pink-400 mb-8 shadow-xl">
             <Sparkles className="w-4 h-4" />
-            <span>The new way to experience life offline</span>
+            <span>Social, beyond the screen</span>
           </div>
           
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-[1.1]">
@@ -54,7 +54,7 @@ export default function LandingPage() {
           </h1>
           
           <p className="text-lg md:text-xl text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed">
-            Loomus helps you plan activities ("Looms") with friends, turn live memories into scrapbooks ("Chapters"), and meet random people who match your vibe. Stop scrolling, start living.
+            Plan unforgettable experiences with friends, meet people who match your vibe, and turn every experience into a Chapter you'll come back to.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -81,8 +81,8 @@ export default function LandingPage() {
       <section className="py-32 px-6 relative z-10 border-t border-white/5 bg-black/40">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
-            <h2 className="text-3xl md:text-5xl font-bold mb-6">Everything you need to touch grass</h2>
-            <p className="text-gray-400 max-w-2xl mx-auto text-lg">From intimate hangouts to massive hobby meetups, Loomus brings people together in the real world.</p>
+            <h2 className="text-3xl md:text-5xl font-bold mb-6">Everything you need to get people together. ⭐<br/><span className="text-2xl md:text-3xl text-gray-300 mt-4 block">Your social life, finally in one place.</span></h2>
+            <p className="text-gray-400 max-w-2xl mx-auto text-lg">Whether it's dinner with friends, a pickup game, or a hobby meetup, Loomus makes it easy to plan, connect, and remember every experience.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -106,7 +106,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-bold mb-3 text-white">Shared Chapters</h3>
               <p className="text-sm text-gray-400 leading-relaxed">
-                Live through the moment and add live memories to a shared scrapbook. Post and share these Chapters with everyone.
+                Turn every hangout into a shared memory. Everyone adds photos, videos, and moments to one collaborative Chapter.
               </p>
             </div>
 
@@ -130,7 +130,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-bold mb-3 text-white">Hobby Meetups</h3>
               <p className="text-sm text-gray-400 leading-relaxed">
-                Go on hobby-based meetups with strangers who share your interests. The easiest way to expand your circle.
+                Meet people through shared hobbies—not awkward networking. Join groups for climbing, gaming, photography, pickleball, and more.
               </p>
             </div>
           </div>

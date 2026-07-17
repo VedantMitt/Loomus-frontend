@@ -44,7 +44,7 @@ export default function MobileNav() {
   }, []);
 
   // Hide on auth pages
-  const hideOn = ["/auth/login", "/login"];
+  const hideOn = ["/", "/auth/login", "/login"];
   if (hideOn.includes(pathname)) return null;
 
   const links = [
