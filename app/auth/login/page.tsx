@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { GoogleLogin } from "@react-oauth/google";
 import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
+import { Capacitor } from "@capacitor/core";
 
 type Screen = "login" | "register" | "otp" | "forgot" | "reset";
 
@@ -51,8 +52,7 @@ export default function AuthPage() {
   // Detect if running inside Capacitor (Android/iOS WebView)
   const [isNative, setIsNative] = useState(false);
   useEffect(() => {
-    const checkNative = typeof window !== "undefined" &&
-      ((window as any).Capacitor !== undefined || navigator.userAgent.includes("wv"));
+    const checkNative = Capacitor.isNativePlatform();
     setIsNative(checkNative);
     if (checkNative) {
       GoogleAuth.initialize();

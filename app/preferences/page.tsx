@@ -27,6 +27,8 @@ export default function PreferencesPage() {
   const [vibeTags, setVibeTags] = useState<string[]>([]);
   const [vibeInput, setVibeInput] = useState("");
 
+  const [isPrivate, setIsPrivate] = useState(false);
+
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -40,6 +42,7 @@ export default function PreferencesPage() {
       setToken(storedToken);
       if (parsedUser.interests) setInterests(parsedUser.interests);
       if (parsedUser.vibe_tags) setVibeTags(parsedUser.vibe_tags);
+      if (parsedUser.is_private !== undefined) setIsPrivate(parsedUser.is_private);
     }
   }, [router]);
 
@@ -75,7 +78,8 @@ export default function PreferencesPage() {
         },
         body: JSON.stringify({
           interests,
-          vibe_tags: vibeTags
+          vibe_tags: vibeTags,
+          is_private: isPrivate
         }),
       });
       const data = await res.json();
@@ -232,6 +236,28 @@ export default function PreferencesPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Privacy Section */}
+        <div style={{ marginBottom: "40px", padding: "16px", background: "rgba(255,255,255,0.05)", borderRadius: "16px", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <h2 style={{ fontSize: "16px", fontWeight: 600, margin: "0 0 4px 0" }}>Private Account</h2>
+            <p style={{ fontSize: "12px", color: "#888", margin: 0 }}>
+              If enabled, your chapters only appear to friends on the feed.
+            </p>
+          </div>
+          <button 
+            onClick={() => setIsPrivate(!isPrivate)}
+            style={{ 
+              width: "44px", height: "24px", borderRadius: "12px", background: isPrivate ? "#3b82f6" : "#333", 
+              position: "relative", cursor: "pointer", border: "none", transition: "all 0.3s"
+            }}
+          >
+            <div style={{
+              width: "18px", height: "18px", borderRadius: "50%", background: "#fff",
+              position: "absolute", top: "3px", left: isPrivate ? "23px" : "3px", transition: "all 0.3s"
+            }} />
+          </button>
         </div>
 
         <button 

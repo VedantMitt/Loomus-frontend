@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import UserCard from "@/components/UserCard";
 import Link from "next/link";
 import NebulaBackground from "@/components/NebulaBackground";
-import { Heart, MessageCircle, Send, X } from "lucide-react";
+import { Heart, MessageCircle, Send, X, UserPlus } from "lucide-react";
 
 type User = {
   id: string;
@@ -57,6 +57,36 @@ export default function DiscoverPage() {
   const [mentionUsers, setMentionUsers] = useState<User[]>([]);
   const [activePhotoIndices, setActivePhotoIndices] = useState<Record<string, number>>({});
   const [showCrewPopup, setShowCrewPopup] = useState<string | null>(null);
+
+  const observer = useRef<IntersectionObserver | null>(null);
+  const viewedItemsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    observer.current = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const feedId = entry.target.getAttribute('data-feed-id');
+          if (feedId && !viewedItemsRef.current.has(feedId)) {
+            viewedItemsRef.current.add(feedId);
+            const token = localStorage.getItem("token");
+            fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/activities/${feedId}/view`, {
+              method: 'POST',
+              headers: token ? { Authorization: `Bearer ${token}` } : {}
+            }).catch(console.error);
+            observer.current?.unobserve(entry.target);
+          }
+        }
+      });
+    }, { threshold: 0.5 });
+
+    return () => observer.current?.disconnect();
+  }, []);
+
+  const feedItemRef = useCallback((node: HTMLDivElement | null) => {
+    if (node && observer.current) {
+      observer.current.observe(node);
+    }
+  }, []);
 
   const handleToggleLike = async (feedId: string) => {
     const isLiked = likes[feedId];
@@ -334,7 +364,7 @@ export default function DiscoverPage() {
             const showSuggestions = (index + 1) % 2 === 0 && usersChunks[chunkIndex];
 
             return (
-              <div key={feedItem.id} style={{ marginBottom: "64px" }}>
+              <div key={feedItem.id} style={{ marginBottom: "64px" }} ref={feedItemRef} data-feed-id={feedItem.id}>
                 {/* Scrapbook Post */}
                 <div className="glass-panel" style={{ borderRadius: "24px", padding: "24px", border: "1px solid rgba(255,255,255,0.05)" }}>
                   <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", marginBottom: "20px", position: "relative" }}>
@@ -343,7 +373,27 @@ export default function DiscoverPage() {
                       style={{ width: "48px", height: "48px", borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(255,255,255,0.1)", marginTop: "2px" }}
                     />
                     <div style={{ flex: 1, paddingRight: "40px" }}>
-                      <div style={{ fontWeight: 700, fontSize: "16px", color: "#fff" }}>{feedItem.host_name}</div>
+                      <div style={{ fontWeight: 700, fontSize: "16px", color: "#fff", display: "flex", alignItems: "center" }}>
+                        {feedItem.host_name}
+                        {feedItem.host_id !== myUserId && !feedItem.is_host_friend && !feedItem.host_is_private && (
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const token = localStorage.getItem("token");
+                              fetch(`${API}/friends/request/${feedItem.host_id}`, {
+                                method: "POST",
+                                headers: token ? { Authorization: `Bearer ${token}` } : {}
+                              }).then(() => {
+                                alert("Friend request sent!");
+                                setSharedFeed(prev => prev.map(f => f.host_id === feedItem.host_id ? { ...f, is_host_friend: true } : f));
+                              });
+                            }}
+                            className="ml-3 bg-pink-500/20 text-pink-400 hover:bg-pink-500 hover:text-white px-3 py-1 rounded-full text-[11px] font-bold transition-colors border border-pink-500/30 flex items-center gap-1"
+                          >
+                            <UserPlus className="w-3 h-3" /> Follow
+                          </button>
+                        )}
+                      </div>
                       <div style={{ fontSize: "13px", color: "#888" }}>
                         {feedItem.timeline_photos && feedItem.timeline_photos.length > 0 && feedItem.timeline_photos[0].created_at ? (
                           <>{feedItem.timeline_photos[0].author_name} added to the story • {timeAgo(feedItem.timeline_photos[0].created_at)}</>
