@@ -29,6 +29,57 @@ export default function FriendCard({ friend, onRemove }: { friend: Friend, onRem
 
   const router = useRouter();
 
+  const [showInviteMenu, setShowInviteMenu] = useState(false);
+  const [myLooms, setMyLooms] = useState<any[]>([]);
+  const [loadingLooms, setLoadingLooms] = useState(false);
+
+  const toggleInviteMenu = async () => {
+    if (showInviteMenu) {
+      setShowInviteMenu(false);
+      return;
+    }
+    setShowInviteMenu(true);
+    if (myLooms.length === 0) {
+      try {
+        setLoadingLooms(true);
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API}/activities`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setMyLooms(data);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingLooms(false);
+      }
+    }
+  };
+
+  const inviteToLoom = async (activityId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/activities/${activityId}/invite`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ invitee_id: friend.id })
+      });
+      if (res.ok) {
+        alert("Invite sent!");
+        setShowInviteMenu(false);
+      } else {
+        alert("Failed to send invite.");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleRemove = async () => {
     if (!confirm(`Are you sure you want to remove ${friend.name} from your friends?`)) return;
     try {
@@ -375,14 +426,38 @@ export default function FriendCard({ friend, onRemove }: { friend: Friend, onRem
 
 
 
-          {/* Remove */}
-          <button
-            className="fc-btn fc-btn-icon fc-btn-remove"
-            onClick={handleRemove}
-            title="Remove Friend"
-          >
-            🗑
-          </button>
+          {/* Invite */}
+          <div className="fc-dropdown-wrap">
+            <button
+              className="fc-btn fc-btn-icon fc-btn-party"
+              onClick={toggleInviteMenu}
+              title="Invite to Loom"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+            </button>
+            
+            {showInviteMenu && (
+              <div className="fc-dropdown" style={{ right: 0 }}>
+                <div className="fc-dropdown-title">INVITE TO LOOM</div>
+                {loadingLooms ? (
+                  <div style={{ padding: "10px", color: "#888", fontSize: "12px", textAlign: "center" }}>Loading your looms...</div>
+                ) : myLooms.length > 0 ? (
+                  <div style={{ maxHeight: "200px", overflowY: "auto" }}>
+                    {myLooms.map(loom => (
+                      <button key={loom.id} className="fc-dropdown-item" onClick={() => inviteToLoom(loom.id)}>
+                        <div className="fc-item-icon fc-item-icon-party-music">🏮</div>
+                        <div>
+                          <div className="fc-item-label">{loom.title}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ padding: "10px", color: "#888", fontSize: "12px", textAlign: "center" }}>No active looms</div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </>
