@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Heart, MessageCircle, Send, X } from "lucide-react";
 
 type Activity = {
   id: string;
@@ -37,6 +37,16 @@ export default function ScrapbookStoryPage() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [editLocationSub, setEditLocationSub] = useState<Submission | null>(null);
   const [newLocation, setNewLocation] = useState("");
+
+  const [likes, setLikes] = useState<Record<string, boolean>>({});
+  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
+  const [showComments, setShowComments] = useState<Record<string, boolean>>({});
+  const [comments, setComments] = useState<Record<string, any[]>>({});
+  const [commentText, setCommentText] = useState<Record<string, string>>({});
+  const [replyingTo, setReplyingTo] = useState<Record<string, any>>({});
+  const [mentionData, setMentionData] = useState<{ query: string; cursor: number; submissionId: string | null }>({ query: "", cursor: -1, submissionId: null });
+  const [mentionUsers, setMentionUsers] = useState<any[]>([]);
+
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   useEffect(() => {
@@ -175,6 +185,156 @@ export default function ScrapbookStoryPage() {
     }
   };
 
+  const handleToggleLike = async (submissionId: string) => {
+    const isLiked = likes[submissionId];
+    setLikes(p => ({ ...p, [submissionId]: !isLiked }));
+    setLikeCounts(p => ({ ...p, [submissionId]: (p[submissionId] || 0) + (isLiked ? -1 : 1) }));
+
+    try {
+      const token = localStorage.getItem("token");
+      await fetch(`${API}/submissions/${submissionId}/vote`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+    } catch (err) {}
+  };
+
+  const handlePostComment = async (submissionId: string) => {
+    const text = commentText[submissionId]?.trim();
+    if (!text) return;
+    
+    const parentId = replyingTo[submissionId]?.id || null;
+    
+    setCommentText(p => ({ ...p, [submissionId]: "" }));
+    setReplyingTo(p => { const np = {...p}; delete np[submissionId]; return np; });
+    
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/submissions/${submissionId}/comments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ content: text, parent_id: parentId })
+      });
+      if (res.ok) {
+        const newComment = await res.json();
+        const formatted = { 
+          id: newComment.id, 
+          text: newComment.content, 
+          author: newComment.user_name || newComment.user_username || "You", 
+          time: "Just now",
+          likes_count: 0,
+          has_liked: false,
+          parent_id: parentId,
+          user_id: myUserId
+        };
+        setComments(p => ({ ...p, [submissionId]: [...(p[submissionId] || []), formatted] }));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleLikeComment = async (submissionId: string, commentId: string, isLiked: boolean) => {
+    setComments(p => ({
+      ...p,
+      [submissionId]: (p[submissionId] || []).map(c => 
+        c.id === commentId 
+          ? { ...c, has_liked: !isLiked, likes_count: c.likes_count + (isLiked ? -1 : 1) } 
+          : c
+      )
+    }));
+
+    try {
+      const token = localStorage.getItem("token");
+      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+      if (isLiked) {
+        await fetch(`${API}/comments/${commentId}/like`, { method: "DELETE", headers });
+      } else {
+        await fetch(`${API}/comments/${commentId}/like`, { method: "POST", headers });
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const toggleComments = async (submissionId: string) => {
+    setShowComments(p => {
+      const isShowing = !p[submissionId];
+      if (isShowing && !comments[submissionId]) {
+        const token = localStorage.getItem("token");
+        fetch(`${API}/submissions/${submissionId}/comments`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            const formatted = data.map((c: any) => ({
+              id: c.id,
+              text: c.content,
+              author: c.user_name || c.user_username || "Unknown",
+              time: new Date(c.created_at).toLocaleDateString(),
+              likes_count: parseInt(c.like_count || '0'),
+              has_liked: c.has_liked,
+              parent_id: c.parent_id,
+              user_id: c.user_id
+            }));
+            setComments(p2 => ({ ...p2, [submissionId]: formatted }));
+          }
+        })
+        .catch(console.error);
+      }
+      return { ...p, [submissionId]: isShowing };
+    });
+  };
+
+  const handleDeleteComment = async (submissionId: string, commentId: string) => {
+    if (!confirm("Delete this comment?")) return;
+    setComments(p => ({
+      ...p,
+      [submissionId]: (p[submissionId] || []).filter(c => c.id !== commentId)
+    }));
+
+    try {
+      const token = localStorage.getItem("token");
+      await fetch(`${API}/comments/${commentId}`, {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleCommentChange = async (submissionId: string, value: string) => {
+    setCommentText(p => ({ ...p, [submissionId]: value }));
+    const match = value.match(/@(\w*)$/);
+    if (match) {
+      setMentionData({ query: match[1], cursor: value.length, submissionId });
+      const token = localStorage.getItem("token");
+      try {
+        const res = await fetch(`${API}/users/discover?search=${match[1]}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        if (res.ok) {
+          const users = await res.json();
+          setMentionUsers(users.slice(0, 5));
+        }
+      } catch (err) {}
+    } else {
+      setMentionData({ query: "", cursor: -1, submissionId: null });
+    }
+  };
+
+  const handleSelectMention = (user: any, submissionId: string) => {
+    const text = commentText[submissionId] || "";
+    const newText = text.replace(/@\w*$/, `@${user.username} `);
+    setCommentText(p => ({ ...p, [submissionId]: newText }));
+    setMentionData({ query: "", cursor: -1, submissionId: null });
+  };
+
   const handleUpdateLocation = async () => {
     if (!editLocationSub) return;
     try {
@@ -201,17 +361,25 @@ export default function ScrapbookStoryPage() {
     async function fetchData() {
       try {
         const token = localStorage.getItem("token");
-        const aRes = await fetch(`${API}/activities/${id}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const aRes = await fetch(`${API}/activities/${id}`, { headers });
         if (aRes.ok) setActivity(await aRes.json());
 
-        const sRes = await fetch(`${API}/activities/${id}/submissions`);
+        const sRes = await fetch(`${API}/activities/${id}/submissions`, { headers });
         if (sRes.ok) {
           const subs = await sRes.json();
           // Sort chronologically for story mode
           subs.sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
           setSubmissions(subs);
+          
+          const initialLikes: Record<string, boolean> = {};
+          const initialLikeCounts: Record<string, number> = {};
+          subs.forEach((sub: any) => {
+            initialLikes[sub.id] = sub.has_voted;
+            initialLikeCounts[sub.id] = parseInt(sub.vote_count || '0', 10);
+          });
+          setLikes(initialLikes);
+          setLikeCounts(initialLikeCounts);
         }
       } catch (err) {
         console.error(err);
@@ -356,6 +524,137 @@ export default function ScrapbookStoryPage() {
                           </div>
                         )}
                       </div>
+                      
+                      {/* Action Buttons */}
+                      <div className="flex gap-4 mt-3 pl-2">
+                        <button 
+                          onClick={() => handleToggleLike(s.id)}
+                          className={`group flex items-center gap-1.5 transition-all ${likes[s.id] ? 'text-pink-500' : 'text-gray-400 hover:text-pink-400'}`}
+                        >
+                          <Heart className={`w-[16px] h-[16px] transition-transform duration-200 group-hover:scale-110 ${likes[s.id] ? 'fill-pink-500' : ''}`} />
+                          <span className="text-[12px] font-bold">
+                            {likeCounts[s.id] > 0 ? likeCounts[s.id] : ""}
+                          </span>
+                        </button>
+                        <button 
+                          onClick={() => toggleComments(s.id)}
+                          className={`group flex items-center gap-1.5 transition-all ${showComments[s.id] ? 'text-blue-400' : 'text-gray-400 hover:text-blue-400'}`}
+                        >
+                          <MessageCircle className="w-[16px] h-[16px] transition-transform duration-200 group-hover:scale-110" />
+                          <span className="text-[12px] font-bold">
+                            {comments[s.id] ? (comments[s.id].length > 0 ? comments[s.id].length : "") : (parseInt((s as any).comment_count || '0', 10) > 0 ? (s as any).comment_count : "")}
+                          </span>
+                        </button>
+                      </div>
+
+                      {/* Comment Section */}
+                      {showComments[s.id] && (
+                        <div className="mt-4 pt-4 border-t border-white/5 flex flex-col gap-3">
+                          {comments[s.id] && comments[s.id].length > 0 ? (
+                            <div className="flex flex-col gap-4 max-h-60 overflow-y-auto pr-2 hide-scroll">
+                              {comments[s.id].filter((c: any) => !c.parent_id).map((c: any) => (
+                                <div key={c.id} className="flex flex-col gap-2">
+                                  <div className="flex gap-2">
+                                    <div className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+                                      {c.author.charAt(0)}
+                                    </div>
+                                    <div className="bg-white/5 rounded-xl rounded-tl-none px-3 py-2 border border-white/5 text-sm w-full">
+                                      <div className="flex justify-between items-end mb-1">
+                                        <span className="font-bold text-xs text-gray-300">{c.author}</span>
+                                        <span className="text-[10px] text-gray-500">{c.time}</span>
+                                      </div>
+                                      <p className="text-gray-300 m-0 text-[13px] leading-relaxed">
+                                        {c.text.split(/(@\w+)/g).map((part: string, x: number) => part.startsWith('@') ? <span key={x} className="text-pink-400 font-semibold">{part}</span> : part)}
+                                      </p>
+                                      <div className="flex gap-4 mt-2 text-[10px] text-gray-400 font-medium">
+                                        <button onClick={() => handleLikeComment(s.id, c.id, c.has_liked)} className={`flex items-center gap-1 ${c.has_liked ? 'text-pink-500' : 'hover:text-white'}`}>
+                                          <Heart className={`w-3 h-3 ${c.has_liked ? 'fill-pink-500' : ''}`} /> {c.likes_count || 0}
+                                        </button>
+                                        <button onClick={() => setReplyingTo(p => ({ ...p, [s.id]: c }))} className="hover:text-white">Reply</button>
+                                        {c.user_id === myUserId && (
+                                          <button onClick={() => handleDeleteComment(s.id, c.id)} className="hover:text-red-400 text-gray-500 ml-auto">Delete</button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  {comments[s.id].filter((reply: any) => reply.parent_id === c.id).length > 0 && (
+                                    <div className="pl-8 flex flex-col gap-2 mt-1">
+                                      {comments[s.id].filter((reply: any) => reply.parent_id === c.id).map((reply: any) => (
+                                        <div key={reply.id} className="flex gap-2">
+                                          <div className="w-5 h-5 rounded-full bg-gray-600 flex items-center justify-center text-[8px] font-bold text-white shrink-0">
+                                            {reply.author.charAt(0)}
+                                          </div>
+                                          <div className="bg-white/5 rounded-xl rounded-tl-none px-3 py-2 border border-white/5 text-sm w-full">
+                                            <div className="flex justify-between items-end mb-1">
+                                              <span className="font-bold text-xs text-gray-300">{reply.author}</span>
+                                              <span className="text-[10px] text-gray-500">{reply.time}</span>
+                                            </div>
+                                            <p className="text-gray-300 m-0 text-[13px] leading-relaxed">
+                                              {reply.text.split(/(@\w+)/g).map((part: string, x: number) => part.startsWith('@') ? <span key={x} className="text-pink-400 font-semibold">{part}</span> : part)}
+                                            </p>
+                                            <div className="flex gap-4 mt-2 text-[10px] text-gray-400 font-medium">
+                                              <button onClick={() => handleLikeComment(s.id, reply.id, reply.has_liked)} className={`flex items-center gap-1 ${reply.has_liked ? 'text-pink-500' : 'hover:text-white'}`}>
+                                                <Heart className={`w-3 h-3 ${reply.has_liked ? 'fill-pink-500' : ''}`} /> {reply.likes_count || 0}
+                                              </button>
+                                              {reply.user_id === myUserId && (
+                                                <button onClick={() => handleDeleteComment(s.id, reply.id)} className="hover:text-red-400 text-gray-500 ml-auto">Delete</button>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-xs text-center text-gray-500 italic py-2">No comments yet. Be the first to spill!</div>
+                          )}
+                          
+                          <div className="relative flex flex-col mt-2">
+                            {mentionData.submissionId === s.id && mentionUsers.length > 0 && (
+                              <div className="absolute bottom-full left-0 mb-2 w-full bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50">
+                                {mentionUsers.map(u => (
+                                  <button key={u.id} onClick={() => handleSelectMention(u, s.id)} className="w-full text-left px-3 py-2 hover:bg-white/5 flex items-center gap-2">
+                                    <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-[10px] text-white">
+                                      {u.profile_pic ? <img src={u.profile_pic} className="w-full h-full rounded-full object-cover" /> : u.username.charAt(0)}
+                                    </div>
+                                    <div>
+                                      <div className="text-sm font-semibold text-white">{u.name}</div>
+                                      <div className="text-[10px] text-gray-400">@{u.username}</div>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            {replyingTo[s.id] && (
+                              <div className="flex justify-between items-center text-[11px] text-gray-400 mb-2 px-2">
+                                <span>Replying to <span className="text-pink-400 font-bold">@{replyingTo[s.id].author}</span></span>
+                                <button onClick={() => setReplyingTo(p => { const np = {...p}; delete np[s.id]; return np; })}><X className="w-3 h-3" /></button>
+                              </div>
+                            )}
+                            <div className="flex gap-2 items-center">
+                              <input 
+                                type="text"
+                                value={commentText[s.id] || ""}
+                                onChange={(e) => handleCommentChange(s.id, e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handlePostComment(s.id)}
+                                placeholder={replyingTo[s.id] ? "Write a reply..." : "Add a comment..."}
+                                className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50"
+                              />
+                              <button 
+                                onClick={() => handlePostComment(s.id)}
+                                disabled={!commentText[s.id]?.trim()}
+                                className="p-2 rounded-full bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-blue-500/20 disabled:hover:text-blue-400"
+                              >
+                                <Send className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

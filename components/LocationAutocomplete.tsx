@@ -6,7 +6,7 @@ export default function LocationAutocomplete({
   onSelect,
   placeholder = "Location name...", 
   className = "",
-  inputClassName = "w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-500 text-white"
+  inputClassName = "wiz-input"
 }: { 
   value: string; 
   onChange: (val: string) => void; 
@@ -59,7 +59,7 @@ export default function LocationAutocomplete({
   }, [value, showDropdown]);
 
   return (
-    <div className={`relative ${className}`} ref={wrapperRef}>
+    <div style={{ position: "relative" }} className={className} ref={wrapperRef}>
       <input 
         type="text" 
         value={value}
@@ -73,9 +73,23 @@ export default function LocationAutocomplete({
       />
       
       {showDropdown && (suggestions.length > 0 || loading) && (
-        <div className="absolute z-[999] top-full left-0 right-0 mt-1 bg-[#141414] border border-white/10 rounded-lg shadow-xl overflow-hidden max-h-60 overflow-y-auto">
+        <div style={{
+          position: "absolute",
+          zIndex: 999,
+          top: "100%",
+          left: 0,
+          right: 0,
+          marginTop: "4px",
+          background: "#141414",
+          border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: "12px",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+          overflow: "hidden",
+          maxHeight: "240px",
+          overflowY: "auto"
+        }}>
           {loading && suggestions.length === 0 && (
-            <div className="p-3 text-xs text-gray-500 italic text-center">Loading...</div>
+            <div style={{ padding: "12px", fontSize: "12px", color: "#888", fontStyle: "italic", textAlign: "center" }}>Loading...</div>
           )}
           {suggestions.map((s, i) => {
             const displayText = s.description || s.name || s.full_address || JSON.stringify(s);
@@ -87,7 +101,18 @@ export default function LocationAutocomplete({
                   if (onSelect) onSelect(displayText);
                   setShowDropdown(false);
                 }}
-                className="px-3 py-2 text-xs text-gray-300 hover:bg-white/10 cursor-pointer border-b border-white/5 last:border-0 truncate"
+                style={{
+                  padding: "12px",
+                  fontSize: "13px",
+                  color: "#ddd",
+                  cursor: "pointer",
+                  borderBottom: i === suggestions.length - 1 ? "none" : "1px solid rgba(255,255,255,0.05)",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis"
+                }}
+                onMouseOver={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
+                onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}
               >
                 {displayText}
               </div>

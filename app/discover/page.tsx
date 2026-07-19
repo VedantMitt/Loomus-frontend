@@ -88,32 +88,32 @@ export default function DiscoverPage() {
     }
   }, []);
 
-  const handleToggleLike = async (feedId: string) => {
-    const isLiked = likes[feedId];
-    setLikes(p => ({ ...p, [feedId]: !isLiked }));
-    setLikeCounts(p => ({ ...p, [feedId]: (p[feedId] || 0) + (isLiked ? -1 : 1) }));
+  const handleToggleLike = async (submissionId: string) => {
+    const isLiked = likes[submissionId];
+    setLikes(p => ({ ...p, [submissionId]: !isLiked }));
+    setLikeCounts(p => ({ ...p, [submissionId]: (p[submissionId] || 0) + (isLiked ? -1 : 1) }));
 
     try {
       const token = localStorage.getItem("token");
-      await fetch(`${API}/activities/${feedId}/like`, {
+      await fetch(`${API}/submissions/${submissionId}/vote`, {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
     } catch (err) {}
   };
 
-  const handlePostComment = async (feedId: string) => {
-    const text = commentText[feedId]?.trim();
+  const handlePostComment = async (submissionId: string) => {
+    const text = commentText[submissionId]?.trim();
     if (!text) return;
     
-    const parentId = replyingTo[feedId]?.id || null;
+    const parentId = replyingTo[submissionId]?.id || null;
     
-    setCommentText(p => ({ ...p, [feedId]: "" }));
-    setReplyingTo(p => { const np = {...p}; delete np[feedId]; return np; });
+    setCommentText(p => ({ ...p, [submissionId]: "" }));
+    setReplyingTo(p => { const np = {...p}; delete np[submissionId]; return np; });
     
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${API}/activities/${feedId}/comments`, {
+      const res = await fetch(`${API}/submissions/${submissionId}/comments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -126,25 +126,25 @@ export default function DiscoverPage() {
         const formatted = { 
           id: newComment.id, 
           text: newComment.content, 
-          author: newComment.name || newComment.username || "You", 
+          author: newComment.user_name || newComment.user_username || "You", 
           time: "Just now",
           likes_count: 0,
           has_liked: false,
           parent_id: parentId,
           user_id: myUserId
         };
-        setComments(p => ({ ...p, [feedId]: [...(p[feedId] || []), formatted] }));
+        setComments(p => ({ ...p, [submissionId]: [...(p[submissionId] || []), formatted] }));
       }
     } catch (err) {
       console.error(err);
     }
   };
 
-  const handleLikeComment = async (feedId: string, commentId: string, isLiked: boolean) => {
+  const handleLikeComment = async (submissionId: string, commentId: string, isLiked: boolean) => {
     // Optimistic update
     setComments(p => ({
       ...p,
-      [feedId]: (p[feedId] || []).map(c => 
+      [submissionId]: (p[submissionId] || []).map(c => 
         c.id === commentId 
           ? { ...c, has_liked: !isLiked, likes_count: c.likes_count + (isLiked ? -1 : 1) } 
           : c
@@ -164,13 +164,13 @@ export default function DiscoverPage() {
     }
   };
 
-  const toggleComments = async (feedId: string) => {
+  const toggleComments = async (submissionId: string) => {
     setShowComments(p => {
-      const isShowing = !p[feedId];
-      if (isShowing && !comments[feedId]) {
+      const isShowing = !p[submissionId];
+      if (isShowing && !comments[submissionId]) {
         // Fetch comments if not loaded yet
         const token = localStorage.getItem("token");
-        fetch(`${API}/activities/${feedId}/comments`, {
+        fetch(`${API}/submissions/${submissionId}/comments`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         })
         .then(res => res.json())
@@ -179,29 +179,29 @@ export default function DiscoverPage() {
             const formatted = data.map((c: any) => ({
               id: c.id,
               text: c.content,
-              author: c.name || c.username || "Unknown",
+              author: c.user_name || c.user_username || "Unknown",
               time: new Date(c.created_at).toLocaleDateString(),
-              likes_count: parseInt(c.likes_count || '0'),
+              likes_count: parseInt(c.like_count || '0'),
               has_liked: c.has_liked,
               parent_id: c.parent_id,
               user_id: c.user_id
             }));
-            setComments(p2 => ({ ...p2, [feedId]: formatted }));
+            setComments(p2 => ({ ...p2, [submissionId]: formatted }));
           }
         })
         .catch(console.error);
       }
-      return { ...p, [feedId]: isShowing };
+      return { ...p, [submissionId]: isShowing };
     });
   };
 
-  const handleDeleteComment = async (feedId: string, commentId: string) => {
+  const handleDeleteComment = async (submissionId: string, commentId: string) => {
     if (!confirm("Delete this comment?")) return;
     
     // Optimistic update
     setComments(p => ({
       ...p,
-      [feedId]: (p[feedId] || []).filter(c => c.id !== commentId)
+      [submissionId]: (p[submissionId] || []).filter(c => c.id !== commentId)
     }));
 
     try {
@@ -215,11 +215,11 @@ export default function DiscoverPage() {
     }
   };
 
-  const handleCommentChange = async (feedId: string, value: string) => {
-    setCommentText(p => ({ ...p, [feedId]: value }));
+  const handleCommentChange = async (submissionId: string, value: string) => {
+    setCommentText(p => ({ ...p, [submissionId]: value }));
     const match = value.match(/@(\w*)$/);
     if (match) {
-      setMentionData({ query: match[1], cursor: value.length, feedId });
+      setMentionData({ query: match[1], cursor: value.length, feedId: submissionId });
       const token = localStorage.getItem("token");
       try {
         const res = await fetch(`${API}/users/discover?search=${match[1]}`, {
@@ -235,10 +235,10 @@ export default function DiscoverPage() {
     }
   };
 
-  const handleSelectMention = (user: User, feedId: string) => {
-    const text = commentText[feedId] || "";
+  const handleSelectMention = (user: User, submissionId: string) => {
+    const text = commentText[submissionId] || "";
     const newText = text.replace(/@\w*$/, `@${user.username} `);
-    setCommentText(p => ({ ...p, [feedId]: newText }));
+    setCommentText(p => ({ ...p, [submissionId]: newText }));
     setMentionData({ query: "", cursor: -1, feedId: null });
   };
 
@@ -296,8 +296,14 @@ export default function DiscoverPage() {
           const initialLikes: Record<string, boolean> = {};
           const initialLikeCounts: Record<string, number> = {};
           feed.forEach((item: any) => {
-            initialLikes[item.id] = item.has_liked;
-            initialLikeCounts[item.id] = parseInt(item.likes_count || '0', 10);
+            if (item.timeline_photos) {
+              item.timeline_photos.forEach((photo: any) => {
+                if (photo.id) {
+                  initialLikes[photo.id] = photo.has_voted;
+                  initialLikeCounts[photo.id] = parseInt(photo.vote_count || '0', 10);
+                }
+              });
+            }
           });
           setLikes(initialLikes);
           setLikeCounts(initialLikeCounts);
@@ -515,7 +521,7 @@ export default function DiscoverPage() {
                           const index = Math.round(target.scrollLeft / 300);
                           setActivePhotoIndices(p => ({ ...p, [feedItem.id]: Math.min(index, feedItem.timeline_photos.length - 1) }));
                         }}
-                        style={{ display: "flex", gap: "16px", overflowX: "auto", paddingBottom: "16px", scrollSnapType: "x mandatory" }} 
+                        style={{ display: "flex", alignItems: "flex-start", gap: "16px", overflowX: "auto", paddingBottom: "16px", scrollSnapType: "x mandatory" }} 
                         className="hide-scroll"
                       >
                       {feedItem.timeline_photos.map((photo: any, i: number) => {
@@ -557,15 +563,146 @@ export default function DiscoverPage() {
                         }
 
                         return (
-                          <div key={i} style={{ flex: "0 0 280px", aspectRatio: "3/4", borderRadius: "16px", overflow: "hidden", position: "relative", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 10px 30px rgba(0,0,0,0.5)", scrollSnapAlign: "center" }}>
-                            <img src={photo.url.startsWith('/uploads') ? `${API}${photo.url}` : photo.url} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 40%)", pointerEvents: "none" }} />
-                            <div style={{ position: "absolute", bottom: "16px", left: "16px", right: "16px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-                              <div style={{ fontSize: "11px", fontWeight: 700, color: "#fbcfe8", background: "rgba(0,0,0,0.4)", padding: "6px 10px", borderRadius: "8px", backdropFilter: "blur(4px)" }}>
-                                📍 {locStr}
+                          <div key={i} style={{ flex: "0 0 280px", scrollSnapAlign: "center", display: "flex", flexDirection: "column" }}>
+                            <div style={{ aspectRatio: "3/4", borderRadius: "16px", overflow: "hidden", position: "relative", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 10px 30px rgba(0,0,0,0.5)" }}>
+                              <img src={photo.url.startsWith('/uploads') ? `${API}${photo.url}` : photo.url} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 40%)", pointerEvents: "none" }} />
+                              <div style={{ position: "absolute", bottom: "16px", left: "16px", right: "16px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                                <div style={{ fontSize: "11px", fontWeight: 700, color: "#fbcfe8", background: "rgba(0,0,0,0.4)", padding: "6px 10px", borderRadius: "8px", backdropFilter: "blur(4px)" }}>
+                                  📍 {locStr}
+                                </div>
+                                {timeStr && <div style={{ fontSize: "16px", fontWeight: 800, fontFamily: "Syne, sans-serif", color: "#fff", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}>{timeStr}</div>}
                               </div>
-                              {timeStr && <div style={{ fontSize: "16px", fontWeight: 800, fontFamily: "Syne, sans-serif", color: "#fff", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}>{timeStr}</div>}
                             </div>
+                            
+                            <div style={{ marginTop: "12px", display: "flex", gap: "10px" }}>
+                              <button 
+                                onClick={() => handleToggleLike(photo.id)}
+                                className={`group flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border ${likes[photo.id] ? 'bg-pink-500/20 border-pink-500/40 shadow-[0_0_10px_rgba(236,72,153,0.15)]' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                              >
+                                <Heart className={`w-[16px] h-[16px] transition-transform duration-200 group-hover:scale-110 ${likes[photo.id] ? 'fill-pink-500 text-pink-500' : 'text-gray-300 group-hover:text-pink-400'}`} />
+                                <span className={`text-[12px] font-bold ${likes[photo.id] ? 'text-pink-400' : 'text-gray-300 group-hover:text-pink-400'}`}>
+                                  {likeCounts[photo.id] > 0 ? likeCounts[photo.id] : "0"}
+                                </span>
+                              </button>
+                              <button 
+                                onClick={() => toggleComments(photo.id)}
+                                className={`group flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border ${showComments[photo.id] ? 'bg-blue-500/20 border-blue-500/40 shadow-[0_0_10px_rgba(59,130,246,0.15)]' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                              >
+                                <MessageCircle className={`w-[16px] h-[16px] transition-transform duration-200 group-hover:scale-110 ${showComments[photo.id] ? 'text-blue-400' : 'text-gray-300 group-hover:text-blue-400'}`} />
+                                <span className={`text-[12px] font-bold ${showComments[photo.id] ? 'text-blue-400' : 'text-gray-300 group-hover:text-blue-400'}`}>
+                                  {comments[photo.id] ? (comments[photo.id].length > 0 ? comments[photo.id].length : "0") : (parseInt(photo.comment_count || '0', 10) > 0 ? photo.comment_count : "0")}
+                                </span>
+                              </button>
+                            </div>
+
+                            {showComments[photo.id] && (
+                              <div className="mt-4 pt-4 border-t border-white/10 flex flex-col gap-3">
+                                {comments[photo.id] && comments[photo.id].length > 0 ? (
+                                  <div className="flex flex-col gap-4 max-h-60 overflow-y-auto pr-2 hide-scroll">
+                                    {comments[photo.id].filter((c: any) => !c.parent_id).map((c: any) => (
+                                      <div key={c.id} className="flex flex-col gap-2">
+                                        <div className="flex gap-2">
+                                          <div className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+                                            {c.author.charAt(0)}
+                                          </div>
+                                          <div className="bg-white/5 rounded-xl rounded-tl-none px-3 py-2 border border-white/5 text-sm w-full">
+                                            <div className="flex justify-between items-end mb-1">
+                                              <span className="font-bold text-xs text-gray-300">{c.author}</span>
+                                              <span className="text-[10px] text-gray-500">{c.time}</span>
+                                            </div>
+                                            <p className="text-gray-300 m-0 text-[13px] leading-relaxed">
+                                              {c.text.split(/(@\w+)/g).map((part: string, x: number) => part.startsWith('@') ? <span key={x} className="text-pink-400 font-semibold">{part}</span> : part)}
+                                            </p>
+                                            <div className="flex gap-4 mt-2 text-[10px] text-gray-400 font-medium">
+                                              <button onClick={() => handleLikeComment(photo.id, c.id, c.has_liked)} className={`flex items-center gap-1 ${c.has_liked ? 'text-pink-500' : 'hover:text-white'}`}>
+                                                <Heart className={`w-3 h-3 ${c.has_liked ? 'fill-pink-500' : ''}`} /> {c.likes_count || 0}
+                                              </button>
+                                              <button onClick={() => setReplyingTo(p => ({ ...p, [photo.id]: c }))} className="hover:text-white">Reply</button>
+                                              {c.user_id === myUserId && (
+                                                <button onClick={() => handleDeleteComment(photo.id, c.id)} className="hover:text-red-400 text-gray-500 ml-auto">Delete</button>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                        
+                                        {comments[photo.id].filter((reply: any) => reply.parent_id === c.id).length > 0 && (
+                                          <div className="pl-8 flex flex-col gap-2 mt-1">
+                                            {comments[photo.id].filter((reply: any) => reply.parent_id === c.id).map((reply: any) => (
+                                              <div key={reply.id} className="flex gap-2">
+                                                <div className="w-5 h-5 rounded-full bg-gray-600 flex items-center justify-center text-[8px] font-bold text-white shrink-0">
+                                                  {reply.author.charAt(0)}
+                                                </div>
+                                                <div className="bg-white/5 rounded-xl rounded-tl-none px-3 py-2 border border-white/5 text-sm w-full">
+                                                  <div className="flex justify-between items-end mb-1">
+                                                    <span className="font-bold text-xs text-gray-300">{reply.author}</span>
+                                                    <span className="text-[10px] text-gray-500">{reply.time}</span>
+                                                  </div>
+                                                  <p className="text-gray-300 m-0 text-[13px] leading-relaxed">
+                                                    {reply.text.split(/(@\w+)/g).map((part: string, x: number) => part.startsWith('@') ? <span key={x} className="text-pink-400 font-semibold">{part}</span> : part)}
+                                                  </p>
+                                                  <div className="flex gap-4 mt-2 text-[10px] text-gray-400 font-medium">
+                                                    <button onClick={() => handleLikeComment(photo.id, reply.id, reply.has_liked)} className={`flex items-center gap-1 ${reply.has_liked ? 'text-pink-500' : 'hover:text-white'}`}>
+                                                      <Heart className={`w-3 h-3 ${reply.has_liked ? 'fill-pink-500' : ''}`} /> {reply.likes_count || 0}
+                                                    </button>
+                                                    {reply.user_id === myUserId && (
+                                                      <button onClick={() => handleDeleteComment(photo.id, reply.id)} className="hover:text-red-400 text-gray-500 ml-auto">Delete</button>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="text-xs text-center text-gray-500 italic py-2">No comments yet. Be the first to spill!</div>
+                                )}
+                                
+                                <div className="relative flex flex-col mt-2">
+                                  {mentionData.feedId === photo.id && mentionUsers.length > 0 && (
+                                    <div className="absolute bottom-full left-0 mb-2 w-full bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50">
+                                      {mentionUsers.map(u => (
+                                        <button key={u.id} onClick={() => handleSelectMention(u, photo.id)} className="w-full text-left px-3 py-2 hover:bg-white/5 flex items-center gap-2">
+                                          <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-[10px] text-white">
+                                            {u.profile_pic ? <img src={u.profile_pic} className="w-full h-full rounded-full object-cover" /> : u.username.charAt(0)}
+                                          </div>
+                                          <div>
+                                            <div className="text-sm font-semibold text-white">{u.name}</div>
+                                            <div className="text-[10px] text-gray-400">@{u.username}</div>
+                                          </div>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                  {replyingTo[photo.id] && (
+                                    <div className="flex justify-between items-center text-[11px] text-gray-400 mb-2 px-2">
+                                      <span>Replying to <span className="text-pink-400 font-bold">@{replyingTo[photo.id].author}</span></span>
+                                      <button onClick={() => setReplyingTo(p => { const np = {...p}; delete np[photo.id]; return np; })}><X className="w-3 h-3" /></button>
+                                    </div>
+                                  )}
+                                  <div className="flex gap-2 items-center">
+                                    <input 
+                                      type="text"
+                                      value={commentText[photo.id] || ""}
+                                      onChange={(e) => handleCommentChange(photo.id, e.target.value)}
+                                      onKeyDown={(e) => e.key === 'Enter' && handlePostComment(photo.id)}
+                                      placeholder={replyingTo[photo.id] ? "Write a reply..." : "Add a comment..."}
+                                      className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50"
+                                    />
+                                    <button 
+                                      onClick={() => handlePostComment(photo.id)}
+                                      disabled={!commentText[photo.id]?.trim()}
+                                      className="p-2 rounded-full bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-blue-500/20 disabled:hover:text-blue-400"
+                                    >
+                                      <Send className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -594,27 +731,7 @@ export default function DiscoverPage() {
                      </div>
                   )}
 
-                  <div style={{ marginTop: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ display: "flex", gap: "10px" }}>
-                      <button 
-                        onClick={() => handleToggleLike(feedItem.id)}
-                        className={`group flex items-center gap-2 px-4 py-2 rounded-full transition-all border ${likes[feedItem.id] ? 'bg-pink-500/20 border-pink-500/40 shadow-[0_0_15px_rgba(236,72,153,0.15)]' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
-                      >
-                        <Heart className={`w-[18px] h-[18px] transition-transform duration-200 group-hover:scale-110 ${likes[feedItem.id] ? 'fill-pink-500 text-pink-500' : 'text-gray-300 group-hover:text-pink-400'}`} />
-                        <span className={`text-[13px] font-bold ${likes[feedItem.id] ? 'text-pink-400' : 'text-gray-300 group-hover:text-pink-400'}`}>
-                          {likeCounts[feedItem.id] > 0 ? likeCounts[feedItem.id] : "0"}
-                        </span>
-                      </button>
-                      <button 
-                        onClick={() => toggleComments(feedItem.id)}
-                        className={`group flex items-center gap-2 px-4 py-2 rounded-full transition-all border ${showComments[feedItem.id] ? 'bg-blue-500/20 border-blue-500/40 shadow-[0_0_15px_rgba(59,130,246,0.15)]' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
-                      >
-                        <MessageCircle className={`w-[18px] h-[18px] transition-transform duration-200 group-hover:scale-110 ${showComments[feedItem.id] ? 'text-blue-400' : 'text-gray-300 group-hover:text-blue-400'}`} />
-                        <span className={`text-[13px] font-bold ${showComments[feedItem.id] ? 'text-blue-400' : 'text-gray-300 group-hover:text-blue-400'}`}>
-                          {comments[feedItem.id] ? (comments[feedItem.id].length > 0 ? comments[feedItem.id].length : "0") : (parseInt(feedItem.comment_count || '0', 10) > 0 ? feedItem.comment_count : "0")}
-                        </span>
-                      </button>
-                    </div>
+                  <div style={{ marginTop: "20px", display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
                     <Link 
                       href={`/scrapbook/${feedItem.id}`} 
                       className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-full font-bold text-[13px] text-white bg-gradient-to-r from-pink-500/20 to-purple-500/20 hover:from-pink-500/30 hover:to-purple-500/30 transition-all border border-white/10 hover:border-pink-500/30 no-underline shadow-lg shadow-black/20 whitespace-nowrap"
@@ -622,118 +739,6 @@ export default function DiscoverPage() {
                       See full <span style={{ opacity: 0.6 }}>↗</span>
                     </Link>
                   </div>
-
-                  {/* Comment Section */}
-                  {showComments[feedItem.id] && (
-                    <div className="mt-4 pt-4 border-t border-white/10 flex flex-col gap-3">
-                      {/* Comment List */}
-                      {comments[feedItem.id] && comments[feedItem.id].length > 0 ? (
-                        <div className="flex flex-col gap-4 max-h-60 overflow-y-auto pr-2 hide-scroll">
-                          {comments[feedItem.id].filter(c => !c.parent_id).map((c: any) => (
-                            <div key={c.id} className="flex flex-col gap-2">
-                              <div className="flex gap-2">
-                                <div className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
-                                  {c.author.charAt(0)}
-                                </div>
-                                <div className="bg-white/5 rounded-xl rounded-tl-none px-3 py-2 border border-white/5 text-sm w-full">
-                                  <div className="flex justify-between items-end mb-1">
-                                    <span className="font-bold text-xs text-gray-300">{c.author}</span>
-                                    <span className="text-[10px] text-gray-500">{c.time}</span>
-                                  </div>
-                                  <p className="text-gray-300 m-0 text-[13px] leading-relaxed">
-                                    {c.text.split(/(@\w+)/g).map((part: string, i: number) => part.startsWith('@') ? <span key={i} className="text-pink-400 font-semibold">{part}</span> : part)}
-                                  </p>
-                                  <div className="flex gap-4 mt-2 text-[10px] text-gray-400 font-medium">
-                                    <button onClick={() => handleLikeComment(feedItem.id, c.id, c.has_liked)} className={`flex items-center gap-1 ${c.has_liked ? 'text-pink-500' : 'hover:text-white'}`}>
-                                      <Heart className={`w-3 h-3 ${c.has_liked ? 'fill-pink-500' : ''}`} /> {c.likes_count || 0}
-                                    </button>
-                                    <button onClick={() => setReplyingTo(p => ({ ...p, [feedItem.id]: c }))} className="hover:text-white">Reply</button>
-                                    {c.user_id === myUserId && (
-                                      <button onClick={() => handleDeleteComment(feedItem.id, c.id)} className="hover:text-red-400 text-gray-500 ml-auto">Delete</button>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              {/* Nested Replies */}
-                              {comments[feedItem.id].filter((reply: any) => reply.parent_id === c.id).length > 0 && (
-                                <div className="pl-8 flex flex-col gap-2 mt-1">
-                                  {comments[feedItem.id].filter((reply: any) => reply.parent_id === c.id).map((reply: any) => (
-                                    <div key={reply.id} className="flex gap-2">
-                                      <div className="w-5 h-5 rounded-full bg-gray-600 flex items-center justify-center text-[8px] font-bold text-white shrink-0">
-                                        {reply.author.charAt(0)}
-                                      </div>
-                                      <div className="bg-white/5 rounded-xl rounded-tl-none px-3 py-2 border border-white/5 text-sm w-full">
-                                        <div className="flex justify-between items-end mb-1">
-                                          <span className="font-bold text-xs text-gray-300">{reply.author}</span>
-                                          <span className="text-[10px] text-gray-500">{reply.time}</span>
-                                        </div>
-                                        <p className="text-gray-300 m-0 text-[13px] leading-relaxed">
-                                          {reply.text.split(/(@\w+)/g).map((part: string, i: number) => part.startsWith('@') ? <span key={i} className="text-pink-400 font-semibold">{part}</span> : part)}
-                                        </p>
-                                        <div className="flex gap-4 mt-2 text-[10px] text-gray-400 font-medium">
-                                          <button onClick={() => handleLikeComment(feedItem.id, reply.id, reply.has_liked)} className={`flex items-center gap-1 ${reply.has_liked ? 'text-pink-500' : 'hover:text-white'}`}>
-                                            <Heart className={`w-3 h-3 ${reply.has_liked ? 'fill-pink-500' : ''}`} /> {reply.likes_count || 0}
-                                          </button>
-                                          {reply.user_id === myUserId && (
-                                            <button onClick={() => handleDeleteComment(feedItem.id, reply.id)} className="hover:text-red-400 text-gray-500 ml-auto">Delete</button>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-xs text-center text-gray-500 italic py-2">No comments yet. Be the first to spill!</div>
-                      )}
-                      
-                      {/* Comment Input */}
-                      <div className="relative flex flex-col mt-2">
-                        {mentionData.feedId === feedItem.id && mentionUsers.length > 0 && (
-                          <div className="absolute bottom-full left-0 mb-2 w-full bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50">
-                            {mentionUsers.map(u => (
-                              <button key={u.id} onClick={() => handleSelectMention(u, feedItem.id)} className="w-full text-left px-3 py-2 hover:bg-white/5 flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-[10px] text-white">
-                                  {u.profile_pic ? <img src={u.profile_pic} className="w-full h-full rounded-full object-cover" /> : u.username.charAt(0)}
-                                </div>
-                                <div>
-                                  <div className="text-sm font-semibold text-white">{u.name}</div>
-                                  <div className="text-[10px] text-gray-400">@{u.username}</div>
-                                </div>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                        {replyingTo[feedItem.id] && (
-                          <div className="flex justify-between items-center text-[11px] text-gray-400 mb-2 px-2">
-                            <span>Replying to <span className="text-pink-400 font-bold">@{replyingTo[feedItem.id].author}</span></span>
-                            <button onClick={() => setReplyingTo(p => { const np = {...p}; delete np[feedItem.id]; return np; })}><X className="w-3 h-3" /></button>
-                          </div>
-                        )}
-                        <div className="flex gap-2 items-center">
-                          <input 
-                            type="text"
-                            value={commentText[feedItem.id] || ""}
-                            onChange={(e) => handleCommentChange(feedItem.id, e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handlePostComment(feedItem.id)}
-                            placeholder={replyingTo[feedItem.id] ? "Write a reply..." : "Add a comment..."}
-                            className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50"
-                          />
-                          <button 
-                            onClick={() => handlePostComment(feedItem.id)}
-                            disabled={!commentText[feedItem.id]?.trim()}
-                            className="p-2 rounded-full bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-blue-500/20 disabled:hover:text-blue-400"
-                          >
-                            <Send className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {/* Interleaved Suggestions */}

@@ -599,11 +599,11 @@ export default function Navbar() {
                               link = `/activities/${meta?.activity_id}?tab=announcements`;
                             }
                             if (n.type === 'post_like') {
-                              message = "liked your chapter!";
+                              message = "liked your photo!";
                               link = `/scrapbook/${meta?.activity_id}`;
                             }
                             if (n.type === 'post_comment') {
-                              message = "commented on your chapter!";
+                              message = "commented on your photo!";
                               link = `/scrapbook/${meta?.activity_id}`;
                             }
                             if (n.type === 'comment_like') {
@@ -799,11 +799,11 @@ export default function Navbar() {
                         link = `/activities/${meta?.activity_id}?tab=announcements`;
                       }
                       if (n.type === 'post_like') {
-                        message = "liked your chapter!";
+                        message = "liked your photo!";
                         link = `/scrapbook/${meta?.activity_id}`;
                       }
                       if (n.type === 'post_comment') {
-                        message = "commented on your chapter!";
+                        message = "commented on your photo!";
                         link = `/scrapbook/${meta?.activity_id}`;
                       }
                       if (n.type === 'comment_like') {
