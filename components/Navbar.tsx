@@ -598,6 +598,26 @@ export default function Navbar() {
                               message = `posted an announcement in ${meta?.title || 'an activity'}!`;
                               link = `/activities/${meta?.activity_id}?tab=announcements`;
                             }
+                            if (n.type === 'post_like') {
+                              message = "liked your chapter!";
+                              link = `/scrapbook/${meta?.activity_id}`;
+                            }
+                            if (n.type === 'post_comment') {
+                              message = "commented on your chapter!";
+                              link = `/scrapbook/${meta?.activity_id}`;
+                            }
+                            if (n.type === 'comment_like') {
+                              message = "liked your comment!";
+                              link = `/scrapbook/${meta?.activity_id}`;
+                            }
+                            if (n.type === 'comment_reply') {
+                              message = "replied to your comment!";
+                              link = `/scrapbook/${meta?.activity_id}`;
+                            }
+                            if (n.type === 'comment_mention') {
+                              message = "mentioned you in a comment!";
+                              link = `/scrapbook/${meta?.activity_id}`;
+                            }
  
                              return (
                                <div key={n.id} style={{ display: "flex", gap: "12px", alignItems: "center", padding: "12px", borderRadius: "16px", background: n.is_read ? "rgba(255,255,255,0.02)" : (n.type === 'game_invite' ? "rgba(6, 182, 212, 0.08)" : (n.type === 'room_invite' ? "rgba(6, 182, 212, 0.08)" : "rgba(244, 114, 182, 0.08)")), marginBottom: "4px", border: n.is_read ? "1px solid rgba(255,255,255,0.05)" : (['game_invite', 'room_invite'].includes(n.type) ? "1px solid rgba(6, 182, 212, 0.2)" : "1px solid rgba(244, 114, 182, 0.2)"), opacity: n.is_read ? 0.6 : 1, transition: 'all 0.3s ease' }}>
@@ -820,6 +840,26 @@ export default function Navbar() {
                       if (n.type === 'activity_announcement') {
                         message = `posted an announcement in ${meta?.title || 'an activity'}!`;
                         link = `/activities/${meta?.activity_id}?tab=announcements`;
+                      }
+                      if (n.type === 'post_like') {
+                        message = "liked your chapter!";
+                        link = `/scrapbook/${meta?.activity_id}`;
+                      }
+                      if (n.type === 'post_comment') {
+                        message = "commented on your chapter!";
+                        link = `/scrapbook/${meta?.activity_id}`;
+                      }
+                      if (n.type === 'comment_like') {
+                        message = "liked your comment!";
+                        link = `/scrapbook/${meta?.activity_id}`;
+                      }
+                      if (n.type === 'comment_reply') {
+                        message = "replied to your comment!";
+                        link = `/scrapbook/${meta?.activity_id}`;
+                      }
+                      if (n.type === 'comment_mention') {
+                        message = "mentioned you in a comment!";
+                        link = `/scrapbook/${meta?.activity_id}`;
                       }
 
                         return (
