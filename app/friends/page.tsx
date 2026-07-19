@@ -511,7 +511,6 @@ export default function FriendsPage() {
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{user.name}</div>
                         <div style={{ fontSize: 12, color: "#666" }}>@{user.username}</div>
-                        <div style={{ fontSize: 11, color: "#34d399" }}>{user.college}</div>
                       </div>
                     </Link>
                   );
@@ -626,7 +625,7 @@ export default function FriendsPage() {
                       <Link href={`/profile/${req.username}`}><img src={avatar} className="req-avatar" alt="" /></Link>
                       <div>
                         <Link href={`/profile/${req.username}`} style={{ textDecoration: "none", color: "#fff", fontSize: 18, fontWeight: 800 }}>{req.name}</Link>
-                        <div style={{ color: "#666", fontSize: 13, marginTop: 4 }}>@{req.username} • {req.college}</div>
+                        <div style={{ color: "#666", fontSize: 13, marginTop: 4 }}>@{req.username}</div>
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 12 }}>

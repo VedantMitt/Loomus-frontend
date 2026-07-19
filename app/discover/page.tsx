@@ -363,18 +363,54 @@ export default function DiscoverPage() {
             const chunkIndex = Math.floor(index / 2);
             const showSuggestions = (index + 1) % 2 === 0 && usersChunks[chunkIndex];
 
+            const participants = feedItem.participant_previews || [];
+            const names = Array.from(new Set([feedItem.host_name, ...participants.map((p: any) => p.name)]));
+            let displayTitle = names[0];
+            if (names.length === 2) {
+              displayTitle = `${names[0]} and ${names[1]}`;
+            } else if (names.length > 2) {
+              displayTitle = `${names[0]}, ${names[1]} & ${names.length - 2} other${names.length - 2 > 1 ? 's' : ''}`;
+            }
+            
+            const avatars = [
+              { name: feedItem.host_name, profile_pic: feedItem.host_pic, username: feedItem.host_name },
+              ...participants.filter((p: any) => p.name !== feedItem.host_name)
+            ];
+
             return (
               <div key={feedItem.id} style={{ marginBottom: "64px" }} ref={feedItemRef} data-feed-id={feedItem.id}>
                 {/* Scrapbook Post */}
                 <div className="glass-panel" style={{ borderRadius: "24px", padding: "24px", border: "1px solid rgba(255,255,255,0.05)" }}>
                   <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", marginBottom: "20px", position: "relative" }}>
-                    <img 
-                      src={feedItem.host_pic?.startsWith('/uploads') ? `${API}${feedItem.host_pic}` : feedItem.host_pic || `https://ui-avatars.com/api/?name=${feedItem.host_name}&background=111&color=fff`} 
-                      style={{ width: "48px", height: "48px", borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(255,255,255,0.1)", marginTop: "2px" }}
-                    />
+                    <div 
+                      onClick={() => setShowCrewPopup(showCrewPopup === feedItem.id ? null : feedItem.id)}
+                      style={{ display: "flex", alignItems: "center", position: "relative", width: avatars.length > 1 ? `${32 + (Math.min(avatars.length, 3) - 1) * 12}px` : "48px", height: "48px", cursor: "pointer", marginTop: "2px", flexShrink: 0 }}
+                      title="View Crew"
+                    >
+                      {avatars.slice(0, 3).map((p: any, i: number) => (
+                        <img 
+                          key={i}
+                          src={p.profile_pic?.startsWith('/uploads') ? `${API}${p.profile_pic}` : p.profile_pic || `https://ui-avatars.com/api/?name=${p.name}&background=111&color=fff`} 
+                          style={{ 
+                            width: avatars.length === 1 ? "48px" : "32px", 
+                            height: avatars.length === 1 ? "48px" : "32px", 
+                            borderRadius: "50%", 
+                            objectFit: "cover", 
+                            border: "2px solid #1a1a1a", 
+                            position: "absolute",
+                            left: avatars.length === 1 ? "0" : `${i * 12}px`,
+                            top: avatars.length === 1 ? "0" : "8px",
+                            zIndex: 3 - i
+                          }}
+                        />
+                      ))}
+                    </div>
                     <div style={{ flex: 1, paddingRight: "40px" }}>
-                      <div style={{ fontWeight: 700, fontSize: "16px", color: "#fff", display: "flex", alignItems: "center" }}>
-                        {feedItem.host_name}
+                      <div 
+                        style={{ fontWeight: 700, fontSize: "16px", color: "#fff", display: "flex", alignItems: "center", cursor: "pointer" }}
+                        onClick={() => setShowCrewPopup(showCrewPopup === feedItem.id ? null : feedItem.id)}
+                      >
+                        {displayTitle}
                         {feedItem.host_id !== myUserId && !feedItem.is_host_friend && !feedItem.host_is_private && (
                           <button 
                             onClick={(e) => {
@@ -406,81 +442,54 @@ export default function DiscoverPage() {
                           {feedItem.shared_caption}
                         </div>
                       )}
-                      {feedItem.participant_previews && feedItem.participant_previews.length > 1 && (
+                      {/* CREW POPUP */}
+                      {showCrewPopup === feedItem.id && (
                         <div style={{ position: "relative" }}>
-                          <div 
-                            onClick={() => setShowCrewPopup(showCrewPopup === feedItem.id ? null : feedItem.id)}
-                            style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "10px", cursor: "pointer", padding: "6px 12px", background: "rgba(255,255,255,0.05)", borderRadius: "20px", width: "fit-content", border: "1px solid rgba(255,255,255,0.1)", transition: "all 0.2s" }}
-                            className="hover:bg-white/10"
-                          >
-                            <div style={{ display: "flex", alignItems: "center" }}>
-                              {feedItem.participant_previews.filter((p: any) => p.name !== feedItem.host_name).slice(0, 3).map((p: any, i: number) => (
-                                <img 
+                          <div style={{
+                            position: "absolute",
+                            top: "8px",
+                            left: "0",
+                            background: "rgba(20,20,20,0.95)",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                            borderRadius: "16px",
+                            padding: "12px",
+                            width: "220px",
+                            zIndex: 50,
+                            backdropFilter: "blur(20px)",
+                            boxShadow: "0 10px 40px rgba(0,0,0,0.8)",
+                            maxHeight: "250px",
+                            overflowY: "auto"
+                          }} className="hide-scroll">
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                              <span style={{ fontSize: "12px", fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em" }}>Chapter Crew</span>
+                              <button onClick={(e) => { e.stopPropagation(); setShowCrewPopup(null); }} className="text-gray-400 hover:text-white transition-colors">
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                              {avatars.map((p: any, i: number) => (
+                                <Link 
+                                  href={`/profile/${p.username}`} 
                                   key={i}
-                                  src={p.profile_pic?.startsWith('/uploads') ? `${API}${p.profile_pic}` : p.profile_pic || `https://ui-avatars.com/api/?name=${p.name}&background=111&color=fff`}
-                                  style={{
-                                    width: "22px", height: "22px", borderRadius: "50%",
-                                    border: "2px solid #1a1a1a", marginLeft: i > 0 ? "-8px" : "0",
-                                    objectFit: "cover"
-                                  }}
-                                  title={p.name}
-                                />
+                                  style={{ display: "flex", alignItems: "center", gap: "10px", padding: "6px", borderRadius: "12px", transition: "all 0.2s", textDecoration: "none" }}
+                                  className="hover:bg-white/10"
+                                >
+                                  <img 
+                                    src={p.profile_pic?.startsWith('/uploads') ? `${API}${p.profile_pic}` : p.profile_pic || `https://ui-avatars.com/api/?name=${p.name}&background=111&color=fff`}
+                                    style={{ width: "28px", height: "28px", borderRadius: "50%", objectFit: "cover" }}
+                                  />
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: "13px", fontWeight: 600, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                      {p.name} {p.name === feedItem.host_name ? <span style={{ color: "#f472b6", fontSize: "10px", marginLeft: "4px" }}>(Host)</span> : ""}
+                                    </div>
+                                    <div style={{ fontSize: "11px", color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                      @{p.username}
+                                    </div>
+                                  </div>
+                                </Link>
                               ))}
                             </div>
-                            <span style={{ fontSize: "12px", color: "#ddd", fontWeight: 600 }}>
-                              {`${feedItem.participant_previews.length - 1} crewmate${feedItem.participant_previews.length - 1 > 1 ? 's' : ''}`}
-                            </span>
                           </div>
-                          
-                          {/* CREW POPUP */}
-                          {showCrewPopup === feedItem.id && (
-                            <div style={{
-                              position: "absolute",
-                              top: "100%",
-                              left: "0",
-                              marginTop: "8px",
-                              background: "rgba(20,20,20,0.95)",
-                              border: "1px solid rgba(255,255,255,0.1)",
-                              borderRadius: "16px",
-                              padding: "12px",
-                              width: "220px",
-                              zIndex: 50,
-                              backdropFilter: "blur(20px)",
-                              boxShadow: "0 10px 40px rgba(0,0,0,0.8)",
-                              maxHeight: "250px",
-                              overflowY: "auto"
-                            }} className="hide-scroll">
-                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                                <span style={{ fontSize: "12px", fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em" }}>Crewmates</span>
-                                <button onClick={(e) => { e.stopPropagation(); setShowCrewPopup(null); }} className="text-gray-400 hover:text-white transition-colors">
-                                  <X className="w-4 h-4" />
-                                </button>
-                              </div>
-                              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                                {feedItem.participant_previews.map((p: any, i: number) => (
-                                  <Link 
-                                    href={`/profile/${p.username}`} 
-                                    key={i}
-                                    style={{ display: "flex", alignItems: "center", gap: "10px", padding: "6px", borderRadius: "12px", transition: "all 0.2s", textDecoration: "none" }}
-                                    className="hover:bg-white/10"
-                                  >
-                                    <img 
-                                      src={p.profile_pic?.startsWith('/uploads') ? `${API}${p.profile_pic}` : p.profile_pic || `https://ui-avatars.com/api/?name=${p.name}&background=111&color=fff`}
-                                      style={{ width: "28px", height: "28px", borderRadius: "50%", objectFit: "cover" }}
-                                    />
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                      <div style={{ fontSize: "13px", fontWeight: 600, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                                        {p.name} {p.name === feedItem.host_name ? <span style={{ color: "#f472b6", fontSize: "10px", marginLeft: "4px" }}>(Host)</span> : ""}
-                                      </div>
-                                      <div style={{ fontSize: "11px", color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                                        @{p.username}
-                                      </div>
-                                    </div>
-                                  </Link>
-                                ))}
-                              </div>
-                            </div>
-                          )}
                         </div>
                       )}
                     </div>

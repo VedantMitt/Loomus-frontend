@@ -146,10 +146,6 @@ const handleSaveProfile = async () => {
             <label className="text-xs uppercase text-white/40 font-bold tracking-widest">Email </label>
             <div className="p-3 bg-white/5 border border-white/10 rounded text-white/30 italic">{email}</div>
           </div>
-          <div className="space-y-1">
-            <label className="text-xs uppercase text-white/40 font-bold tracking-widest">College </label>
-            <div className="p-3 bg-white/5 border border-white/10 rounded text-white/30 italic">{college}</div>
-          </div>
         </div>
 
         <div className="space-y-1">

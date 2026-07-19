@@ -460,7 +460,7 @@ export default function ActivityCard({
               <span style={{ color: 'rgba(255,255,255,0.4)', marginRight: '4px' }}>By</span>
               <strong>
                 {activity.is_official 
-                  ? (activity.society_name ? `${activity.society_name}, ${activity.college_name}` : activity.college_name)
+                  ? (activity.society_name || 'Official Host')
                   : (activity.hosted_by_name || activity.host_name)
                 }
               </strong>

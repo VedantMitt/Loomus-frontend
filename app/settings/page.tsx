@@ -77,16 +77,6 @@ export default function SettingsMenu() {
         <h1 style={{ fontSize: "28px", fontWeight: 700, marginBottom: "24px" }}>Settings</h1>
 
         <div className="settings-card">
-          <div className="settings-item" onClick={() => router.push("/settings/account")}>
-            <div className="settings-item-left">
-              <div className="settings-icon-wrap">
-                <User size={18} />
-              </div>
-              <span className="settings-label">Account Details</span>
-            </div>
-            <ChevronRight size={18} color="#666" />
-          </div>
-          
           <div className="settings-item" onClick={() => router.push("/preferences")}>
             <div className="settings-item-left">
               <div className="settings-icon-wrap">

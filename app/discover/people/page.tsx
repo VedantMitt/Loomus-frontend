@@ -39,7 +39,6 @@ export default function PeopleDiscoverPage() {
         const token = localStorage.getItem("token");
         const params = new URLSearchParams();
         if (searchTerm?.trim()) params.set("search", searchTerm.trim());
-        if (activeCollege) params.set("college", activeCollege);
         if (activeYear) params.set("year", activeYear);
 
         const res = await fetch(`${API}/users/discover?${params.toString()}`, {
@@ -55,7 +54,7 @@ export default function PeopleDiscoverPage() {
         setLoading(false);
       }
     },
-    [activeCollege, activeYear]
+    [activeYear]
   );
 
   // Initial load - fetch all users to populate filter options
@@ -276,22 +275,8 @@ export default function PeopleDiscoverPage() {
         </div>
 
         {/* Filter chips */}
-        {(allColleges.length > 1 || allYears.length > 1) && (
+        {allYears.length > 1 && (
           <div style={{ display: "flex", flexDirection: "column", gap: "10px", alignItems: "center", marginBottom: "32px" }}>
-            {allColleges.length > 1 && (
-              <div className="filter-row" style={{ marginBottom: 0 }}>
-                <span className="filter-label">College</span>
-                {allColleges.map((c) => (
-                  <button
-                    key={c}
-                    className={`filter-chip ${activeCollege === c ? "active" : ""}`}
-                    onClick={() => setActiveCollege(activeCollege === c ? null : c)}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
-            )}
             {allYears.length > 1 && (
               <div className="filter-row" style={{ marginBottom: 0 }}>
                 <span className="filter-label">Year</span>

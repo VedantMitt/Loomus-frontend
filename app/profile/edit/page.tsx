@@ -14,8 +14,11 @@ export default function EditProfile() {
   // Form fields
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
-  const [currentStatus, setCurrentStatus] = useState("");
-  const [friendsIf, setFriendsIf] = useState("");
+  const [gender, setGender] = useState("");
+  const [dob, setDob] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [linkedin, setLinkedin] = useState("");
+  const [isPrivate, setIsPrivate] = useState(false);
   const [profilePic, setProfilePic] = useState("");
   const [uploading, setUploading] = useState(false);
 
@@ -25,11 +28,7 @@ export default function EditProfile() {
   const [zoom, setZoom] = useState(1);
   const [croppedArea, setCroppedArea] = useState<Area | null>(null);
 
-  // Tag arrays
-  const [interests, setInterests] = useState<string[]>([]);
-  const [vibeTags, setVibeTags] = useState<string[]>([]);
-  const [interestInput, setInterestInput] = useState("");
-  const [vibeInput, setVibeInput] = useState("");
+
 
   // Load current data from API
   useEffect(() => {
@@ -46,10 +45,11 @@ export default function EditProfile() {
 
         setUsername(data.username || "");
         setBio(data.bio || "");
-        setCurrentStatus(data.current_status || "");
-        setFriendsIf(data.friends_if || "");
-        setInterests(data.interests || []);
-        setVibeTags(data.vibe_tags || []);
+        setGender(data.gender || "");
+        setDob(data.dob || "");
+        setInstagram(data.instagram || "");
+        setLinkedin(data.linkedin || "");
+        setIsPrivate(data.is_private || false);
         setProfilePic(data.profile_pic || "");
       } catch {
         console.error("Failed to load profile");
@@ -78,10 +78,11 @@ export default function EditProfile() {
         body: JSON.stringify({
           username: username.toLowerCase(),
           bio,
-          current_status: currentStatus,
-          friends_if: friendsIf,
-          interests,
-          vibe_tags: vibeTags,
+          gender,
+          dob,
+          instagram,
+          linkedin,
+          is_private: isPrivate,
           profile_pic: profilePic,
         }),
       });
@@ -109,22 +110,7 @@ export default function EditProfile() {
     }
   };
 
-  const addTag = (
-    val: string,
-    list: string[],
-    setList: (v: string[]) => void,
-    setInput: (v: string) => void
-  ) => {
-    const trimmed = val.trim();
-    if (trimmed && !list.includes(trimmed)) {
-      setList([...list, trimmed]);
-    }
-    setInput("");
-  };
 
-  const removeTag = (tag: string, list: string[], setList: (v: string[]) => void) => {
-    setList(list.filter((t) => t !== tag));
-  };
 
   const onCropComplete = useCallback((_: Area, croppedPixels: Area) => {
     setCroppedArea(croppedPixels);
@@ -359,83 +345,72 @@ export default function EditProfile() {
           />
         </div>
 
-        {/* Current Status */}
+        {/* Gender */}
         <div className="edit-card">
-          <label className="edit-label">📡 Current Status</label>
+          <label className="edit-label">Gender</label>
+          <select 
+            className="edit-input" 
+            value={gender} 
+            onChange={(e) => setGender(e.target.value)}
+            style={{ appearance: "none", cursor: "pointer" }}
+          >
+            <option value="" disabled>Select Gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Non-Binary">Non-Binary</option>
+          </select>
+
+          <label className="edit-label" style={{ marginTop: "16px" }}>Date of Birth</label>
           <input
+            type="date"
             className="edit-input"
-            value={currentStatus}
-            onChange={(e) => setCurrentStatus(e.target.value)}
-            placeholder="e.g. Building a startup 🚀"
+            value={dob}
+            onChange={(e) => setDob(e.target.value)}
+            style={{ colorScheme: "dark" }}
           />
         </div>
 
-        {/* I'm into... (interests) */}
+        {/* Social Links */}
         <div className="edit-card">
-          <label className="edit-label">🎯 I'm into...</label>
+          <label className="edit-label">Social Links</label>
           <input
+            type="text"
             className="edit-input"
-            value={interestInput}
-            onChange={(e) => setInterestInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addTag(interestInput, interests, setInterests, setInterestInput);
-              }
-            }}
-            placeholder="Type and press Enter (e.g. AI, Photography)"
+            placeholder="Instagram Username"
+            value={instagram}
+            onChange={(e) => setInstagram(e.target.value)}
+            style={{ marginBottom: "16px" }}
           />
-          <div className="tag-row">
-            {interests.map((item) => (
-              <span
-                key={item}
-                className="tag tag-blue"
-                onClick={() => removeTag(item, interests, setInterests)}
-              >
-                {item} ×
-              </span>
-            ))}
+          <input
+            type="text"
+            className="edit-input"
+            placeholder="LinkedIn Profile URL"
+            value={linkedin}
+            onChange={(e) => setLinkedin(e.target.value)}
+            style={{ marginBottom: 0 }}
+          />
+        </div>
+
+        {/* Privacy Section */}
+        <div className="edit-card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px" }}>
+          <div>
+            <h2 style={{ fontSize: "16px", fontWeight: 600, margin: "0 0 4px 0" }}>Private Account</h2>
+            <p style={{ fontSize: "12px", color: "#888", margin: 0 }}>
+              If enabled, your chapters only appear to friends on the feed.
+            </p>
           </div>
-        </div>
-
-        {/* Vibe Tags */}
-        <div className="edit-card">
-          <label className="edit-label">✨ Vibe Tags</label>
-          <input
-            className="edit-input"
-            value={vibeInput}
-            onChange={(e) => setVibeInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addTag(vibeInput, vibeTags, setVibeTags, setVibeInput);
-              }
+          <button 
+            onClick={() => setIsPrivate(!isPrivate)}
+            style={{ 
+              width: "44px", height: "24px", borderRadius: "12px", background: isPrivate ? "#3b82f6" : "#333", 
+              position: "relative", cursor: "pointer", border: "none", transition: "all 0.3s"
             }}
-            placeholder="Type and press Enter (e.g. Night Owl, Chai Lover)"
-          />
-          <div className="tag-row">
-            {vibeTags.map((tag) => (
-              <span
-                key={tag}
-                className="tag tag-purple"
-                onClick={() => removeTag(tag, vibeTags, setVibeTags)}
-              >
-                {tag} ×
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* We are friends if... */}
-        <div className="edit-card">
-          <label className="edit-label">🤝 We are friends if...</label>
-          <textarea
-            className="edit-input edit-textarea"
-            value={friendsIf}
-            onChange={(e) => setFriendsIf(e.target.value)}
-            placeholder="e.g. You also binge anime at 3am and argue about best programming language"
-            rows={3}
-          />
+          >
+            <div style={{
+              width: "18px", height: "18px", borderRadius: "50%", background: "#fff",
+              position: "absolute", top: "3px", left: isPrivate ? "23px" : "3px", transition: "all 0.3s"
+            }} />
+          </button>
         </div>
 
         {/* Save */}

@@ -535,27 +535,15 @@ export default function EditActivityPage() {
                 />
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', animation: 'dropReveal 0.3s ease' }}>
-                <div>
-                  <label className="cac-label" style={{ fontSize: '13px', opacity: 0.7 }}>College Name *</label>
-                  <input
-                    type="text"
-                    className="cac-input"
-                    placeholder="e.g. IIT Delhi"
-                    value={collegeName}
-                    onChange={(e) => setCollegeName(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="cac-label" style={{ fontSize: '13px', opacity: 0.7 }}>Society Name (Optional)</label>
-                  <input
-                    type="text"
-                    className="cac-input"
-                    placeholder="e.g. DevClub"
-                    value={societyName}
-                    onChange={(e) => setSocietyName(e.target.value)}
-                  />
-                </div>
+              <div style={{ animation: 'dropReveal 0.3s ease' }}>
+                <label className="cac-label" style={{ fontSize: '13px', opacity: 0.7 }}>Society/Organization Name (Optional)</label>
+                <input
+                  type="text"
+                  className="cac-input"
+                  placeholder="e.g. DevClub"
+                  value={societyName}
+                  onChange={(e) => setSocietyName(e.target.value)}
+                />
               </div>
             )}
           </div>
