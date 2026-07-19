@@ -383,7 +383,7 @@ export default function OnboardingPage() {
               <textarea
                 className="inp"
                 style={{ resize: "none", height: "80px" }}
-                placeholder="CSE '26 | Building cool things"
+                placeholder="Always looking for the next adventure | Coffee addict"
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
               />
@@ -431,7 +431,7 @@ export default function OnboardingPage() {
                         },
                         (error) => {
                           console.error("Error getting location", error);
-                          alert("Could not get location. Please enter it manually.");
+                          alert(`Could not get location: ${error.message}. Please enter it manually or check your browser permissions.`);
                           setLoading(false);
                         }
                       );

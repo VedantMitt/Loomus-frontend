@@ -439,7 +439,7 @@ export default function ProfilePage() {
                     Edit Profile
                   </button>
                   <button
-                    onClick={() => router.push("/preferences")}
+                    onClick={() => router.push("/settings")}
                     style={{
                       padding: "8px",
                       borderRadius: "8px",
