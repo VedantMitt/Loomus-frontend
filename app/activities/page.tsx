@@ -336,12 +336,17 @@ export default function ActivitiesPage() {
       if (!token) return;
       try {
         const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-        const res = await fetch(`${API}/suggestions`, {
+        const res = await fetch(`${API}/activities?is_public=true`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
           const data = await res.json();
-          setPublicPlans(data.activities || []);
+          const upcomingOrLive = data.filter((a: any) => {
+            if (a.end_date && new Date(a.end_date) < new Date()) return false;
+            if (!a.end_date && new Date(a.date).getTime() < new Date().getTime() - 24 * 60 * 60 * 1000) return false;
+            return true;
+          });
+          setPublicPlans(upcomingOrLive);
         }
 
         const hobbyRes = await fetch(`${API}/activities?is_public=true&type=hobby`, {
@@ -349,7 +354,12 @@ export default function ActivitiesPage() {
         });
         if (hobbyRes.ok) {
           const hobbyData = await hobbyRes.json();
-          setHobbyMeetups(hobbyData || []);
+          const upcomingOrLiveHobby = hobbyData.filter((a: any) => {
+            if (a.end_date && new Date(a.end_date) < new Date()) return false;
+            if (!a.end_date && new Date(a.date).getTime() < new Date().getTime() - 24 * 60 * 60 * 1000) return false;
+            return true;
+          });
+          setHobbyMeetups(upcomingOrLiveHobby);
         }
       } catch (err) {
         console.error("Failed to fetch public plans", err);
@@ -963,7 +973,7 @@ export default function ActivitiesPage() {
                     <div className="live-card-category">
                       {event.type || "Hobby"}
                     </div>
-                    <div className="live-card" onClick={() => handleEventClick(event)}>
+                    <div className="live-card" onClick={() => router.push(`/activities/${event.id}`)}>
                       <HobbyAnimatedBg seed={event.id ? event.id.charCodeAt(0) : 0} />
                       <div 
                         className="live-overlay" 
@@ -1038,7 +1048,7 @@ export default function ActivitiesPage() {
                         <div className="live-card-category" style={{ background: 'rgba(52,211,153,0.15)', color: '#34d399' }}>
                           {plan.type || 'Public Plan'}
                         </div>
-                        <div className="live-card" onClick={() => handleEventClick(plan)}>
+                        <div className="live-card" onClick={() => router.push(`/activities/${plan.id}`)}>
                           <img src={plan.banner || `https://source.unsplash.com/random/800x600/?${plan.type || 'party'}`} alt={plan.title} className="live-img" />
                           <div 
                             className="live-overlay" 

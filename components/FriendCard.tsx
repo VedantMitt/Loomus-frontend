@@ -32,6 +32,21 @@ export default function FriendCard({ friend, onRemove }: { friend: Friend, onRem
   const [showInviteMenu, setShowInviteMenu] = useState(false);
   const [myLooms, setMyLooms] = useState<any[]>([]);
   const [loadingLooms, setLoadingLooms] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowInviteMenu(false);
+      }
+    };
+    if (showInviteMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showInviteMenu]);
 
   const toggleInviteMenu = async () => {
     if (showInviteMenu) {
@@ -427,7 +442,7 @@ export default function FriendCard({ friend, onRemove }: { friend: Friend, onRem
 
 
           {/* Invite */}
-          <div className="fc-dropdown-wrap">
+          <div className="fc-dropdown-wrap" ref={dropdownRef}>
             <button
               className="fc-btn fc-btn-icon fc-btn-party"
               onClick={toggleInviteMenu}
