@@ -175,12 +175,24 @@ export default function UserFeedPage() {
             </div>
 
             {/* Description */}
-            {snap.description && (
-              <div style={{ marginTop: "16px", fontSize: "14px", color: "rgba(255,255,255,0.8)", lineHeight: "1.5" }}>
-                <span style={{ fontWeight: 700, marginRight: "8px", color: "#fff" }}>{username}</span>
-                {snap.description}
-              </div>
-            )}
+            {(() => {
+              let displayDesc = snap.description;
+              try {
+                if (displayDesc && displayDesc.startsWith('{')) {
+                  const meta = JSON.parse(displayDesc);
+                  displayDesc = meta.note || "";
+                }
+              } catch(e) {}
+              
+              if (!displayDesc) return null;
+
+              return (
+                <div style={{ marginTop: "16px", fontSize: "14px", color: "rgba(255,255,255,0.8)", lineHeight: "1.5" }}>
+                  <span style={{ fontWeight: 700, marginRight: "8px", color: "#fff" }}>{username}</span>
+                  {displayDesc}
+                </div>
+              );
+            })()}
 
             {/* Actions */}
             <div style={{ marginTop: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
