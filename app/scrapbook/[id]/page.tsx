@@ -528,7 +528,7 @@ export default function ScrapbookStoryPage() {
                       {/* Action Buttons */}
                       <div className="flex gap-4 mt-3 pl-2">
                         <button 
-                          onClick={() => handleToggleLike(s.id)}
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleToggleLike(s.id); }}
                           className={`group flex items-center gap-1.5 transition-all ${likes[s.id] ? 'text-pink-500' : 'text-gray-400 hover:text-pink-400'}`}
                         >
                           <Heart className={`w-[16px] h-[16px] transition-transform duration-200 group-hover:scale-110 ${likes[s.id] ? 'fill-pink-500' : ''}`} />
@@ -537,7 +537,7 @@ export default function ScrapbookStoryPage() {
                           </span>
                         </button>
                         <button 
-                          onClick={() => toggleComments(s.id)}
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleComments(s.id); }}
                           className={`group flex items-center gap-1.5 transition-all ${showComments[s.id] ? 'text-blue-400' : 'text-gray-400 hover:text-blue-400'}`}
                         >
                           <MessageCircle className="w-[16px] h-[16px] transition-transform duration-200 group-hover:scale-110" />

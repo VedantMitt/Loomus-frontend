@@ -577,7 +577,7 @@ export default function DiscoverPage() {
                             
                             <div style={{ marginTop: "12px", display: "flex", gap: "10px" }}>
                               <button 
-                                onClick={() => handleToggleLike(photo.id)}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleToggleLike(photo.id); }}
                                 className={`group flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border ${likes[photo.id] ? 'bg-pink-500/20 border-pink-500/40 shadow-[0_0_10px_rgba(236,72,153,0.15)]' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
                               >
                                 <Heart className={`w-[16px] h-[16px] transition-transform duration-200 group-hover:scale-110 ${likes[photo.id] ? 'fill-pink-500 text-pink-500' : 'text-gray-300 group-hover:text-pink-400'}`} />
@@ -586,7 +586,7 @@ export default function DiscoverPage() {
                                 </span>
                               </button>
                               <button 
-                                onClick={() => toggleComments(photo.id)}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleComments(photo.id); }}
                                 className={`group flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border ${showComments[photo.id] ? 'bg-blue-500/20 border-blue-500/40 shadow-[0_0_10px_rgba(59,130,246,0.15)]' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
                               >
                                 <MessageCircle className={`w-[16px] h-[16px] transition-transform duration-200 group-hover:scale-110 ${showComments[photo.id] ? 'text-blue-400' : 'text-gray-300 group-hover:text-blue-400'}`} />
