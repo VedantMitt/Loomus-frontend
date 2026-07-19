@@ -245,9 +245,14 @@ export default function ScrapbookStoryPage() {
           </div>
         </div>
         <div>
-          <button onClick={() => router.push(`/activities/${id}`)} className="text-xs font-bold text-white bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition-all flex items-center gap-2">
-            View Loom
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => router.push(`/activities/${id}?modal=invite`)} className="text-xs font-bold text-white bg-pink-500/20 hover:bg-pink-500/40 px-3 py-2 rounded-lg transition-all flex items-center gap-2">
+              ✉️ Invite
+            </button>
+            <button onClick={() => router.push(`/activities/${id}`)} className="text-xs font-bold text-white bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition-all flex items-center gap-2">
+              View Loom
+            </button>
+          </div>
         </div>
       </div>
 
@@ -364,8 +369,8 @@ export default function ScrapbookStoryPage() {
         )}
       </div>
 
-      {/* Add Snap Button (Only if myUserId === activity.host_id) */}
-      {myUserId === activity.host_id && (
+      {/* Add Snap Button (Available for all members) */}
+      {(
         <div className="fixed bottom-24 right-6 z-50 flex items-end gap-2">
           <input type="file" accept="image/*" className="hidden" id="gal-scrapbook" onChange={e => { if(e.target.files?.[0]) handleQuickSnap(e.target.files[0], 'gallery'); }} />
           <button
