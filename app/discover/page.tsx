@@ -157,9 +157,9 @@ export default function DiscoverPage() {
       const token = localStorage.getItem("token");
       const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
       if (isLiked) {
-        await fetch(`${API}/comments/${commentId}/like`, { method: "DELETE", headers });
+        await fetch(`${API}/activities/comments/${commentId}/like`, { method: "DELETE", headers });
       } else {
-        await fetch(`${API}/comments/${commentId}/like`, { method: "POST", headers });
+        await fetch(`${API}/activities/comments/${commentId}/like`, { method: "POST", headers });
       }
     } catch (err) {
       console.error(err);
@@ -208,7 +208,7 @@ export default function DiscoverPage() {
 
     try {
       const token = localStorage.getItem("token");
-      await fetch(`${API}/comments/${commentId}`, {
+      await fetch(`${API}/activities/comments/${commentId}`, {
         method: "DELETE",
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
