@@ -12,6 +12,7 @@ type Activity = {
   banner?: string;
   is_shared?: boolean;
   host_id?: string;
+  has_joined?: boolean;
 };
 
 type Submission = {
@@ -413,14 +414,16 @@ export default function ScrapbookStoryPage() {
           </div>
         </div>
         <div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => router.push(`/activities/${id}?modal=invite`)} className="text-xs font-bold text-white bg-pink-500/20 hover:bg-pink-500/40 px-3 py-2 rounded-lg transition-all flex items-center gap-2">
-              ✉️ Invite
-            </button>
-            <button onClick={() => router.push(`/activities/${id}`)} className="text-xs font-bold text-white bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition-all flex items-center gap-2">
-              View Loom
-            </button>
-          </div>
+          {(activity.host_id === myUserId || activity.has_joined) && (
+            <div className="flex items-center gap-2">
+              <button onClick={() => router.push(`/activities/${id}?modal=invite`)} className="text-xs font-bold text-white bg-pink-500/20 hover:bg-pink-500/40 px-3 py-2 rounded-lg transition-all flex items-center gap-2">
+                ✉️ Invite
+              </button>
+              <button onClick={() => router.push(`/activities/${id}`)} className="text-xs font-bold text-white bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition-all flex items-center gap-2">
+                View Loom
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
