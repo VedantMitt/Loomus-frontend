@@ -145,6 +145,24 @@ export default function Navbar() {
     }
   };
 
+  const handleToggleDropdown = () => {
+    if (!showDropdown) {
+      const hasUnread = notifications.some(n => !n.is_read);
+      if (hasUnread) {
+        setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+        const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        const token = localStorage.getItem("token");
+        if (token) {
+          fetch(`${API}/notifications/read-all`, {
+            method: "PUT",
+            headers: { Authorization: `Bearer ${token}` }
+          }).catch(err => console.error(err));
+        }
+      }
+    }
+    setShowDropdown(!showDropdown);
+  };
+
   const handleAcceptRequest = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
@@ -531,7 +549,7 @@ export default function Navbar() {
                 <div style={{ position: "relative" }} ref={desktopDropdownRef}>
                   <button className="nav-action-btn" onClick={(e) => {
                     e.stopPropagation();
-                    setShowDropdown(!showDropdown);
+                    handleToggleDropdown();
                   }}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
@@ -623,7 +641,7 @@ export default function Navbar() {
                                <div key={n.id} style={{ display: "flex", gap: "12px", alignItems: "center", padding: "12px", borderRadius: "16px", background: n.is_read ? "rgba(255,255,255,0.02)" : (n.type === 'game_invite' ? "rgba(6, 182, 212, 0.08)" : (n.type === 'room_invite' ? "rgba(6, 182, 212, 0.08)" : "rgba(244, 114, 182, 0.08)")), marginBottom: "4px", border: n.is_read ? "1px solid rgba(255,255,255,0.05)" : (['game_invite', 'room_invite'].includes(n.type) ? "1px solid rgba(6, 182, 212, 0.2)" : "1px solid rgba(244, 114, 182, 0.2)"), opacity: n.is_read ? 0.6 : 1, transition: 'all 0.3s ease' }}>
                                  <img src={avatar} alt="" style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover", border: "1px solid rgba(255,255,255,0.1)" }} />
                                  <div style={{ flex: 1, fontSize: "13px", color: "#ccc", lineHeight: "1.4" }}>
-                                   <Link href={link} onClick={() => { markNotifRead(n.id); setShowDropdown(false); }} style={{ color: "inherit", textDecoration: "none" }}>
+                                   <Link href={link} onClick={() => { setShowDropdown(false); }} style={{ color: "inherit", textDecoration: "none" }}>
                                       <span style={{ color: "#fff", fontWeight: 700 }}>{n.name}</span>
                                       {" "}{message}
                                       {(n.type === 'game_invite' || n.type === 'room_invite') && meta?.title && (
@@ -631,7 +649,7 @@ export default function Navbar() {
                                       )}
                                    </Link>
                                  </div>
-                                 {(n.type === 'game_invite' || n.type === 'room_invite' || n.type === 'activity_invite') && !n.is_read ? (
+                                 {(n.type === 'game_invite' || n.type === 'room_invite' || n.type === 'activity_invite') && (
                                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                                       <button 
                                         onClick={async (e) => { 
@@ -649,7 +667,6 @@ export default function Navbar() {
                                             } catch (e) { console.error(e); }
                                           }
                                           
-                                          markNotifRead(n.id); 
                                           setShowDropdown(false); 
                                           router.push(link); 
                                         }} 
@@ -658,16 +675,12 @@ export default function Navbar() {
                                         Join
                                       </button>
                                       <button 
-                                        onClick={(e) => { e.stopPropagation(); markNotifRead(n.id); }} 
+                                        onClick={(e) => { e.stopPropagation(); setNotifications(prev => prev.filter(x => x.id !== n.id)); }} 
                                         style={{ padding: "5px 10px", background: "rgba(255,255,255,0.08)", color: "#ccc", border: "none", borderRadius: "8px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}
                                       >
                                         Ignore
                                       </button>
                                    </div>
-                                 ) : (
-                                   !n.is_read && (
-                                     <button onClick={() => markNotifRead(n.id)} style={{ padding: "6px", background: "transparent", border: "none", color: "#666", cursor: "pointer", fontSize: "18px" }}>×</button>
-                                   )
                                  )}
                                </div>
                              );
@@ -729,7 +742,7 @@ export default function Navbar() {
           <div style={{ position: "relative" }} ref={mobileDropdownRef}>
             <button className="mtn-btn" onClick={(e) => {
               e.stopPropagation();
-              setShowDropdown(!showDropdown);
+              handleToggleDropdown();
             }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -823,7 +836,7 @@ export default function Navbar() {
                           <div key={n.id} style={{ display: "flex", gap: "12px", alignItems: "center", padding: "12px", borderRadius: "16px", background: n.is_read ? "rgba(255,255,255,0.02)" : (n.type === 'game_invite' ? "rgba(6, 182, 212, 0.08)" : (n.type === 'room_invite' ? "rgba(6, 182, 212, 0.08)" : "rgba(244, 114, 182, 0.08)")), marginBottom: "4px", border: n.is_read ? "1px solid rgba(255,255,255,0.05)" : (['game_invite', 'room_invite'].includes(n.type) ? "1px solid rgba(6, 182, 212, 0.2)" : "1px solid rgba(244, 114, 182, 0.2)"), opacity: n.is_read ? 0.6 : 1, transition: 'all 0.3s ease' }}>
                             <img src={avatar} alt="" style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover", border: "1px solid rgba(255,255,255,0.1)" }} />
                             <div style={{ flex: 1, fontSize: "13px", color: "#ccc", lineHeight: "1.4" }}>
-                              <Link href={link} onClick={() => { markNotifRead(n.id); setShowDropdown(false); }} style={{ color: "inherit", textDecoration: "none" }}>
+                              <Link href={link} onClick={() => { setShowDropdown(false); }} style={{ color: "inherit", textDecoration: "none" }}>
                                 <span style={{ color: "#fff", fontWeight: 700 }}>{n.name}</span>
                                 {" "}{message}
                                 {(n.type === 'game_invite' || n.type === 'room_invite') && meta?.title && (
@@ -831,7 +844,7 @@ export default function Navbar() {
                                 )}
                               </Link>
                             </div>
-                            {(n.type === 'game_invite' || n.type === 'room_invite' || n.type === 'activity_invite') && !n.is_read ? (
+                            {(n.type === 'game_invite' || n.type === 'room_invite' || n.type === 'activity_invite') && (
                               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                                 <button 
                                   onClick={async (e) => { 
@@ -849,7 +862,6 @@ export default function Navbar() {
                                       } catch (e) { console.error(e); }
                                     }
                                     
-                                    markNotifRead(n.id); 
                                     setShowDropdown(false); 
                                     router.push(link); 
                                   }} 
@@ -858,16 +870,12 @@ export default function Navbar() {
                                   Join
                                 </button>
                                 <button 
-                                  onClick={(e) => { e.stopPropagation(); markNotifRead(n.id); }} 
+                                  onClick={(e) => { e.stopPropagation(); setNotifications(prev => prev.filter(x => x.id !== n.id)); }} 
                                   style={{ padding: "5px 10px", background: "rgba(255,255,255,0.08)", color: "#ccc", border: "none", borderRadius: "8px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}
                                 >
                                   Ignore
                                 </button>
                               </div>
-                            ) : (
-                              !n.is_read && (
-                                <button onClick={() => markNotifRead(n.id)} style={{ padding: "6px", background: "transparent", border: "none", color: "#666", cursor: "pointer", fontSize: "18px" }}>×</button>
-                              )
                             )}
                           </div>
                         );
