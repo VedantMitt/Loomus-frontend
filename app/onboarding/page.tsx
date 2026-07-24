@@ -25,6 +25,7 @@ export default function OnboardingPage() {
   const [vibeTags, setVibeTags] = useState("");
   const [instagram, setInstagram] = useState("");
   const [linkedin, setLinkedin] = useState("");
+  const [isPrivate, setIsPrivate] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -45,6 +46,7 @@ export default function OnboardingPage() {
       if (parsedUser.vibe_tags) setVibeTags(parsedUser.vibe_tags.join(", "));
       if (parsedUser.instagram) setInstagram(parsedUser.instagram);
       if (parsedUser.linkedin) setLinkedin(parsedUser.linkedin);
+      if (parsedUser.is_private !== undefined) setIsPrivate(parsedUser.is_private);
     }
   }, [router]);
 
@@ -110,6 +112,7 @@ export default function OnboardingPage() {
       payload.bio = bio;
       payload.gender = gender;
       payload.dob = dob;
+      payload.is_private = isPrivate;
     }
     if (step === 3) {
       payload.location_name = locationName;
@@ -409,6 +412,16 @@ export default function OnboardingPage() {
                 onChange={(e) => setDob(e.target.value)}
                 style={{ colorScheme: "dark" }}
               />
+              <label className="lbl">Account Privacy</label>
+              <select 
+                className="inp" 
+                value={isPrivate ? "true" : "false"} 
+                onChange={(e) => setIsPrivate(e.target.value === "true")}
+                style={{ appearance: "none", cursor: "pointer" }}
+              >
+                <option value="false">Public</option>
+                <option value="true">Private</option>
+              </select>
             </>
           )}
 

@@ -18,6 +18,7 @@ type User = {
   followers_count?: number;
   chapters_count?: number;
   looms_count?: number;
+  is_private?: boolean;
 };
 
 type Snap = {
@@ -516,8 +517,16 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', marginTop: '24px' }}>
+        {user.is_private && friendStatus !== "friends" && currentUserId !== user.id ? (
+          <div style={{ textAlign: "center", padding: "60px 20px", color: "#666", marginTop: "24px" }}>
+            <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔒</div>
+            <h3 style={{ fontSize: "18px", color: "#fff", marginBottom: "8px" }}>This account is private</h3>
+            <p style={{ fontSize: "14px" }}>Follow this account to see their posts and chapters.</p>
+          </div>
+        ) : (
+          <>
+            {/* Tabs */}
+            <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', marginTop: '24px' }}>
           <button 
             onClick={() => setActiveTab('posts')}
             style={{ 
@@ -625,6 +634,8 @@ export default function ProfilePage() {
             )
           )}
         </div>
+          </>
+        )}
 
         {/* Logout Button (Own Profile Only) */}
         {isOwnProfile && (
