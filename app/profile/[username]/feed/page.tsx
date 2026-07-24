@@ -47,7 +47,7 @@ export default function UserFeedPage() {
       try {
         const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
         const token = localStorage.getItem("token");
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
         const [userRes, snapsRes] = await Promise.all([
           fetch(`${API}/users/${username}`, { headers }),
           fetch(`${API}/users/${username}/snaps`, { headers })
