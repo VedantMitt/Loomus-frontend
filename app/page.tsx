@@ -1,10 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Apple, Smartphone, Globe, Sparkles, Users, BookHeart, MapPin } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
 
 export default function LandingPage() {
   const router = useRouter();
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const handleOpenWebApp = () => {
     const token = localStorage.getItem("token");
@@ -14,6 +17,15 @@ export default function LandingPage() {
       router.push("/auth/login");
     }
   };
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
+      setIsRedirecting(true);
+      handleOpenWebApp();
+    }
+  }, [router]);
+
+  if (isRedirecting) return null;
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-pink-500/30 font-sans">
