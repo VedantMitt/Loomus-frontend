@@ -46,9 +46,11 @@ export default function UserFeedPage() {
     async function fetchData() {
       try {
         const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        const token = localStorage.getItem("token");
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
         const [userRes, snapsRes] = await Promise.all([
-          fetch(`${API}/users/${username}`),
-          fetch(`${API}/users/${username}/snaps`)
+          fetch(`${API}/users/${username}`, { headers }),
+          fetch(`${API}/users/${username}/snaps`, { headers })
         ]);
         
         if (userRes.ok) {
@@ -59,6 +61,15 @@ export default function UserFeedPage() {
         if (snapsRes.ok) {
           const snapsData = await snapsRes.json();
           setSnaps(snapsData);
+          
+          const initialLikes: Record<string, boolean> = {};
+          const initialLikeCounts: Record<string, number> = {};
+          snapsData.forEach((snap: any) => {
+            initialLikes[snap.id] = snap.has_voted || false;
+            initialLikeCounts[snap.id] = parseInt(snap.vote_count || '0', 10);
+          });
+          setLikes(initialLikes);
+          setLikeCounts(initialLikeCounts);
         }
       } catch (err) {
         console.error("Fetch failed:", err);
@@ -221,7 +232,7 @@ export default function UserFeedPage() {
                   className={`group flex items-center gap-2 px-4 py-2 rounded-full transition-all border bg-white/5 border-white/10 hover:bg-white/10`}
                 >
                   <MessageCircle className={`w-[18px] h-[18px] transition-transform duration-200 group-hover:scale-110 text-gray-300 group-hover:text-blue-400`} />
-                  <span className={`text-[13px] font-bold text-gray-300 group-hover:text-blue-400`}>0</span>
+                  <span className={`text-[13px] font-bold text-gray-300 group-hover:text-blue-400`}>{(snap as any).comment_count || 0}</span>
                 </button>
               </div>
               

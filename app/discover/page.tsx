@@ -89,12 +89,9 @@ export default function DiscoverPage() {
   }, []);
 
   const handleToggleLike = async (submissionId: string) => {
-    let wasLiked = false;
-    setLikes(p => {
-      wasLiked = !!p[submissionId];
-      return { ...p, [submissionId]: !wasLiked };
-    });
-    setLikeCounts(p => ({ ...p, [submissionId]: (p[submissionId] || 0) + (wasLiked ? -1 : 1) }));
+    const isLiked = likes[submissionId];
+    setLikes(p => ({ ...p, [submissionId]: !isLiked }));
+    setLikeCounts(p => ({ ...p, [submissionId]: (p[submissionId] || 0) + (isLiked ? -1 : 1) }));
 
     try {
       const token = localStorage.getItem("token");
