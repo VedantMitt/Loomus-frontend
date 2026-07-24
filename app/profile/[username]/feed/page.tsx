@@ -69,10 +69,21 @@ export default function UserFeedPage() {
     fetchData();
   }, [username]);
 
-  const handleToggleLike = (id: string) => {
+  const handleToggleLike = async (id: string) => {
     const isLiked = likes[id];
     setLikes(p => ({ ...p, [id]: !isLiked }));
     setLikeCounts(p => ({ ...p, [id]: (p[id] || 0) + (isLiked ? -1 : 1) }));
+
+    try {
+      const token = localStorage.getItem("token");
+      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      await fetch(`${API}/submissions/${id}/vote`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleDelete = async (snapId: string) => {

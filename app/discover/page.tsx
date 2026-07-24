@@ -89,9 +89,12 @@ export default function DiscoverPage() {
   }, []);
 
   const handleToggleLike = async (submissionId: string) => {
-    const isLiked = likes[submissionId];
-    setLikes(p => ({ ...p, [submissionId]: !isLiked }));
-    setLikeCounts(p => ({ ...p, [submissionId]: (p[submissionId] || 0) + (isLiked ? -1 : 1) }));
+    let wasLiked = false;
+    setLikes(p => {
+      wasLiked = !!p[submissionId];
+      return { ...p, [submissionId]: !wasLiked };
+    });
+    setLikeCounts(p => ({ ...p, [submissionId]: (p[submissionId] || 0) + (wasLiked ? -1 : 1) }));
 
     try {
       const token = localStorage.getItem("token");
@@ -99,7 +102,9 @@ export default function DiscoverPage() {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
-    } catch (err) {}
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handlePostComment = async (submissionId: string) => {
@@ -575,10 +580,11 @@ export default function DiscoverPage() {
                               </div>
                             </div>
                             
-                            <div style={{ marginTop: "12px", display: "flex", gap: "10px" }}>
+                            <div style={{ marginTop: "12px", display: "flex", gap: "10px", position: "relative", zIndex: 20 }}>
                               <button 
+                                type="button"
                                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleToggleLike(photo.id); }}
-                                className={`group flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border ${likes[photo.id] ? 'bg-pink-500/20 border-pink-500/40 shadow-[0_0_10px_rgba(236,72,153,0.15)]' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                                className={`group relative flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border ${likes[photo.id] ? 'bg-pink-500/20 border-pink-500/40 shadow-[0_0_10px_rgba(236,72,153,0.15)]' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
                               >
                                 <Heart className={`w-[16px] h-[16px] transition-transform duration-200 group-hover:scale-110 ${likes[photo.id] ? 'fill-pink-500 text-pink-500' : 'text-gray-300 group-hover:text-pink-400'}`} />
                                 <span className={`text-[12px] font-bold ${likes[photo.id] ? 'text-pink-400' : 'text-gray-300 group-hover:text-pink-400'}`}>
@@ -586,8 +592,9 @@ export default function DiscoverPage() {
                                 </span>
                               </button>
                               <button 
+                                type="button"
                                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleComments(photo.id); }}
-                                className={`group flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border ${showComments[photo.id] ? 'bg-blue-500/20 border-blue-500/40 shadow-[0_0_10px_rgba(59,130,246,0.15)]' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                                className={`group relative flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border ${showComments[photo.id] ? 'bg-blue-500/20 border-blue-500/40 shadow-[0_0_10px_rgba(59,130,246,0.15)]' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
                               >
                                 <MessageCircle className={`w-[16px] h-[16px] transition-transform duration-200 group-hover:scale-110 ${showComments[photo.id] ? 'text-blue-400' : 'text-gray-300 group-hover:text-blue-400'}`} />
                                 <span className={`text-[12px] font-bold ${showComments[photo.id] ? 'text-blue-400' : 'text-gray-300 group-hover:text-blue-400'}`}>
