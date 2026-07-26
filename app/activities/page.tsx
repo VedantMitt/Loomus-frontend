@@ -342,6 +342,7 @@ export default function ActivitiesPage() {
         if (res.ok) {
           const data = await res.json();
           const upcomingOrLive = data.filter((a: any) => {
+            if (a.type === 'hobby') return false;
             if (a.end_date && new Date(a.end_date) < new Date()) return false;
             if (!a.end_date && new Date(a.date).getTime() < new Date().getTime() - 24 * 60 * 60 * 1000) return false;
             return true;
