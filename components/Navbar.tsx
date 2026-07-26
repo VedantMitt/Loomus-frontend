@@ -17,6 +17,7 @@ export default function Navbar() {
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isInvisible, setIsInvisible] = useState(false);
+  const [hasViewedRequests, setHasViewedRequests] = useState(false);
   const [globalLocation, setGlobalLocation] = useState("");
   
   const [showLocationModal, setShowLocationModal] = useState(false);
@@ -147,6 +148,7 @@ export default function Navbar() {
 
   const handleToggleDropdown = () => {
     if (!showDropdown) {
+      setHasViewedRequests(true);
       const hasUnread = notifications.some(n => !n.is_read);
       if (hasUnread) {
         setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
@@ -555,7 +557,7 @@ export default function Navbar() {
                       <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
                       <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
                     </svg>
-                    {notifications.some(n => !n.is_read) && <div className="notif-dot" />}
+                    { (notifications.some(n => !n.is_read) || (hasPendingRequests && !hasViewedRequests)) && <div className="notif-dot" /> }
                   </button>
  
                   {/* Dropdown rendered outside layout bounds for desktop, but mobile overrides below */}
@@ -748,14 +750,13 @@ export default function Navbar() {
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                 <path d="M13.73 21a2 2 0 0 1-3.46 0" />
               </svg>
-              {(notifications.some(n => !n.is_read) || hasPendingRequests) && <div className="notif-dot" style={{ width: 8, height: 8, top: -2, right: -2, border: "2px solid #141414" }} />}
+              {(notifications.some(n => !n.is_read) || (hasPendingRequests && !hasViewedRequests)) && <div className="notif-dot" style={{ width: 8, height: 8, top: -2, right: -2, border: "2px solid #141414" }} />}
             </button>
             {/* Mobile Dropdown reused from above */}
             {showDropdown && (
               <div className="notif-panel mobile-notif">
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                   <h4 style={{ color: "#fff", margin: 0, fontSize: "16px", fontWeight: 800 }}>Activity</h4>
-                  <button onClick={() => setShowDropdown(false)} style={{ background: "none", border: "none", color: "#666", fontSize: "20px", cursor: "pointer" }}>✕</button>
                 </div>
                 {pendingRequests.length === 0 && notifications.length === 0 ? (
                   <div style={{ padding: "32px", textAlign: "center", color: "#666", fontSize: "14px" }}>No new activity</div>
