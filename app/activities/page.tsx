@@ -1238,4 +1238,5 @@ export default function ActivitiesPage() {
       </main>
     </div>
   );
-}
+}/ /   t r i g g e r i n g   f r o n t e n d   r e b u i l d  
+ 
