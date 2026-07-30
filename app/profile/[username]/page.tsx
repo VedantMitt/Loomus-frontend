@@ -64,8 +64,8 @@ export default function ProfilePage() {
         const token = localStorage.getItem("token");
         const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
         const [userRes, snapsRes, chaptersRes] = await Promise.all([
-          fetch(`${API}/users/${username}`),
-          fetch(`${API}/users/${username}/snaps`),
+          fetch(`${API}/users/${username}`, { headers }),
+          fetch(`${API}/users/${username}/snaps`, { headers }),
           fetch(`${API}/users/${username}/chapters`, { headers })
         ]);
         
