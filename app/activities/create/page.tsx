@@ -56,6 +56,31 @@ function CreateActivityContent() {
   const handleCitySearch = async (val: string) => {
     setSearchCityName(val);
     if (!val) return;
+    
+    if (val === "Current Location") {
+      const setPos = (lat: number, lng: number) => setCurrentCoords({ lat, lng });
+      // @ts-ignore
+      if (typeof window !== "undefined" && window.Capacitor && window.Capacitor.isNativePlatform()) {
+        try {
+          const { Geolocation } = await import('@capacitor/geolocation');
+          let perm = await Geolocation.checkPermissions();
+          if (perm.location !== 'granted') perm = await Geolocation.requestPermissions();
+          if (perm.location === 'granted') {
+            const pos = await Geolocation.getCurrentPosition();
+            setPos(pos.coords.latitude, pos.coords.longitude);
+          }
+        } catch (e) {
+          console.warn("Capacitor geo error", e);
+        }
+      } else if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => setPos(pos.coords.latitude, pos.coords.longitude),
+          (err) => console.warn(err)
+        );
+      }
+      return;
+    }
+
     try {
       setLoadingPlaces(true);
       const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -515,6 +540,8 @@ function CreateActivityContent() {
                 placeholder="Where's this happening?" 
                 className="" 
                 inputClassName="wiz-input"
+                lat={currentCoords?.lat}
+                lng={currentCoords?.lng}
               />
             </div>
 

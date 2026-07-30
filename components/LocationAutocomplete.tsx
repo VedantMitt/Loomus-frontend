@@ -14,6 +14,8 @@ export default function LocationAutocomplete({
   placeholder?: string;
   className?: string;
   inputClassName?: string;
+  lat?: number;
+  lng?: number;
 }) {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -40,7 +42,9 @@ export default function LocationAutocomplete({
       try {
         const token = localStorage.getItem("token");
         const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-        const res = await fetch(`${API}/places/autocomplete?q=${encodeURIComponent(value)}`, {
+        let url = `${API}/places/autocomplete?q=${encodeURIComponent(value)}`;
+        if (lat && lng) url += `&lat=${lat}&lon=${lng}`;
+        const res = await fetch(url, {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
         if (res.ok) {
