@@ -46,7 +46,7 @@ export default function EditProfile() {
         setUsername(data.username || "");
         setBio(data.bio || "");
         setGender(data.gender || "");
-        setDob(data.dob || "");
+        setDob(data.dob ? data.dob.split('T')[0] : "");
         setInstagram(data.instagram || "");
         setLinkedin(data.linkedin || "");
         setIsPrivate(data.is_private || false);
@@ -358,6 +358,8 @@ export default function EditProfile() {
             <option value="Male">Male</option>
             <option value="Female">Female</option>
             <option value="Non-Binary">Non-Binary</option>
+            <option value="Other">Other</option>
+            <option value="Prefer not to say">Prefer not to say</option>
           </select>
 
           <label className="edit-label" style={{ marginTop: "16px" }}>Date of Birth</label>
