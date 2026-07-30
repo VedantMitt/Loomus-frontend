@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Apple, Smartphone, Globe, Sparkles, Users, BookHeart, MapPin } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
+import Image from "next/image";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -33,9 +34,13 @@ export default function LandingPage() {
       <nav className="fixed top-0 w-full z-50 border-b border-white/10 bg-black/50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center font-bold text-lg shadow-[0_0_15px_rgba(236,72,153,0.5)]">
-              L
-            </div>
+            <Image 
+              src="/logo.png" 
+              alt="Loomus Logo" 
+              width={36} 
+              height={36} 
+              className="rounded-xl shadow-[0_0_15px_rgba(236,72,153,0.5)]"
+            />
             <span className="font-bold text-xl tracking-tight">Loomus</span>
           </div>
           <button 
@@ -153,9 +158,13 @@ export default function LandingPage() {
       <footer className="border-t border-white/10 py-12 px-6 text-center text-gray-500 text-sm bg-black">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center font-bold text-xs text-white">
-              L
-            </div>
+            <Image 
+              src="/logo.png" 
+              alt="Loomus Logo" 
+              width={24} 
+              height={24} 
+              className="rounded-lg"
+            />
             <span className="font-bold text-gray-300">Loomus</span>
           </div>
           <p>© {new Date().getFullYear()} Loomus. All rights reserved.</p>
