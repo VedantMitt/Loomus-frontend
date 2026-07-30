@@ -39,7 +39,7 @@ export default function LandingPage() {
               alt="Loomus Logo" 
               width={36} 
               height={36} 
-              className="rounded-xl shadow-[0_0_15px_rgba(236,72,153,0.5)]"
+              className="drop-shadow-[0_0_15px_rgba(236,72,153,0.5)] scale-125"
             />
             <span className="font-bold text-xl tracking-tight">Loomus</span>
           </div>
@@ -163,7 +163,7 @@ export default function LandingPage() {
               alt="Loomus Logo" 
               width={24} 
               height={24} 
-              className="rounded-lg"
+              className="scale-125"
             />
             <span className="font-bold text-gray-300">Loomus</span>
           </div>
