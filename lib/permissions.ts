@@ -6,88 +6,44 @@ export interface LocationCoords {
 }
 
 /**
- * Helper to get position from browser geolocation with timeout & fallback
+ * Get GPS coordinates from browser Geolocation API
  */
 async function getBrowserPosition(): Promise<LocationCoords | null> {
   if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
     return null;
   }
 
-  // Try fast low-accuracy first
-  try {
-    const pos: any = await new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: false,
-        timeout: 6000,
-        maximumAge: 60000,
-      });
-    });
-    if (pos && pos.coords) {
-      return { lat: pos.coords.latitude, lng: pos.coords.longitude };
-    }
-  } catch (e) {
-    // Try high accuracy if low accuracy failed
-    try {
-      const pos: any = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 8000,
-          maximumAge: 30000,
-        });
-      });
-      if (pos && pos.coords) {
-        return { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      }
-    } catch (e2) {
-      console.warn('Browser geolocation failed:', e2);
-    }
-  }
-
-  return null;
-}
-
-/**
- * Fetch IP-based approximate location as an indestructible fallback
- */
-async function getIpLocation(): Promise<{ name: string; lat: number; lng: number } | null> {
-  const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-  
-  // 1. Try backend IP endpoint
-  try {
-    const res = await fetch(`${API}/places/ip-location`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.lat && data.lng) {
-        return {
-          name: data.name || data.city || 'Nearby',
-          lat: Number(data.lat),
-          lng: Number(data.lng),
-        };
-      }
-    }
-  } catch (e) {
-    console.warn('Backend IP location failed:', e);
-  }
-
-  // 2. Direct client fallback via ip-api
-  try {
-    const directRes = await fetch('https://ipapi.co/json/');
-    if (directRes.ok) {
-      const d = await directRes.json();
-      if (d.latitude && d.longitude) {
-        const cityName = [d.city, d.region, d.country_name].filter(Boolean).slice(0, 2).join(', ');
-        return {
-          name: cityName || 'Nearby',
-          lat: Number(d.latitude),
-          lng: Number(d.longitude),
-        };
-      }
-    }
-  } catch (directErr) {
-    console.warn('Direct IP location failed:', directErr);
-  }
-
-  return null;
+  return new Promise((resolve) => {
+    // Try high accuracy first
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        if (pos && pos.coords) {
+          resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        } else {
+          resolve(null);
+        }
+      },
+      (err) => {
+        console.warn('High accuracy geolocation failed, trying standard accuracy:', err.message);
+        // Fallback to low accuracy
+        navigator.geolocation.getCurrentPosition(
+          (pos2) => {
+            if (pos2 && pos2.coords) {
+              resolve({ lat: pos2.coords.latitude, lng: pos2.coords.longitude });
+            } else {
+              resolve(null);
+            }
+          },
+          (err2) => {
+            console.warn('Low accuracy geolocation failed:', err2.message);
+            resolve(null);
+          },
+          { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+        );
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }
+    );
+  });
 }
 
 /**
@@ -102,38 +58,38 @@ export async function requestLocationPermission(): Promise<LocationCoords | null
         
         let perm = await Geolocation.checkPermissions().catch(() => null);
         
-        // If not granted, request permission to trigger Android OS permission dialog
+        // Request permissions if not granted
         if (!perm || (perm.location !== 'granted' && perm.coarseLocation !== 'granted')) {
-          perm = await Geolocation.requestPermissions({ permissions: ['location', 'coarseLocation'] }).catch(() => null);
+          perm = await Geolocation.requestPermissions().catch(() => null);
         }
 
-        // Try getting position with low accuracy first (instant & reliable)
+        // Fetch position using high accuracy GPS
         try {
           const pos = await Geolocation.getCurrentPosition({
-            enableHighAccuracy: false,
-            timeout: 6000,
-            maximumAge: 60000,
+            enableHighAccuracy: true,
+            timeout: 12000,
+            maximumAge: 10000,
           });
           if (pos && pos.coords) {
             return { lat: pos.coords.latitude, lng: pos.coords.longitude };
           }
-        } catch (coarseErr) {
-          // Retry with high accuracy
+        } catch (highErr) {
+          console.warn('Native high-accuracy failed, trying standard:', highErr);
           const pos = await Geolocation.getCurrentPosition({
-            enableHighAccuracy: true,
-            timeout: 8000,
-            maximumAge: 30000,
+            enableHighAccuracy: false,
+            timeout: 10000,
+            maximumAge: 60000,
           });
           if (pos && pos.coords) {
             return { lat: pos.coords.latitude, lng: pos.coords.longitude };
           }
         }
       } catch (nativeErr) {
-        console.warn('Native Geolocation failed, trying web fallback:', nativeErr);
+        console.warn('Native Geolocation plugin error, falling back to web:', nativeErr);
       }
     }
 
-    // 2. Web fallback
+    // 2. Browser Geolocation fallback
     const browserCoords = await getBrowserPosition();
     if (browserCoords) {
       return browserCoords;
@@ -148,18 +104,16 @@ export async function requestLocationPermission(): Promise<LocationCoords | null
 
 /**
  * Automatically prompts for location permission, gets GPS coords,
- * reverse-geocodes to the city/neighborhood name, and updates global storage.
- * If GPS is not available, gracefully falls back to IP-based location.
+ * reverse-geocodes to the user's REAL city/neighborhood, and updates global state.
  */
 export async function autoDetectAndSetLocation(silent = false): Promise<{ name: string; lat: number; lng: number } | null> {
-  // Step 1: Try GPS Coordinates
   const coords = await requestLocationPermission();
 
   if (coords) {
     const { lat, lng } = coords;
     localStorage.setItem('global_coords', JSON.stringify({ lat, lng }));
 
-    // Reverse geocode coordinates
+    // Reverse geocode coordinates to get actual city name
     let locationName = 'Current Location';
     try {
       const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
@@ -180,26 +134,12 @@ export async function autoDetectAndSetLocation(silent = false): Promise<{ name: 
     return { name: locationName, lat, lng };
   }
 
-  // Step 2: GPS failed or denied -> Use IP-based City Detection
-  const ipLoc = await getIpLocation();
-  if (ipLoc) {
-    localStorage.setItem('global_coords', JSON.stringify({ lat: ipLoc.lat, lng: ipLoc.lng }));
-    localStorage.setItem('global_location', ipLoc.name);
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('global_location_change', { detail: ipLoc.name }));
-    }
-    return ipLoc;
+  // If GPS failed or was blocked by device settings:
+  if (!silent && typeof window !== 'undefined') {
+    alert('Could not detect your GPS location. Please make sure Location (GPS) is turned ON in your phone settings and permission is granted.');
   }
 
-  // Step 3: Default fallback
-  const fallback = { name: 'Delhi, India', lat: 28.6139, lng: 77.2090 };
-  localStorage.setItem('global_coords', JSON.stringify({ lat: fallback.lat, lng: fallback.lng }));
-  localStorage.setItem('global_location', fallback.name);
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('global_location_change', { detail: fallback.name }));
-  }
-
-  return fallback;
+  return null;
 }
 
 /**
