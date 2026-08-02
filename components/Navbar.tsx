@@ -505,8 +505,13 @@ export default function Navbar() {
       <div className={`nav-wrapper ${scrolled ? "scrolled" : ""}`}>
         <div className="nav-container">
           <div style={{ display: "flex", alignItems: "center" }}>
-            <Link href="/" className="nav-logo">
-              Loom<span>us</span>
+            <Link href="/" className="nav-logo" style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+              <img 
+                src="/logo.png" 
+                alt="Loomus" 
+                style={{ width: 28, height: 28, borderRadius: 8, objectFit: "cover", boxShadow: "0 0 12px rgba(244,114,182,0.3)" }} 
+              />
+              <div>Loom<span>us</span></div>
             </Link>
             <button className="nav-location-selector" onClick={() => setShowLocationModal(true)}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6, color: '#f472b6', flexShrink: 0 }}>
@@ -717,8 +722,13 @@ export default function Navbar() {
 
       <div className="mobile-top-nav">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <Link href="/" className="nav-logo" style={{ fontSize: "20px" }}>
-            Loom<span>us</span>
+          <Link href="/" className="nav-logo" style={{ fontSize: "20px", display: "flex", alignItems: "center", gap: "7px" }}>
+            <img 
+              src="/logo.png" 
+              alt="Loomus" 
+              style={{ width: 22, height: 22, borderRadius: 6, objectFit: "cover" }} 
+            />
+            <div>Loom<span>us</span></div>
           </Link>
           <button style={{ display: 'flex', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => setShowLocationModal(true)}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 4, color: '#f472b6', flexShrink: 0 }}>

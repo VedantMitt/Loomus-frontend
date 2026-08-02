@@ -34,14 +34,17 @@ export default function LandingPage() {
       <nav className="fixed top-0 w-full z-50 border-b border-white/10 bg-black/50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Image 
-              src="/logo.png" 
-              alt="Loomus Logo" 
-              width={36} 
-              height={36} 
-              className="drop-shadow-[0_0_15px_rgba(236,72,153,0.5)] scale-125"
-            />
-            <span className="font-bold text-xl tracking-tight">Loomus</span>
+            <div className="relative w-9 h-9 rounded-xl overflow-hidden shadow-[0_0_20px_rgba(236,72,153,0.4)] border border-white/10 bg-white/5 flex items-center justify-center">
+              <Image 
+                src="/logo.png" 
+                alt="Loomus Logo" 
+                width={36} 
+                height={36} 
+                className="w-full h-full object-cover"
+                priority
+              />
+            </div>
+            <span className="font-bold text-xl tracking-tight">Loom<span className="text-pink-500">us</span></span>
           </div>
           <button 
             onClick={handleOpenWebApp}
@@ -75,21 +78,33 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button className="w-full sm:w-auto group relative px-8 py-4 bg-white text-black font-semibold rounded-2xl flex items-center justify-center gap-3 hover:scale-105 transition-all duration-300 shadow-[0_0_30px_rgba(255,255,255,0.2)]">
-              <Apple className="w-7 h-7" />
+            {/* Android Download Button - Primary CTA */}
+            <a 
+              href="https://github.com/VedantMitt/Loomus-frontend/releases/latest" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto group relative px-8 py-4 bg-white text-black font-semibold rounded-2xl flex items-center justify-center gap-3 hover:scale-105 transition-all duration-300 shadow-[0_0_30px_rgba(255,255,255,0.25)] hover:shadow-[0_0_40px_rgba(236,72,153,0.35)]"
+            >
+              <Smartphone className="w-7 h-7 text-black group-hover:text-pink-600 transition-colors" />
               <div className="text-left">
-                <div className="text-[10px] leading-none text-gray-600 uppercase font-bold tracking-wider mb-0.5">Download on the</div>
-                <div className="text-lg leading-tight font-bold">App Store</div>
+                <div className="text-[10px] leading-none text-gray-600 uppercase font-bold tracking-wider mb-0.5">DOWNLOAD FOR</div>
+                <div className="text-lg leading-tight font-bold">Android</div>
               </div>
-            </button>
-            
-            <button className="w-full sm:w-auto group relative px-8 py-4 bg-white/5 border border-white/10 text-white font-semibold rounded-2xl flex items-center justify-center gap-3 hover:bg-white/10 hover:scale-105 transition-all duration-300">
-              <Smartphone className="w-7 h-7" />
+            </a>
+
+            {/* iOS Coming Soon Button */}
+            <div 
+              className="w-full sm:w-auto relative px-8 py-4 bg-white/5 border border-white/10 text-gray-300 font-semibold rounded-2xl flex items-center justify-center gap-3 select-none backdrop-blur-md opacity-85 hover:opacity-100 transition-opacity"
+            >
+              <Apple className="w-7 h-7 text-gray-400" />
               <div className="text-left">
-                <div className="text-[10px] leading-none text-gray-400 uppercase font-bold tracking-wider mb-0.5">GET IT ON</div>
-                <div className="text-lg leading-tight font-bold">Google Play</div>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-[10px] leading-none text-gray-400 uppercase font-bold tracking-wider">COMING SOON TO</span>
+                  <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded-full">Soon</span>
+                </div>
+                <div className="text-lg leading-tight font-bold text-gray-200">App Store</div>
               </div>
-            </button>
+            </div>
           </div>
         </div>
       </section>
@@ -157,15 +172,17 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-white/10 py-12 px-6 text-center text-gray-500 text-sm bg-black">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Image 
-              src="/logo.png" 
-              alt="Loomus Logo" 
-              width={24} 
-              height={24} 
-              className="scale-125"
-            />
-            <span className="font-bold text-gray-300">Loomus</span>
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 h-6 rounded-lg overflow-hidden border border-white/10 flex items-center justify-center">
+              <Image 
+                src="/logo.png" 
+                alt="Loomus Logo" 
+                width={24} 
+                height={24} 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <span className="font-bold text-gray-300">Loom<span className="text-pink-500">us</span></span>
           </div>
           <p>© {new Date().getFullYear()} Loomus. All rights reserved.</p>
         </div>
