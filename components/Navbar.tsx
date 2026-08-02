@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import LocationAutocomplete from "./LocationAutocomplete";
+import { autoDetectAndSetLocation, requestAllAppPermissions } from "@/lib/permissions";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -69,7 +70,12 @@ export default function Navbar() {
       setGlobalLocation(storedLoc);
     } else {
       setGlobalLocation("Delhi, India");
-      localStorage.setItem("global_location", "Delhi, India");
+      // Auto-detect on first load without disturbing the user
+      autoDetectAndSetLocation(true).then((res) => {
+        if (res) {
+          setGlobalLocation(res.name);
+        }
+      });
     }
 
     // Custom event listener for instant auth state updates without route changes
@@ -89,74 +95,15 @@ export default function Navbar() {
   const handleUseCurrentLocation = async () => {
     setLocating(true);
     try {
-      let lat: number | null = null;
-      let lng: number | null = null;
-
-      // 1. Try native Capacitor Geolocation
-      // @ts-ignore
-      if (typeof window !== "undefined" && window.Capacitor && window.Capacitor.isNativePlatform()) {
-        try {
-          const { Geolocation } = await import('@capacitor/geolocation');
-          let perm = await Geolocation.checkPermissions();
-          if (perm.location !== 'granted') {
-            perm = await Geolocation.requestPermissions();
-          }
-          if (perm.location === 'granted') {
-            const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 10000 });
-            lat = pos.coords.latitude;
-            lng = pos.coords.longitude;
-          }
-        } catch (capErr) {
-          console.warn("Capacitor Geolocation error:", capErr);
-        }
-      }
-
-      // 2. Fallback to browser Geolocation
-      if (lat === null && typeof navigator !== "undefined" && navigator.geolocation) {
-        try {
-          const pos: any = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              enableHighAccuracy: true,
-              timeout: 10000,
-              maximumAge: 60000,
-            });
-          });
-          if (pos && pos.coords) {
-            lat = pos.coords.latitude;
-            lng = pos.coords.longitude;
-          }
-        } catch (geoErr) {
-          console.warn("Browser geolocation error:", geoErr);
-        }
-      }
-
-      if (lat !== null && lng !== null) {
-        localStorage.setItem("global_coords", JSON.stringify({ lat, lng }));
-        
-        // Reverse geocode via backend
-        const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-        try {
-          const res = await fetch(`${API}/places/reverse?lat=${lat}&lng=${lng}`);
-          if (res.ok) {
-            const data = await res.json();
-            const placeName = data.name || data.city || data.formatted || "Current Location";
-            handleGlobalLocationChange(placeName, { lat, lng });
-            setShowLocationModal(false);
-            return;
-          }
-        } catch (revErr) {
-          console.warn("Reverse geocoding error:", revErr);
-        }
-
-        handleGlobalLocationChange("Current Location", { lat, lng });
-        setShowLocationModal(false);
-      } else {
-        alert("Unable to detect your location. Please check that location permission is granted in your device settings.");
+      const res = await autoDetectAndSetLocation(false);
+      if (res) {
+        setGlobalLocation(res.name);
       }
     } catch (err) {
       console.error("Location detection error:", err);
     } finally {
       setLocating(false);
+      setShowLocationModal(false);
     }
   };
 

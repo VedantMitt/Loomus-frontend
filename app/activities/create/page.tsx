@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { uploadSubmission } from "@/lib/uploadSubmission";
 import Link from "next/link";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
+import { requestLocationPermission } from "@/lib/permissions";
 
 const AI_SUGGESTIONS: Record<string, { title: string; description: string; location: string }> = {
   bowling: { title: "Bowling Night", description: "Book lanes, split into teams, play 3 rounds. Loser buys snacks. Perfect for groups of 4-8.", location: "Smaaash (Cyberhub) / Yes Minister (HKV)" },
@@ -58,25 +59,19 @@ function CreateActivityContent() {
     if (!val) return;
     
     if (val === "Current Location") {
-      const setPos = (lat: number, lng: number) => setCurrentCoords({ lat, lng });
-      // @ts-ignore
-      if (typeof window !== "undefined" && window.Capacitor && window.Capacitor.isNativePlatform()) {
+      const storedCoords = localStorage.getItem("global_coords");
+      if (storedCoords) {
         try {
-          const { Geolocation } = await import('@capacitor/geolocation');
-          let perm = await Geolocation.checkPermissions();
-          if (perm.location !== 'granted') perm = await Geolocation.requestPermissions();
-          if (perm.location === 'granted') {
-            const pos = await Geolocation.getCurrentPosition();
-            setPos(pos.coords.latitude, pos.coords.longitude);
+          const parsed = JSON.parse(storedCoords);
+          if (parsed.lat && parsed.lng) {
+            setCurrentCoords(parsed);
+            return;
           }
-        } catch (e) {
-          console.warn("Capacitor geo error", e);
-        }
-      } else if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => setPos(pos.coords.latitude, pos.coords.longitude),
-          (err) => console.warn(err)
-        );
+        } catch (e) {}
+      }
+      const coords = await requestLocationPermission();
+      if (coords) {
+        setCurrentCoords(coords);
       }
       return;
     }
@@ -98,20 +93,33 @@ function CreateActivityContent() {
 
   useEffect(() => {
     const handleGlobalChange = (e: any) => {
-      handleCitySearch(e.detail);
+      const detail = e.detail;
+      const locationName = typeof detail === "string" ? detail : (detail?.name || "");
+      if (locationName) handleCitySearch(locationName);
     };
     window.addEventListener("global_location_change", handleGlobalChange);
+
+    const storedCoords = localStorage.getItem("global_coords");
+    if (storedCoords) {
+      try {
+        const parsed = JSON.parse(storedCoords);
+        if (parsed.lat && parsed.lng) {
+          setCurrentCoords(parsed);
+        }
+      } catch (e) {}
+    }
 
     const stored = localStorage.getItem("global_location");
     if (stored) {
       handleCitySearch(stored);
-    } else if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => setCurrentCoords({ lat: position.coords.latitude, lng: position.coords.longitude }),
-        (error) => setCurrentCoords({ lat: 28.6139, lng: 77.2090 })
-      );
     } else {
-      setCurrentCoords({ lat: 28.6139, lng: 77.2090 });
+      requestLocationPermission().then(coords => {
+        if (coords) {
+          setCurrentCoords(coords);
+        } else {
+          setCurrentCoords({ lat: 28.6139, lng: 77.2090 });
+        }
+      });
     }
 
     return () => window.removeEventListener("global_location_change", handleGlobalChange);
