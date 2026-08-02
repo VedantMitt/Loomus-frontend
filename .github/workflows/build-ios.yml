@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: Build iOS (Simulator)
+    name: Build iOS (Simulator & Package)
     runs-on: macos-latest
     steps:
       - name: Checkout Source Code
@@ -26,36 +26,52 @@ jobs:
       - name: Build Web App
         run: npm run build:mobile
 
-      - name: Sync Capacitor
+      - name: Sync Capacitor iOS
         run: npx cap sync ios
 
-      # We build for the iOS Simulator here because building for a physical device (.ipa)
-      # requires an Apple Developer account, Certificates, and Provisioning Profiles.
-      - name: Build iOS App (Simulator)
+      - name: Build iOS App
         working-directory: ./ios/App
         run: |
-          xcodebuild \
-            -workspace App.xcworkspace \
+          if [ -d "App.xcworkspace" ]; then
+            XCODE_TARGET="-workspace App.xcworkspace"
+          else
+            XCODE_TARGET="-project App.xcodeproj"
+          fi
+
+          echo "Building with $XCODE_TARGET..."
+          xcodebuild $XCODE_TARGET \
             -scheme App \
             -configuration Debug \
             -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=latest' \
+            -derivedDataPath ./DerivedData \
             build \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
 
-      # Zip the resulting .app so it can be downloaded
-      - name: Package Simulator App
+      - name: Package iOS App & Simulator Bundle
         working-directory: ./ios/App
         run: |
-          mkdir -p build/Build/Products/Debug-iphonesimulator
-          # xcodebuild puts it in the derived data by default, let's specify derived data path to be sure
-          xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=latest' -derivedDataPath ./DerivedData build CODE_SIGNING_ALLOWED=NO
-          cd DerivedData/Build/Products/Debug-iphonesimulator
-          zip -r ../../../../App-Simulator.zip App.app
+          APP_PATH=$(find ./DerivedData -name "App.app" -type d | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: App.app was not found!"
+            exit 1
+          fi
+          echo "Found App bundle at: $APP_PATH"
 
-      - name: Upload iOS App Artifact
+          # Package 1: Simulator ZIP
+          mkdir -p ../../dist-ios
+          zip -r ../../dist-ios/Loomus-iOS-Simulator.zip "$APP_PATH"
+
+          # Package 2: Unsigned IPA Payload (Payload/App.app)
+          mkdir -p ./Payload
+          cp -R "$APP_PATH" ./Payload/
+          zip -r ../../dist-ios/Loomus-iOS-Unsigned.ipa ./Payload
+          rm -rf ./Payload
+
+      - name: Upload iOS App Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ios-simulator-app
-          path: ios/App/App-Simulator.zip
+          name: Loomus-iOS-Build
+          path: dist-ios/
+

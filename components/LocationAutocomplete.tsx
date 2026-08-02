@@ -6,7 +6,9 @@ export default function LocationAutocomplete({
   onSelect,
   placeholder = "Location name...", 
   className = "",
-  inputClassName = "wiz-input"
+  inputClassName = "wiz-input",
+  lat,
+  lng
 }: { 
   value: string; 
   onChange: (val: string) => void; 
@@ -60,7 +62,7 @@ export default function LocationAutocomplete({
       }
     }, 400); // debounce
     return () => clearTimeout(timer);
-  }, [value, showDropdown]);
+  }, [value, showDropdown, lat, lng]);
 
   return (
     <div style={{ position: "relative" }} className={className} ref={wrapperRef}>

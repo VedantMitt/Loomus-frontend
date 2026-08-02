@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>CampusConnect</string>
+	<string>Loomus</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -45,15 +45,29 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleLightContent</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
-	<true/>
+	<false/>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>We need your location to show you activities and places happening nearby.</string>
+	<string>We need your location to show you activities, chapters, and places happening nearby.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>We need your location to show you activities and places happening nearby.</string>
+	<string>We need your location to show you activities, chapters, and places happening nearby.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>We need access to your photo library so you can upload cover photos for activities.</string>
+	<string>We need access to your photo library so you can upload cover photos, scrapbooks, and profile pictures.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>We need access to your camera so you can take photos for activities.</string>
+	<string>We need access to your camera so you can capture photos directly for activities and scrapbooks.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>loomus</string>
+				<string>com.googleusercontent.apps.179896098236-k92cj68fkliirf291ruuu6sk6rp1e7q4</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
