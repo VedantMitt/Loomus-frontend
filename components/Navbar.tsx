@@ -22,6 +22,7 @@ export default function Navbar() {
   
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationSearchVal, setLocationSearchVal] = useState("");
+  const [locating, setLocating] = useState(false);
 
   const desktopDropdownRef = useRef<HTMLDivElement>(null);
   const mobileDropdownRef = useRef<HTMLDivElement>(null);
@@ -63,8 +64,6 @@ export default function Navbar() {
 
     checkUser();
 
-    checkUser();
-
     const storedLoc = localStorage.getItem("global_location");
     if (storedLoc) {
       setGlobalLocation(storedLoc);
@@ -78,10 +77,87 @@ export default function Navbar() {
     return () => window.removeEventListener("auth-change", checkUser);
   }, [pathname]);
 
-  const handleGlobalLocationChange = (val: string) => {
+  const handleGlobalLocationChange = (val: string, coords?: { lat: number; lng: number }) => {
     setGlobalLocation(val);
     localStorage.setItem("global_location", val);
-    window.dispatchEvent(new CustomEvent("global_location_change", { detail: val }));
+    if (coords) {
+      localStorage.setItem("global_coords", JSON.stringify(coords));
+    }
+    window.dispatchEvent(new CustomEvent("global_location_change", { detail: typeof val === "string" ? val : val }));
+  };
+
+  const handleUseCurrentLocation = async () => {
+    setLocating(true);
+    try {
+      let lat: number | null = null;
+      let lng: number | null = null;
+
+      // 1. Try native Capacitor Geolocation
+      // @ts-ignore
+      if (typeof window !== "undefined" && window.Capacitor && window.Capacitor.isNativePlatform()) {
+        try {
+          const { Geolocation } = await import('@capacitor/geolocation');
+          let perm = await Geolocation.checkPermissions();
+          if (perm.location !== 'granted') {
+            perm = await Geolocation.requestPermissions();
+          }
+          if (perm.location === 'granted') {
+            const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 10000 });
+            lat = pos.coords.latitude;
+            lng = pos.coords.longitude;
+          }
+        } catch (capErr) {
+          console.warn("Capacitor Geolocation error:", capErr);
+        }
+      }
+
+      // 2. Fallback to browser Geolocation
+      if (lat === null && typeof navigator !== "undefined" && navigator.geolocation) {
+        try {
+          const pos: any = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 60000,
+            });
+          });
+          if (pos && pos.coords) {
+            lat = pos.coords.latitude;
+            lng = pos.coords.longitude;
+          }
+        } catch (geoErr) {
+          console.warn("Browser geolocation error:", geoErr);
+        }
+      }
+
+      if (lat !== null && lng !== null) {
+        localStorage.setItem("global_coords", JSON.stringify({ lat, lng }));
+        
+        // Reverse geocode via backend
+        const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        try {
+          const res = await fetch(`${API}/places/reverse?lat=${lat}&lng=${lng}`);
+          if (res.ok) {
+            const data = await res.json();
+            const placeName = data.name || data.city || data.formatted || "Current Location";
+            handleGlobalLocationChange(placeName, { lat, lng });
+            setShowLocationModal(false);
+            return;
+          }
+        } catch (revErr) {
+          console.warn("Reverse geocoding error:", revErr);
+        }
+
+        handleGlobalLocationChange("Current Location", { lat, lng });
+        setShowLocationModal(false);
+      } else {
+        alert("Unable to detect your location. Please check that location permission is granted in your device settings.");
+      }
+    } catch (err) {
+      console.error("Location detection error:", err);
+    } finally {
+      setLocating(false);
+    }
   };
 
   useEffect(() => {
@@ -910,21 +986,23 @@ export default function Navbar() {
             </div>
             
             <button 
-              onClick={() => {
-                handleGlobalLocationChange("Current Location");
-                setShowLocationModal(false);
-              }}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '14px', background: 'linear-gradient(145deg, rgba(244,114,182,0.15), rgba(192,132,252,0.1))', border: '1px solid rgba(244,114,182,0.3)', padding: '16px 20px', borderRadius: '20px', cursor: 'pointer', transition: 'all 0.3s ease', marginBottom: '24px', color: '#fff', fontWeight: 700, fontSize: '15px', boxShadow: '0 8px 24px rgba(244,114,182,0.15)' }}
-              onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(244,114,182,0.25)'; e.currentTarget.style.borderColor = 'rgba(244,114,182,0.5)'; }}
+              disabled={locating}
+              onClick={handleUseCurrentLocation}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '14px', background: 'linear-gradient(145deg, rgba(244,114,182,0.15), rgba(192,132,252,0.1))', border: '1px solid rgba(244,114,182,0.3)', padding: '16px 20px', borderRadius: '20px', cursor: locating ? 'wait' : 'pointer', transition: 'all 0.3s ease', marginBottom: '24px', color: '#fff', fontWeight: 700, fontSize: '15px', boxShadow: '0 8px 24px rgba(244,114,182,0.15)', opacity: locating ? 0.7 : 1 }}
+              onMouseOver={e => { if (!locating) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(244,114,182,0.25)'; e.currentTarget.style.borderColor = 'rgba(244,114,182,0.5)'; } }}
               onMouseOut={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(244,114,182,0.15)'; e.currentTarget.style.borderColor = 'rgba(244,114,182,0.3)'; }}
             >
               <div style={{ background: 'rgba(244,114,182,0.2)', padding: '8px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f472b6' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
+                {locating ? (
+                  <div style={{ width: '18px', height: '18px', border: '2px solid #f472b6', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                )}
               </div>
-              Use current location
+              {locating ? "Detecting GPS location..." : "Use current location"}
             </button>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
@@ -943,12 +1021,13 @@ export default function Navbar() {
               <LocationAutocomplete 
                 value={locationSearchVal} 
                 onChange={setLocationSearchVal}
-                onSelect={(val) => {
-                  handleGlobalLocationChange(val);
+                onSelect={(val, item) => {
+                  const coords = (item?.lat && item?.lng) ? { lat: item.lat, lng: item.lng } : undefined;
+                  handleGlobalLocationChange(val, coords);
                   setShowLocationModal(false);
                   setLocationSearchVal("");
                 }}
-                placeholder="Search for your city..."
+                placeholder="Search for your city or area..."
                 inputClassName="w-full bg-[rgba(255,255,255,0.03)] border border-white/10 rounded-2xl pl-[44px] pr-4 py-[14px] text-[15px] outline-none focus:border-[#c084fc] focus:bg-[rgba(255,255,255,0.06)] text-white transition-all placeholder-white/30"
               />
             </div>
