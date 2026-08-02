@@ -24,6 +24,7 @@ export default function Navbar() {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationSearchVal, setLocationSearchVal] = useState("");
   const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   const desktopDropdownRef = useRef<HTMLDivElement>(null);
   const mobileDropdownRef = useRef<HTMLDivElement>(null);
@@ -70,13 +71,16 @@ export default function Navbar() {
       setGlobalLocation(storedLoc);
     } else {
       setGlobalLocation("Delhi, India");
-      // Auto-detect on first load without disturbing the user
-      autoDetectAndSetLocation(true).then((res) => {
-        if (res) {
+      // Auto-detect on first visit without blocking alert
+      autoDetectAndSetLocation().then(res => {
+        if (res.success) {
           setGlobalLocation(res.name);
         }
-      });
+      }).catch(() => {});
     }
+
+    // Auto-request general app permissions (notifications, etc)
+    requestAllAppPermissions().catch(() => {});
 
     // Custom event listener for instant auth state updates without route changes
     window.addEventListener("auth-change", checkUser);
@@ -94,16 +98,26 @@ export default function Navbar() {
 
   const handleUseCurrentLocation = async () => {
     setLocating(true);
+    setLocationError(null);
     try {
-      const res = await autoDetectAndSetLocation(false);
-      if (res) {
+      const res = await autoDetectAndSetLocation();
+      if (res.success) {
         setGlobalLocation(res.name);
+        setShowLocationModal(false);
+      } else {
+        if (res.errorType === "denied") {
+          setLocationError("Location permission is blocked in your browser/device. Click the lock icon in your address bar or app settings to allow it, or search manually below.");
+        } else if (res.errorType === "unavailable") {
+          setLocationError("Could not get GPS fix. Please search for your city or area below.");
+        } else {
+          setLocationError("Location detection timed out. Please search manually below.");
+        }
       }
     } catch (err) {
       console.error("Location detection error:", err);
+      setLocationError("Failed to detect location. Please search manually below.");
     } finally {
       setLocating(false);
-      setShowLocationModal(false);
     }
   };
 
@@ -951,6 +965,25 @@ export default function Navbar() {
               </div>
               {locating ? "Detecting GPS location..." : "Use current location"}
             </button>
+
+            {locationError && (
+              <div style={{
+                background: 'rgba(239, 68, 68, 0.12)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                borderRadius: '16px',
+                padding: '12px 14px',
+                marginBottom: '20px',
+                fontSize: '12px',
+                color: '#fca5a5',
+                lineHeight: '1.4',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '8px'
+              }}>
+                <span style={{ fontSize: '14px', flexShrink: 0 }}>⚠️</span>
+                <div>{locationError}</div>
+              </div>
+            )}
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
               <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>

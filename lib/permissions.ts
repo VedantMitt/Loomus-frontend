@@ -5,43 +5,41 @@ export interface LocationCoords {
   lng: number;
 }
 
+export type GeolocationResult =
+  | { success: true; coords: LocationCoords; name: string }
+  | { success: false; errorType: 'denied' | 'unavailable' | 'timeout' | 'unknown' };
+
 /**
  * Get GPS coordinates from browser Geolocation API
  */
-async function getBrowserPosition(): Promise<LocationCoords | null> {
+async function getBrowserPosition(): Promise<{ coords: LocationCoords | null; errorType?: 'denied' | 'unavailable' | 'timeout' }> {
   if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
-    return null;
+    return { coords: null, errorType: 'unavailable' };
   }
 
   return new Promise((resolve) => {
-    // Try high accuracy first
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         if (pos && pos.coords) {
-          resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          resolve({ coords: { lat: pos.coords.latitude, lng: pos.coords.longitude } });
         } else {
-          resolve(null);
+          resolve({ coords: null, errorType: 'unavailable' });
         }
       },
       (err) => {
-        console.warn('High accuracy geolocation failed, trying standard accuracy:', err.message);
-        // Fallback to low accuracy
-        navigator.geolocation.getCurrentPosition(
-          (pos2) => {
-            if (pos2 && pos2.coords) {
-              resolve({ lat: pos2.coords.latitude, lng: pos2.coords.longitude });
-            } else {
-              resolve(null);
-            }
-          },
-          (err2) => {
-            console.warn('Low accuracy geolocation failed:', err2.message);
-            resolve(null);
-          },
-          { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
-        );
+        console.warn('Geolocation browser error:', err.code, err.message);
+        if (err.code === 1) {
+          // PERMISSION_DENIED
+          resolve({ coords: null, errorType: 'denied' });
+        } else if (err.code === 2) {
+          // POSITION_UNAVAILABLE (e.g. Windows location disabled or no GPS)
+          resolve({ coords: null, errorType: 'unavailable' });
+        } else {
+          // TIMEOUT
+          resolve({ coords: null, errorType: 'timeout' });
+        }
       },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
     );
   });
 }
@@ -49,15 +47,15 @@ async function getBrowserPosition(): Promise<LocationCoords | null> {
 /**
  * Request GPS / Location permission on Android, iOS, or Web and return current coordinates.
  */
-export async function requestLocationPermission(): Promise<LocationCoords | null> {
+export async function requestLocationPermission(): Promise<{ coords: LocationCoords | null; errorType?: 'denied' | 'unavailable' | 'timeout' }> {
   try {
     // 1. Native Capacitor Geolocation (Android / iOS)
     if (Capacitor.isNativePlatform()) {
       try {
         const { Geolocation } = await import('@capacitor/geolocation');
-        
+
         let perm = await Geolocation.checkPermissions().catch(() => null);
-        
+
         // Request permissions if not granted
         if (!perm || (perm.location !== 'granted' && perm.coarseLocation !== 'granted')) {
           perm = await Geolocation.requestPermissions().catch(() => null);
@@ -71,7 +69,7 @@ export async function requestLocationPermission(): Promise<LocationCoords | null
             maximumAge: 10000,
           });
           if (pos && pos.coords) {
-            return { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            return { coords: { lat: pos.coords.latitude, lng: pos.coords.longitude } };
           }
         } catch (highErr) {
           console.warn('Native high-accuracy failed, trying standard:', highErr);
@@ -81,7 +79,7 @@ export async function requestLocationPermission(): Promise<LocationCoords | null
             maximumAge: 60000,
           });
           if (pos && pos.coords) {
-            return { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            return { coords: { lat: pos.coords.latitude, lng: pos.coords.longitude } };
           }
         }
       } catch (nativeErr) {
@@ -90,27 +88,22 @@ export async function requestLocationPermission(): Promise<LocationCoords | null
     }
 
     // 2. Browser Geolocation fallback
-    const browserCoords = await getBrowserPosition();
-    if (browserCoords) {
-      return browserCoords;
-    }
-
-    return null;
+    return await getBrowserPosition();
   } catch (err) {
     console.error('Error in requestLocationPermission:', err);
-    return null;
+    return { coords: null, errorType: 'unavailable' };
   }
 }
 
 /**
- * Automatically prompts for location permission, gets GPS coords,
+ * Prompts for location permission, gets GPS coords,
  * reverse-geocodes to the user's REAL city/neighborhood, and updates global state.
  */
-export async function autoDetectAndSetLocation(silent = false): Promise<{ name: string; lat: number; lng: number } | null> {
-  const coords = await requestLocationPermission();
+export async function autoDetectAndSetLocation(): Promise<GeolocationResult> {
+  const result = await requestLocationPermission();
 
-  if (coords) {
-    const { lat, lng } = coords;
+  if (result.coords) {
+    const { lat, lng } = result.coords;
     localStorage.setItem('global_coords', JSON.stringify({ lat, lng }));
 
     // Reverse geocode coordinates to get actual city name
@@ -131,15 +124,10 @@ export async function autoDetectAndSetLocation(silent = false): Promise<{ name: 
       window.dispatchEvent(new CustomEvent('global_location_change', { detail: locationName }));
     }
 
-    return { name: locationName, lat, lng };
+    return { success: true, coords: result.coords, name: locationName };
   }
 
-  // If GPS failed or was blocked by device settings:
-  if (!silent && typeof window !== 'undefined') {
-    alert('Could not detect your GPS location. Please make sure Location (GPS) is turned ON in your phone settings and permission is granted.');
-  }
-
-  return null;
+  return { success: false, errorType: result.errorType || 'unavailable' };
 }
 
 /**

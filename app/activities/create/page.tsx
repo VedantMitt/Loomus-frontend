@@ -69,9 +69,9 @@ function CreateActivityContent() {
           }
         } catch (e) {}
       }
-      const coords = await requestLocationPermission();
-      if (coords) {
-        setCurrentCoords(coords);
+      const res = await requestLocationPermission();
+      if (res.coords) {
+        setCurrentCoords(res.coords);
       }
       return;
     }
@@ -113,9 +113,9 @@ function CreateActivityContent() {
     if (stored) {
       handleCitySearch(stored);
     } else {
-      requestLocationPermission().then(coords => {
-        if (coords) {
-          setCurrentCoords(coords);
+      requestLocationPermission().then(res => {
+        if (res.coords) {
+          setCurrentCoords(res.coords);
         } else {
           setCurrentCoords({ lat: 28.6139, lng: 77.2090 });
         }
