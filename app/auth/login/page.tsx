@@ -57,6 +57,10 @@ export default function AuthPage() {
     if (checkNative) {
       GoogleAuth.initialize();
     }
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) {
+      document.cookie = `token=${storedToken}; path=/; max-age=31536000; SameSite=Lax`;
+    }
   }, []);
 
   // Auto-focus on screen change
@@ -98,6 +102,7 @@ export default function AuthPage() {
       } else {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
+        document.cookie = `token=${data.token}; path=/; max-age=31536000; SameSite=Lax`;
         if (data.isNewUser) {
           router.push("/onboarding");
         } else {
@@ -170,6 +175,7 @@ export default function AuthPage() {
       if (!res.ok) throw new Error(data.error || "Login failed. Please try again.");
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
+      document.cookie = `token=${data.token}; path=/; max-age=31536000; SameSite=Lax`;
       router.push(`/profile/${data.user.username}`);
     } catch (err: any) {
       setError(err.message);
@@ -231,6 +237,7 @@ export default function AuthPage() {
       if (!res.ok) throw new Error(data.error);
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
+      document.cookie = `token=${data.token}; path=/; max-age=31536000; SameSite=Lax`;
       router.push("/onboarding");
     } catch (err: any) {
       setError(err.message);
@@ -310,6 +317,7 @@ export default function AuthPage() {
       if (data.token) {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
+        document.cookie = `token=${data.token}; path=/; max-age=31536000; SameSite=Lax`;
         router.push("/onboarding");
       } else {
         setSuccess("Registration complete! Please sign in.");

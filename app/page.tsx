@@ -6,9 +6,20 @@ import { Apple, Smartphone, Globe, Sparkles, Users, BookHeart, MapPin } from "lu
 import { Capacitor } from "@capacitor/core";
 import Image from "next/image";
 
+const checkIsNative = () => {
+  if (typeof window === "undefined") return false;
+  return (
+    Capacitor.isNativePlatform() ||
+    Boolean((window as any).Capacitor?.isNativePlatform?.()) ||
+    (window as any).Capacitor?.platform === "android" ||
+    (window as any).Capacitor?.platform === "ios" ||
+    navigator.userAgent.includes("LoomusApp")
+  );
+};
+
 export default function LandingPage() {
   const router = useRouter();
-  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(() => checkIsNative());
 
   const handleOpenWebApp = () => {
     const token = localStorage.getItem("token");
@@ -20,16 +31,50 @@ export default function LandingPage() {
   };
 
   useEffect(() => {
-    if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
+    if (checkIsNative()) {
       setIsRedirecting(true);
-      handleOpenWebApp();
+      const token = localStorage.getItem("token");
+      if (token) {
+        router.replace("/activities");
+      } else {
+        router.replace("/auth/login");
+      }
     }
   }, [router]);
 
-  if (isRedirecting) return null;
+  if (isRedirecting) {
+    return <div className="min-h-screen bg-black" />;
+  }
 
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-pink-500/30 font-sans">
+    <div className="landing-page-container min-h-screen bg-black text-white selection:bg-pink-500/30 font-sans">
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+            (function() {
+              try {
+                var isCap = window.Capacitor && (typeof window.Capacitor.isNativePlatform === 'function' ? window.Capacitor.isNativePlatform() : window.Capacitor.platform !== 'web');
+                var isNative = isCap || navigator.userAgent.indexOf('LoomusApp') !== -1;
+                if (isNative) {
+                  document.documentElement.classList.add('is-native-app');
+                  var token = localStorage.getItem('token');
+                  if (token) {
+                    window.location.replace('/activities');
+                  } else {
+                    window.location.replace('/auth/login');
+                  }
+                }
+              } catch(e) {}
+            })();
+          `,
+        }}
+      />
+      <style>{`
+        html.is-native-app body,
+        html.is-native-app .landing-page-container {
+          display: none !important;
+        }
+      `}</style>
       {/* Navigation */}
       <nav className="fixed top-0 w-full z-50 border-b border-white/10 bg-black/50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">

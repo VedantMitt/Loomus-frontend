@@ -3,6 +3,8 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.campusconnect.app',
   appName: 'Loomus',
+  backgroundColor: '#000000',
+  appendUserAgent: 'LoomusApp',
   server: {
     url: 'https://loomusapp.vercel.app',
     cleartext: true,
