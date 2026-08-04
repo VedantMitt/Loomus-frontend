@@ -79,13 +79,15 @@ export default function Navbar() {
       }).catch(() => {});
     }
 
-    // Auto-request general app permissions (notifications, etc)
-    requestAllAppPermissions().catch(() => {});
-
     // Custom event listener for instant auth state updates without route changes
     window.addEventListener("auth-change", checkUser);
     return () => window.removeEventListener("auth-change", checkUser);
   }, [pathname]);
+
+  // Request runtime app permissions (like notifications) once on initial mount
+  useEffect(() => {
+    requestAllAppPermissions().catch(() => {});
+  }, []);
 
   const handleGlobalLocationChange = (val: string, coords?: { lat: number; lng: number }) => {
     setGlobalLocation(val);
@@ -105,13 +107,7 @@ export default function Navbar() {
         setGlobalLocation(res.name);
         setShowLocationModal(false);
       } else {
-        if (res.errorType === "denied") {
-          setLocationError("Location permission is blocked in your browser/device. Click the lock icon in your address bar or app settings to allow it, or search manually below.");
-        } else if (res.errorType === "unavailable") {
-          setLocationError("Could not get GPS fix. Please search for your city or area below.");
-        } else {
-          setLocationError("Location detection timed out. Please search manually below.");
-        }
+        setLocationError("Could not detect location automatically. Please search for your city or area below.");
       }
     } catch (err) {
       console.error("Location detection error:", err);
@@ -551,7 +547,7 @@ export default function Navbar() {
               />
               <div>Loom<span>us</span></div>
             </Link>
-            <button className="nav-location-selector" onClick={() => setShowLocationModal(true)}>
+            <button className="nav-location-selector" onClick={() => { setShowLocationModal(true); setLocationError(null); }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6, color: '#f472b6', flexShrink: 0 }}>
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                 <circle cx="12" cy="10" r="3"></circle>
@@ -768,7 +764,7 @@ export default function Navbar() {
             />
             <div>Loom<span>us</span></div>
           </Link>
-          <button style={{ display: 'flex', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => setShowLocationModal(true)}>
+          <button style={{ display: 'flex', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => { setShowLocationModal(true); setLocationError(null); }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 4, color: '#f472b6', flexShrink: 0 }}>
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
               <circle cx="12" cy="10" r="3"></circle>
