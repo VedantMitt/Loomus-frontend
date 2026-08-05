@@ -948,58 +948,6 @@ export default function ActivitiesPage() {
         <div style={{ pointerEvents: isRefreshing ? "none" : "auto", transition: "all 0.3s ease" }}>
         {activeTab === "discover" && (
           <>
-            {/* Active City / Location Indicator */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              background: 'linear-gradient(135deg, rgba(192,132,252,0.08) 0%, rgba(244,114,182,0.04) 100%)',
-              border: '1px solid rgba(192,132,252,0.2)',
-              borderRadius: '16px',
-              padding: '12px 18px',
-              marginBottom: '28px',
-              backdropFilter: 'blur(10px)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{
-                  background: 'rgba(244,114,182,0.2)',
-                  color: '#f472b6',
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '15px'
-                }}>
-                  📍
-                </div>
-                <div>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Showing Activities Near
-                  </div>
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>
-                    {userLocation || "Your Detected Location"}
-                  </div>
-                </div>
-              </div>
-              <div style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                color: '#34d399',
-                background: 'rgba(52,211,153,0.12)',
-                border: '1px solid rgba(52,211,153,0.25)',
-                padding: '4px 10px',
-                borderRadius: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px'
-              }}>
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#34d399', boxShadow: '0 0 6px #34d399' }} />
-                NEARBY FIRST
-              </div>
-            </div>
-
             <div className="exp-section-label">
               <span className="glow-icon">🔥</span> Top Upcoming Events {cityKeyword ? `in ${cityKeyword.charAt(0).toUpperCase() + cityKeyword.slice(1)}` : ""}
             </div>
