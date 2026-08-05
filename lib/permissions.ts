@@ -108,7 +108,7 @@ export async function reverseGeocodeCoords(lat: number, lng: number): Promise<st
 }
 
 /**
- * Get exact GPS coordinates from browser Geolocation API with high accuracy prioritised
+ * Get exact GPS coordinates from browser Geolocation API
  */
 async function getBrowserPosition(): Promise<{ coords: LocationCoords | null; errorType?: 'denied' | 'unavailable' | 'timeout' }> {
   if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
@@ -119,7 +119,7 @@ async function getBrowserPosition(): Promise<{ coords: LocationCoords | null; er
     return new Promise((resolve) => {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          if (pos && pos.coords) {
+          if (pos && pos.coords && pos.coords.latitude && pos.coords.longitude) {
             resolve({ coords: { lat: pos.coords.latitude, lng: pos.coords.longitude } });
           } else {
             resolve({ coords: null, errorType: 'unavailable' });
@@ -139,14 +139,14 @@ async function getBrowserPosition(): Promise<{ coords: LocationCoords | null; er
     });
   };
 
-  // Attempt 1: Exact High Accuracy GPS Position (Live hardware GPS query, 15s timeout)
-  let result = await queryPos({ enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 });
+  // Attempt 1: High Accuracy GPS Position (12s timeout)
+  let result = await queryPos({ enableHighAccuracy: true, timeout: 12000, maximumAge: 10000 });
   if (result.coords) return result;
 
   // If user explicitly denied permission, do not retry
   if (result.errorType === 'denied') return result;
 
-  // Attempt 2: Standard positioning fallback if high-accuracy timed out
+  // Attempt 2: Standard positioning fallback if high-accuracy timed out or was temporarily unavailable
   result = await queryPos({ enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
   return result;
 }
@@ -168,28 +168,34 @@ export async function requestLocationPermission(): Promise<{ coords: LocationCoo
           perm = await Geolocation.requestPermissions().catch(() => null);
         }
 
-        // Fetch exact position using high accuracy GPS first
-        try {
-          const pos = await Geolocation.getCurrentPosition({
-            enableHighAccuracy: true,
-            timeout: 15000,
-            maximumAge: 10000,
-          });
-          if (pos && pos.coords) {
-            return { coords: { lat: pos.coords.latitude, lng: pos.coords.longitude } };
+        if (perm && (perm.location === 'granted' || perm.coarseLocation === 'granted')) {
+          // Fetch exact position using high accuracy GPS first
+          try {
+            const pos = await Geolocation.getCurrentPosition({
+              enableHighAccuracy: true,
+              timeout: 12000,
+              maximumAge: 10000,
+            });
+            if (pos && pos.coords && pos.coords.latitude && pos.coords.longitude) {
+              return { coords: { lat: pos.coords.latitude, lng: pos.coords.longitude } };
+            }
+          } catch (posErr) {
+            console.warn('Native GPS high accuracy failed, falling back to standard network position:', posErr);
           }
-        } catch {
-          // Standard accuracy fallback
+
+          // Standard accuracy / network positioning fallback
           try {
             const pos = await Geolocation.getCurrentPosition({
               enableHighAccuracy: false,
               timeout: 10000,
               maximumAge: 60000,
             });
-            if (pos && pos.coords) {
+            if (pos && pos.coords && pos.coords.latitude && pos.coords.longitude) {
               return { coords: { lat: pos.coords.latitude, lng: pos.coords.longitude } };
             }
           } catch {}
+        } else if (perm && perm.location === 'denied') {
+          return { coords: null, errorType: 'denied' };
         }
       } catch (nativeErr) {
         console.warn('Native Geolocation plugin error:', nativeErr);
