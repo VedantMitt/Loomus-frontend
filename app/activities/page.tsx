@@ -217,6 +217,31 @@ export default function ActivitiesPage() {
   const [userPreferences, setUserPreferences] = useState<string[]>([]);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
+  const [userLocation, setUserLocation] = useState<string>("");
+
+  useEffect(() => {
+    const stored = localStorage.getItem("global_location");
+    if (stored) setUserLocation(stored);
+
+    const handleLocChange = (e: any) => {
+      const locName = typeof e.detail === "string" ? e.detail : (e.detail?.name || "");
+      if (locName) {
+        setUserLocation(locName);
+        setRefreshTrigger(prev => prev + 1);
+      }
+    };
+    window.addEventListener("global_location_change", handleLocChange);
+    return () => window.removeEventListener("global_location_change", handleLocChange);
+  }, []);
+
+  const cityKeyword = (userLocation ? userLocation.split(",")[0].trim() : "").toLowerCase();
+
+  const isNearby = (locStr?: string) => {
+    if (!cityKeyword || !locStr) return false;
+    const l = locStr.toLowerCase();
+    return l.includes(cityKeyword) || (userLocation && l.includes(userLocation.toLowerCase()));
+  };
+
   // Calculate frontend sorting based on preferences for top events
   const getRelevance = (itemText: string) => {
     if (!userPreferences.length) return 0;
@@ -232,9 +257,26 @@ export default function ActivitiesPage() {
   };
 
   const sortedTopEvents = [...topEvents].sort((a, b) => {
+    const nearA = isNearby(a.location) ? 1 : 0;
+    const nearB = isNearby(b.location) ? 1 : 0;
+    if (nearA !== nearB) return nearB - nearA;
     const scoreA = getRelevance((a.title || "") + " " + (a.type || "") + " " + (a.location || ""));
     const scoreB = getRelevance((b.title || "") + " " + (b.type || "") + " " + (b.location || ""));
     return scoreB - scoreA;
+  });
+
+  const sortedPublicPlans = [...publicPlans].sort((a, b) => {
+    const nearA = isNearby(a.location) ? 1 : 0;
+    const nearB = isNearby(b.location) ? 1 : 0;
+    if (nearA !== nearB) return nearB - nearA;
+    return getRelevance(b.title + " " + b.type + " " + b.location) - getRelevance(a.title + " " + a.type + " " + a.location);
+  });
+
+  const sortedHobbyMeetups = [...hobbyMeetups].sort((a, b) => {
+    const nearA = isNearby(a.location) ? 1 : 0;
+    const nearB = isNearby(b.location) ? 1 : 0;
+    if (nearA !== nearB) return nearB - nearA;
+    return 0;
   });
 
   const sortedCategories = [...EXPERIENCE_CATEGORIES].sort((a, b) => {
@@ -277,23 +319,13 @@ export default function ActivitiesPage() {
         const token = localStorage.getItem("token");
         const headers: any = token ? { Authorization: `Bearer ${token}` } : {};
         const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-        const res = await fetch(`${API}/ai/hot-events`, { headers });
+        const locQuery = userLocation ? `?location=${encodeURIComponent(userLocation)}` : "";
+        const res = await fetch(`${API}/ai/hot-events${locQuery}`, { headers });
         if (res.ok) {
           const data = await res.json();
-          if (Array.isArray(data)) {
-            // If API returns some events, but fewer than 4, pad with the hardcoded top live events
-            const combined = [...data];
-            let i = 0;
-            while (combined.length < 4 && i < TOP_LIVE_EVENTS.length) {
-              if (!combined.find((e) => e.id === TOP_LIVE_EVENTS[i].id)) {
-                combined.push(TOP_LIVE_EVENTS[i]);
-              }
-              i++;
-            }
-            if (combined.length > 0) {
-              setTopEvents(combined);
-              return;
-            }
+          if (Array.isArray(data) && data.length > 0) {
+            setTopEvents(data);
+            return;
           }
         }
         setTopEvents(TOP_LIVE_EVENTS);
@@ -303,7 +335,7 @@ export default function ActivitiesPage() {
       }
     };
     fetchHotEvents();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, userLocation]);
 
   const fetchMyPlans = useCallback(async () => {
     const token = localStorage.getItem("token");
@@ -336,7 +368,8 @@ export default function ActivitiesPage() {
       if (!token) return;
       try {
         const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-        const res = await fetch(`${API}/activities?is_public=true`, {
+        const locQuery = userLocation ? `&location=${encodeURIComponent(userLocation)}` : "";
+        const res = await fetch(`${API}/activities?is_public=true${locQuery}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
@@ -350,7 +383,7 @@ export default function ActivitiesPage() {
           setPublicPlans(upcomingOrLive);
         }
 
-        const hobbyRes = await fetch(`${API}/activities?is_public=true&type=hobby`, {
+        const hobbyRes = await fetch(`${API}/activities?is_public=true&type=hobby${locQuery}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (hobbyRes.ok) {
@@ -367,7 +400,7 @@ export default function ActivitiesPage() {
       }
     };
     fetchPublicPlans();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, userLocation]);
 
   const handleDeletePlan = async () => {
     if (!planToDelete) return;
@@ -915,12 +948,64 @@ export default function ActivitiesPage() {
         <div style={{ pointerEvents: isRefreshing ? "none" : "auto", transition: "all 0.3s ease" }}>
         {activeTab === "discover" && (
           <>
+            {/* Active City / Location Indicator */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: 'linear-gradient(135deg, rgba(192,132,252,0.08) 0%, rgba(244,114,182,0.04) 100%)',
+              border: '1px solid rgba(192,132,252,0.2)',
+              borderRadius: '16px',
+              padding: '12px 18px',
+              marginBottom: '28px',
+              backdropFilter: 'blur(10px)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  background: 'rgba(244,114,182,0.2)',
+                  color: '#f472b6',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '15px'
+                }}>
+                  📍
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Showing Activities Near
+                  </div>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>
+                    {userLocation || "Your Detected Location"}
+                  </div>
+                </div>
+              </div>
+              <div style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                color: '#34d399',
+                background: 'rgba(52,211,153,0.12)',
+                border: '1px solid rgba(52,211,153,0.25)',
+                padding: '4px 10px',
+                borderRadius: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#34d399', boxShadow: '0 0 6px #34d399' }} />
+                NEARBY FIRST
+              </div>
+            </div>
+
             <div className="exp-section-label">
-              <span className="glow-icon">🔥</span> Top Upcoming Events
+              <span className="glow-icon">🔥</span> Top Upcoming Events {cityKeyword ? `in ${cityKeyword.charAt(0).toUpperCase() + cityKeyword.slice(1)}` : ""}
             </div>
             
             <div className="live-scroll">
-              {isRefreshing || topEvents.length === 0 ? (
+              {isRefreshing || sortedTopEvents.length === 0 ? (
                 // Show skeletons while loading or refreshing
                 [...Array(4)].map((_, i) => (
                   <div key={`skel-${i}`} className="live-card-wrapper">
@@ -929,32 +1014,41 @@ export default function ActivitiesPage() {
                   </div>
                 ))
               ) : (
-                topEvents.map((event) => (
-                  <div key={event.id} className="live-card-wrapper">
-                    <div className="live-card-category">
-                      {event.type}
-                    </div>
-                    <div className="live-card" onClick={() => handleEventClick(event)}>
-                      <img src={event.image} alt={event.title} className="live-img" />
-                      <div 
-                        className="live-overlay" 
-                        style={{ background: `linear-gradient(to top, rgba(0,0,0,0.95) 0%, ${event.gradient || 'rgba(0,0,0,0.4)'} 60%, transparent 100%)` }} 
-                      />
-                      <div className="live-badge" style={{ background: 'rgba(192, 132, 252, 0.9)', boxShadow: '0 4px 12px rgba(192, 132, 252, 0.4)' }}>
-                        <div className="live-badge-dot" style={{ animation: 'none' }} /> UPCOMING
+                sortedTopEvents.map((event) => {
+                  const nearby = isNearby(event.location);
+                  return (
+                    <div key={event.id} className="live-card-wrapper">
+                      <div className="live-card-category" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>{event.type}</span>
+                        {nearby && (
+                          <span style={{ fontSize: '10px', color: '#34d399', background: 'rgba(52,211,153,0.15)', padding: '1px 6px', borderRadius: '8px' }}>
+                            📍 Nearby
+                          </span>
+                        )}
                       </div>
-                      <div className="live-content">
-                        <h3 className="live-title">{event.title}</h3>
-                        <div className="live-meta">
-                          <span>📍 {event.location}</span>
-                          <span>⏰ {event.time}</span>
+                      <div className="live-card" onClick={() => handleEventClick(event)}>
+                        <img src={event.image} alt={event.title} className="live-img" />
+                        <div 
+                          className="live-overlay" 
+                          style={{ background: `linear-gradient(to top, rgba(0,0,0,0.95) 0%, ${event.gradient || 'rgba(0,0,0,0.4)'} 60%, transparent 100%)` }} 
+                        />
+                        <div className="live-badge" style={{ background: nearby ? 'rgba(52,211,153,0.95)' : 'rgba(192, 132, 252, 0.9)', boxShadow: nearby ? '0 4px 12px rgba(52,211,153,0.4)' : '0 4px 12px rgba(192, 132, 252, 0.4)' }}>
+                          <div className="live-badge-dot" style={{ animation: 'none' }} /> {nearby ? 'LOCAL' : 'UPCOMING'}
+                        </div>
+                        <div className="live-content">
+                          <h3 className="live-title">{event.title}</h3>
+                          <div className="live-meta">
+                            <span>📍 {event.location}</span>
+                            <span>⏰ {event.time}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
+
             <div className="exp-section-label" style={{ marginTop: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingRight: '20px' }}>
               <div><span className="glow-icon">🎨</span> Hobbies based meetups</div>
               <button onClick={() => router.push('/activities/create?type=hobby')} style={{ background: 'rgba(255,154,158,0.2)', color: '#ff9a9e', border: 'none', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '18px', paddingBottom: '2px' }}>+</button>
@@ -968,31 +1062,39 @@ export default function ActivitiesPage() {
                     <div className="live-card exp-skeleton" />
                   </div>
                 ))
-              ) : hobbyMeetups.length > 0 ? (
-                hobbyMeetups.map((event) => (
-                  <div key={event.id} className="live-card-wrapper">
-                    <div className="live-card-category">
-                      {event.type || "Hobby"}
-                    </div>
-                    <div className="live-card" onClick={() => router.push(`/activities/${event.id}`)}>
-                      <HobbyAnimatedBg seed={event.id ? event.id.charCodeAt(0) : 0} />
-                      <div 
-                        className="live-overlay" 
-                        style={{ background: `linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)` }} 
-                      />
-                      <div className="live-badge" style={{ background: 'rgba(255, 154, 158, 0.9)', boxShadow: '0 4px 12px rgba(255, 154, 158, 0.4)' }}>
-                        <div className="live-badge-dot" style={{ animation: 'none' }} /> MEETUP
+              ) : sortedHobbyMeetups.length > 0 ? (
+                sortedHobbyMeetups.map((event) => {
+                  const nearby = isNearby(event.location);
+                  return (
+                    <div key={event.id} className="live-card-wrapper">
+                      <div className="live-card-category" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>{event.type || "Hobby"}</span>
+                        {nearby && (
+                          <span style={{ fontSize: '10px', color: '#34d399', background: 'rgba(52,211,153,0.15)', padding: '1px 6px', borderRadius: '8px' }}>
+                            📍 Nearby
+                          </span>
+                        )}
                       </div>
-                      <div className="live-content">
-                        <h3 className="live-title">{event.title}</h3>
-                        <div className="live-meta">
-                          <span>📍 {event.location}</span>
-                          <span>⏰ {(event as any).time || (new Date(event.date).toLocaleDateString() + ' ' + new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))}</span>
+                      <div className="live-card" onClick={() => router.push(`/activities/${event.id}`)}>
+                        <HobbyAnimatedBg seed={event.id ? event.id.charCodeAt(0) : 0} />
+                        <div 
+                          className="live-overlay" 
+                          style={{ background: `linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)` }} 
+                        />
+                        <div className="live-badge" style={{ background: nearby ? 'rgba(52,211,153,0.95)' : 'rgba(255, 154, 158, 0.9)', boxShadow: nearby ? '0 4px 12px rgba(52,211,153,0.4)' : '0 4px 12px rgba(255, 154, 158, 0.4)' }}>
+                          <div className="live-badge-dot" style={{ animation: 'none' }} /> MEETUP
+                        </div>
+                        <div className="live-content">
+                          <h3 className="live-title">{event.title}</h3>
+                          <div className="live-meta">
+                            <span>📍 {event.location}</span>
+                            <span>⏰ {(event as any).time || (new Date(event.date).toLocaleDateString() + ' ' + new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div style={{ padding: '20px', color: 'rgba(255,255,255,0.4)', fontSize: '13px', fontStyle: 'italic', width: '100%', textAlign: 'center' }}>
                   No hobby meetups yet. Be the first to host one!
@@ -1004,7 +1106,7 @@ export default function ActivitiesPage() {
               <span>✨</span> Pick your vibe
             </div>
             <div className="vibe-scroll">
-              {EXPERIENCE_CATEGORIES.map((cat) => (
+              {sortedCategories.map((cat) => (
                 <div key={cat.key} className="vibe-card-wrapper">
                   <div
                     className="exp-card"
@@ -1042,29 +1144,43 @@ export default function ActivitiesPage() {
                       </div>
                     ))}
                   </div>
-                ) : publicPlans.length > 0 ? (
+                ) : sortedPublicPlans.length > 0 ? (
                   <div className="live-scroll">
-                    {publicPlans.map((plan) => (
-                      <div key={plan.id} className="live-card-wrapper">
-                        <div className="live-card-category" style={{ background: 'rgba(52,211,153,0.15)', color: '#34d399' }}>
-                          {plan.type || 'Public Plan'}
-                        </div>
-                        <div className="live-card" onClick={() => router.push(`/activities/${plan.id}`)}>
-                          <img src={plan.banner || `https://source.unsplash.com/random/800x600/?${plan.type || 'party'}`} alt={plan.title} className="live-img" />
-                          <div 
-                            className="live-overlay" 
-                            style={{ background: `linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(52,211,153,0.3) 60%, transparent 100%)` }} 
-                          />
-                          <div className="live-content">
-                            <h3 className="live-title">{plan.title}</h3>
-                            <div className="live-meta">
-                              <span>📍 {plan.location}</span>
-                              <span>⏰ {new Date(plan.date).toLocaleDateString()} {new Date(plan.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    {sortedPublicPlans.map((plan) => {
+                      const nearby = isNearby(plan.location);
+                      return (
+                        <div key={plan.id} className="live-card-wrapper">
+                          <div className="live-card-category" style={{
+                            background: nearby ? 'rgba(52,211,153,0.2)' : 'rgba(52,211,153,0.15)',
+                            color: '#34d399',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}>
+                            <span>{plan.type || 'Public Plan'}</span>
+                            {nearby && (
+                              <span style={{ fontSize: '10px', color: '#34d399', background: 'rgba(52,211,153,0.15)', padding: '1px 6px', borderRadius: '8px' }}>
+                                📍 Nearby
+                              </span>
+                            )}
+                          </div>
+                          <div className="live-card" onClick={() => router.push(`/activities/${plan.id}`)}>
+                            <img src={plan.banner || `https://source.unsplash.com/random/800x600/?${plan.type || 'party'}`} alt={plan.title} className="live-img" />
+                            <div 
+                              className="live-overlay" 
+                              style={{ background: `linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(52,211,153,0.3) 60%, transparent 100%)` }} 
+                            />
+                            <div className="live-content">
+                              <h3 className="live-title">{plan.title}</h3>
+                              <div className="live-meta">
+                                <span>📍 {plan.location}</span>
+                                <span>⏰ {new Date(plan.date).toLocaleDateString()} {new Date(plan.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px', padding: '16px 0', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.1)' }}>
