@@ -1,0 +1,85 @@
+name: Build Google Play AAB & Release APK
+
+on:
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build Signed AAB & APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Create Assets Directory
+        run: mkdir -p android/app/src/main/assets
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Generate Release Keystore
+        run: |
+          keytool -genkey -v -keystore android/loomus-release-key.jks \
+            -alias loomus-key \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass loomuspass123 \
+            -keypass loomuspass123 \
+            -dname "CN=Loomus, OU=App, O=Loomus, L=Delhi, S=Delhi, C=IN"
+
+      - name: Build Android App Bundle (.aab) and APK (.apk)
+        working-directory: ./android
+        run: |
+          sudo apt-get update && sudo apt-get install -y dos2unix
+          dos2unix ./gradlew
+          chmod +x ./gradlew
+          ./gradlew bundleRelease assembleRelease assembleDebug
+
+      - name: Sign App Bundle (.aab)
+        run: |
+          AAB_FILE=$(find android/app/build/outputs/bundle/release -name "*.aab" | head -n 1)
+          echo "Signing $AAB_FILE"
+          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+            -keystore android/loomus-release-key.jks \
+            -storepass loomuspass123 \
+            -keypass loomuspass123 \
+            $AAB_FILE loomus-key
+          cp $AAB_FILE ./loomus-release.aab
+
+      - name: Upload Google Play App Bundle (.aab)
+        uses: actions/upload-artifact@v4
+        with:
+          name: google-play-bundle-aab
+          path: ./loomus-release.aab
+          if-no-files-found: error
+
+      - name: Upload Release Keystore (Save this safely!)
+        uses: actions/upload-artifact@v4
+        with:
+          name: loomus-release-keystore
+          path: android/loomus-release-key.jks
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apks
+          path: '**/*.apk'
