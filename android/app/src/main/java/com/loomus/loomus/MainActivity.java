@@ -1,4 +1,4 @@
-package com.campusconnect.app;
+package com.loomus.loomus;
 
 import android.Manifest;
 import android.content.pm.PackageManager;

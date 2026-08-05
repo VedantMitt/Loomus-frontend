@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.campusconnect.app',
+  appId: 'com.loomus.loomus',
   appName: 'Loomus',
   backgroundColor: '#000000',
   appendUserAgent: 'LoomusApp',
