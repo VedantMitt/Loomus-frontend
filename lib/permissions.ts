@@ -10,6 +10,104 @@ export type GeolocationResult =
   | { success: false; errorType: 'denied' | 'unavailable' | 'timeout' | 'unknown' };
 
 /**
+ * Reverse geocodes coordinates (lat, lng) to a clean, human-readable City/Locality name
+ * using multiple reliable APIs (BigDataCloud, Photon, Backend, OSM Nominatim).
+ */
+export async function reverseGeocodeCoords(lat: number, lng: number): Promise<string> {
+  // 1. BigDataCloud Client-side Reverse Geocoding (Free, CORS-friendly, ultra-fast, high precision)
+  try {
+    const res = await fetch(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`,
+      { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(3500) }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      if (data) {
+        const locality = data.locality || '';
+        const city = data.city || data.principalSubdivision || '';
+        const state = data.principalSubdivision || '';
+        const country = data.countryName || '';
+
+        // Form nice descriptive city/neighborhood string
+        let parts: string[] = [];
+        if (locality) parts.push(locality);
+        if (city && city !== locality) parts.push(city);
+        else if (state && state !== locality) parts.push(state);
+
+        if (parts.length > 0) {
+          return parts.join(', ');
+        }
+        if (city || state || country) {
+          return city || state || country;
+        }
+      }
+    }
+  } catch {}
+
+  // 2. Photon (Komoot OSM Geocoding - fast, CORS-friendly)
+  try {
+    const res = await fetch(
+      `https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}`,
+      { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(3500) }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.features && data.features.length > 0) {
+        const p = data.features[0].properties;
+        const locality = p.name || p.district || p.suburb || '';
+        const city = p.city || p.county || p.state || '';
+        if (locality && city && locality !== city) {
+          return `${locality}, ${city}`;
+        }
+        if (locality || city) {
+          return locality || city;
+        }
+      }
+    }
+  } catch {}
+
+  // 3. Backend Reverse Geocode Endpoint (Geoapify & Nominatim proxy)
+  try {
+    const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const res = await fetch(`${API}/places/reverse?lat=${lat}&lng=${lng}`, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(4000)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.name && data.name !== 'Current Location') {
+        return data.name;
+      }
+      if (data && data.city && data.city !== 'Current Location') {
+        return data.city;
+      }
+    }
+  } catch {}
+
+  // 4. OpenStreetMap Nominatim Direct
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+      { headers: { 'User-Agent': 'LoomusApp/1.0 (contact@loomus.app)' }, signal: AbortSignal.timeout(3500) }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      const addr = data.address || {};
+      const locality = addr.suburb || addr.neighbourhood || addr.quarter || addr.residential || addr.road || '';
+      const city = addr.city || addr.town || addr.village || addr.county || addr.state || '';
+      if (locality && city && locality !== city) {
+        return `${locality}, ${city}`;
+      }
+      if (locality || city) {
+        return locality || city;
+      }
+    }
+  } catch {}
+
+  return 'Delhi, India';
+}
+
+/**
  * Fallback to IP-based Geolocation when GPS / browser permission is blocked or unavailable
  */
 export async function getIpLocationFallback(): Promise<{ coords: LocationCoords; name: string } | null> {
@@ -24,15 +122,14 @@ export async function getIpLocationFallback(): Promise<{ coords: LocationCoords;
     if (res.ok) {
       const data = await res.json();
       if (data && typeof data.lat === 'number' && typeof data.lng === 'number') {
+        const name = (data.name && data.name !== 'Current Location') ? data.name : (data.city || 'Delhi, India');
         return {
           coords: { lat: data.lat, lng: data.lng },
-          name: data.name || data.city || 'Current Location'
+          name
         };
       }
     }
-  } catch {
-    // Backend might be offline or waking up, try direct public fallbacks
-  }
+  } catch {}
 
   // 2. Direct client fallback via ipwho.is (fast, free, CORS-friendly)
   try {
@@ -43,9 +140,9 @@ export async function getIpLocationFallback(): Promise<{ coords: LocationCoords;
     if (res.ok) {
       const data = await res.json();
       if (data && data.success !== false && data.latitude && data.longitude) {
-        const city = data.city || data.region || data.country || 'Current Location';
+        const city = data.city || data.region || data.country || '';
         const region = data.region || data.country || '';
-        const name = region && city !== region ? `${city}, ${region}` : city;
+        const name = region && city && city !== region ? `${city}, ${region}` : (city || region || 'Delhi, India');
         return {
           coords: { lat: data.latitude, lng: data.longitude },
           name
@@ -63,7 +160,7 @@ export async function getIpLocationFallback(): Promise<{ coords: LocationCoords;
     if (res.ok) {
       const data = await res.json();
       if (data && data.latitude && data.longitude) {
-        const name = data.cityName ? `${data.cityName}, ${data.countryName}` : 'Current Location';
+        const name = data.cityName ? (data.regionName && data.regionName !== data.cityName ? `${data.cityName}, ${data.regionName}` : `${data.cityName}, ${data.countryName}`) : 'Delhi, India';
         return {
           coords: { lat: data.latitude, lng: data.longitude },
           name
@@ -95,13 +192,10 @@ async function getBrowserPosition(): Promise<{ coords: LocationCoords | null; er
         },
         (err) => {
           if (err.code === 1) {
-            // PERMISSION_DENIED
             resolve({ coords: null, errorType: 'denied' });
           } else if (err.code === 2) {
-            // POSITION_UNAVAILABLE
             resolve({ coords: null, errorType: 'unavailable' });
           } else {
-            // TIMEOUT
             resolve({ coords: null, errorType: 'timeout' });
           }
         },
@@ -209,34 +303,15 @@ export async function autoDetectAndSetLocation(): Promise<GeolocationResult> {
     const { lat, lng } = result.coords;
     localStorage.setItem('global_coords', JSON.stringify({ lat, lng }));
 
-    // Reverse geocode coordinates to get actual city name
-    let locationName = result.name || 'Current Location';
-    
     // Reverse geocode exact GPS coords to neighborhood & city
-    try {
-      const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      const res = await fetch(`${API}/places/reverse?lat=${lat}&lng=${lng}`, {
-        signal: AbortSignal.timeout(5000)
-      });
-      if (res.ok) {
-        const data = await res.json();
-        locationName = data.name || data.city || data.formatted || locationName;
-      }
-    } catch {
-      // Fallback to OSM Nominatim directly
-      try {
-        const osmRes = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-          { headers: { 'User-Agent': 'LoomusApp/1.0 (contact@loomus.app)' }, signal: AbortSignal.timeout(4000) }
-        );
-        if (osmRes.ok) {
-          const osmData = await osmRes.json();
-          const addr = osmData.address || {};
-          const city = addr.city || addr.town || addr.village || addr.county || addr.state || 'Current Location';
-          const locality = addr.suburb || addr.neighbourhood || addr.quarter || addr.residential || addr.road || '';
-          locationName = locality && city && locality !== city ? `${locality}, ${city}` : (locality || city);
-        }
-      } catch {}
+    let locationName = result.name && result.name !== 'Current Location' ? result.name : '';
+    
+    if (!locationName) {
+      locationName = await reverseGeocodeCoords(lat, lng);
+    }
+
+    if (!locationName || locationName === 'Current Location') {
+      locationName = 'Delhi, India';
     }
 
     localStorage.setItem('global_location', locationName);

@@ -67,21 +67,33 @@ export default function Navbar() {
     checkUser();
 
     const storedLoc = localStorage.getItem("global_location");
-    if (storedLoc) {
+    if (storedLoc && storedLoc !== "Current Location") {
       setGlobalLocation(storedLoc);
     } else {
       setGlobalLocation("Delhi, India");
-      // Auto-detect on first visit without blocking alert
+      // Auto-detect on first visit or if generic "Current Location" was stored
       autoDetectAndSetLocation().then(res => {
-        if (res.success) {
+        if (res.success && res.name && res.name !== "Current Location") {
           setGlobalLocation(res.name);
         }
       }).catch(() => {});
     }
 
+    const handleLocationEvent = (e: any) => {
+      const detail = e.detail;
+      const name = typeof detail === "string" ? detail : (detail?.name || "");
+      if (name && name !== "Current Location") {
+        setGlobalLocation(name);
+      }
+    };
+    window.addEventListener("global_location_change", handleLocationEvent);
+
     // Custom event listener for instant auth state updates without route changes
     window.addEventListener("auth-change", checkUser);
-    return () => window.removeEventListener("auth-change", checkUser);
+    return () => {
+      window.removeEventListener("auth-change", checkUser);
+      window.removeEventListener("global_location_change", handleLocationEvent);
+    };
   }, [pathname]);
 
   // Request runtime app permissions (like notifications) once on initial mount
