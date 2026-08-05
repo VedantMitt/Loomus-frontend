@@ -70,8 +70,7 @@ export default function Navbar() {
     if (storedLoc && storedLoc !== "Current Location") {
       setGlobalLocation(storedLoc);
     } else {
-      setGlobalLocation("Delhi, India");
-      // Auto-detect on first visit or if generic "Current Location" was stored
+      // Auto-detect exact device GPS on launch
       autoDetectAndSetLocation().then(res => {
         if (res.success && res.name && res.name !== "Current Location") {
           setGlobalLocation(res.name);
@@ -119,7 +118,15 @@ export default function Navbar() {
         setGlobalLocation(res.name);
         setShowLocationModal(false);
       } else {
-        setLocationError("Could not detect location automatically. Please search for your city or area below.");
+        if (res.errorType === 'denied') {
+          setLocationError("Location permission was blocked. Please click the lock/settings icon in your browser address bar (or Android app settings) and choose 'Allow Location'.");
+        } else if (res.errorType === 'unavailable') {
+          setLocationError("Precise GPS location unavailable. Please make sure Location Services / GPS is turned ON in your Windows or device settings, or search for your city below.");
+        } else if (res.errorType === 'timeout') {
+          setLocationError("GPS location request timed out. Please try again or search for your city manually below.");
+        } else {
+          setLocationError("Could not detect precise location. Please search for your city or area below.");
+        }
       }
     } catch (err) {
       console.error("Location detection error:", err);

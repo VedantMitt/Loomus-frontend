@@ -6,11 +6,11 @@ export interface LocationCoords {
 }
 
 export type GeolocationResult =
-  | { success: true; coords: LocationCoords; name: string; isApproximate?: boolean }
+  | { success: true; coords: LocationCoords; name: string }
   | { success: false; errorType: 'denied' | 'unavailable' | 'timeout' | 'unknown' };
 
 /**
- * Reverse geocodes coordinates (lat, lng) to a clean, human-readable City/Locality name
+ * Reverse geocodes exact coordinates (lat, lng) to a clean, human-readable City/Locality name
  * using multiple reliable APIs (BigDataCloud, Photon, Backend, OSM Nominatim).
  */
 export async function reverseGeocodeCoords(lat: number, lng: number): Promise<string> {
@@ -18,21 +18,21 @@ export async function reverseGeocodeCoords(lat: number, lng: number): Promise<st
   try {
     const res = await fetch(
       `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`,
-      { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(3500) }
+      { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(4000) }
     );
     if (res.ok) {
       const data = await res.json();
       if (data) {
         const locality = data.locality || '';
-        const city = data.city || data.principalSubdivision || '';
+        const city = data.city || '';
         const state = data.principalSubdivision || '';
         const country = data.countryName || '';
 
-        // Form nice descriptive city/neighborhood string
+        // E.g. "Faridabad, Haryana" or "Connaught Place, New Delhi" or "Indiranagar, Bengaluru"
         let parts: string[] = [];
         if (locality) parts.push(locality);
         if (city && city !== locality) parts.push(city);
-        else if (state && state !== locality) parts.push(state);
+        else if (state && state !== locality && state !== city) parts.push(state);
 
         if (parts.length > 0) {
           return parts.join(', ');
@@ -48,7 +48,7 @@ export async function reverseGeocodeCoords(lat: number, lng: number): Promise<st
   try {
     const res = await fetch(
       `https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}`,
-      { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(3500) }
+      { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(4000) }
     );
     if (res.ok) {
       const data = await res.json();
@@ -88,7 +88,7 @@ export async function reverseGeocodeCoords(lat: number, lng: number): Promise<st
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-      { headers: { 'User-Agent': 'LoomusApp/1.0 (contact@loomus.app)' }, signal: AbortSignal.timeout(3500) }
+      { headers: { 'User-Agent': 'LoomusApp/1.0 (contact@loomus.app)' }, signal: AbortSignal.timeout(4000) }
     );
     if (res.ok) {
       const data = await res.json();
@@ -104,72 +104,7 @@ export async function reverseGeocodeCoords(lat: number, lng: number): Promise<st
     }
   } catch {}
 
-  return 'Delhi, India';
-}
-
-/**
- * Fallback to IP-based Geolocation when GPS / browser permission is blocked or unavailable
- */
-export async function getIpLocationFallback(): Promise<{ coords: LocationCoords; name: string } | null> {
-  const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-
-  // 1. Try our backend's IP location endpoint
-  try {
-    const res = await fetch(`${API}/places/ip-location`, {
-      headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(4000)
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data && typeof data.lat === 'number' && typeof data.lng === 'number') {
-        const name = (data.name && data.name !== 'Current Location') ? data.name : (data.city || 'Delhi, India');
-        return {
-          coords: { lat: data.lat, lng: data.lng },
-          name
-        };
-      }
-    }
-  } catch {}
-
-  // 2. Direct client fallback via ipwho.is (fast, free, CORS-friendly)
-  try {
-    const res = await fetch('https://ipwho.is/', {
-      headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(3500)
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.success !== false && data.latitude && data.longitude) {
-        const city = data.city || data.region || data.country || '';
-        const region = data.region || data.country || '';
-        const name = region && city && city !== region ? `${city}, ${region}` : (city || region || 'Delhi, India');
-        return {
-          coords: { lat: data.latitude, lng: data.longitude },
-          name
-        };
-      }
-    }
-  } catch {}
-
-  // 3. Fallback via freeipapi.com
-  try {
-    const res = await fetch('https://freeipapi.com/api/json', {
-      headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(3500)
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.latitude && data.longitude) {
-        const name = data.cityName ? (data.regionName && data.regionName !== data.cityName ? `${data.cityName}, ${data.regionName}` : `${data.cityName}, ${data.countryName}`) : 'Delhi, India';
-        return {
-          coords: { lat: data.latitude, lng: data.longitude },
-          name
-        };
-      }
-    }
-  } catch {}
-
-  return null;
+  return `${lat.toFixed(3)}, ${lng.toFixed(3)}`;
 }
 
 /**
@@ -204,22 +139,22 @@ async function getBrowserPosition(): Promise<{ coords: LocationCoords | null; er
     });
   };
 
-  // Attempt 1: Exact High Accuracy GPS Position (Live hardware GPS query)
-  let result = await queryPos({ enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
+  // Attempt 1: Exact High Accuracy GPS Position (Live hardware GPS query, 15s timeout)
+  let result = await queryPos({ enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 });
   if (result.coords) return result;
 
   // If user explicitly denied permission, do not retry
   if (result.errorType === 'denied') return result;
 
-  // Attempt 2: Fallback to standard/network positioning if high-accuracy timed out
-  result = await queryPos({ enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 });
+  // Attempt 2: Standard positioning fallback if high-accuracy timed out
+  result = await queryPos({ enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
   return result;
 }
 
 /**
  * Request GPS / Location permission on Android, iOS, or Web and return exact current coordinates.
  */
-export async function requestLocationPermission(): Promise<{ coords: LocationCoords | null; name?: string; isApproximate?: boolean; errorType?: 'denied' | 'unavailable' | 'timeout' }> {
+export async function requestLocationPermission(): Promise<{ coords: LocationCoords | null; name?: string; errorType?: 'denied' | 'unavailable' | 'timeout' }> {
   try {
     // 1. Native Capacitor Geolocation (Android / iOS)
     if (Capacitor.isNativePlatform()) {
@@ -238,21 +173,21 @@ export async function requestLocationPermission(): Promise<{ coords: LocationCoo
           const pos = await Geolocation.getCurrentPosition({
             enableHighAccuracy: true,
             timeout: 15000,
-            maximumAge: 0,
+            maximumAge: 10000,
           });
           if (pos && pos.coords) {
-            return { coords: { lat: pos.coords.latitude, lng: pos.coords.longitude }, isApproximate: false };
+            return { coords: { lat: pos.coords.latitude, lng: pos.coords.longitude } };
           }
         } catch {
           // Standard accuracy fallback
           try {
             const pos = await Geolocation.getCurrentPosition({
               enableHighAccuracy: false,
-              timeout: 8000,
-              maximumAge: 30000,
+              timeout: 10000,
+              maximumAge: 60000,
             });
             if (pos && pos.coords) {
-              return { coords: { lat: pos.coords.latitude, lng: pos.coords.longitude }, isApproximate: false };
+              return { coords: { lat: pos.coords.latitude, lng: pos.coords.longitude } };
             }
           } catch {}
         }
@@ -264,30 +199,12 @@ export async function requestLocationPermission(): Promise<{ coords: LocationCoo
     // 2. Browser Geolocation API
     const browserResult = await getBrowserPosition();
     if (browserResult.coords) {
-      return { coords: browserResult.coords, isApproximate: false };
-    }
-
-    // 3. Fallback to IP Geolocation only if hardware GPS cannot be reached
-    const ipFallback = await getIpLocationFallback();
-    if (ipFallback && ipFallback.coords) {
-      return {
-        coords: ipFallback.coords,
-        name: ipFallback.name,
-        isApproximate: true
-      };
+      return { coords: browserResult.coords };
     }
 
     return { coords: null, errorType: browserResult.errorType || 'unavailable' };
   } catch (err) {
     console.error('Error in requestLocationPermission:', err);
-    const ipFallback = await getIpLocationFallback().catch(() => null);
-    if (ipFallback && ipFallback.coords) {
-      return {
-        coords: ipFallback.coords,
-        name: ipFallback.name,
-        isApproximate: true
-      };
-    }
     return { coords: null, errorType: 'unavailable' };
   }
 }
@@ -304,22 +221,14 @@ export async function autoDetectAndSetLocation(): Promise<GeolocationResult> {
     localStorage.setItem('global_coords', JSON.stringify({ lat, lng }));
 
     // Reverse geocode exact GPS coords to neighborhood & city
-    let locationName = result.name && result.name !== 'Current Location' ? result.name : '';
-    
-    if (!locationName) {
-      locationName = await reverseGeocodeCoords(lat, lng);
-    }
-
-    if (!locationName || locationName === 'Current Location') {
-      locationName = 'Delhi, India';
-    }
+    const locationName = await reverseGeocodeCoords(lat, lng);
 
     localStorage.setItem('global_location', locationName);
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('global_location_change', { detail: locationName }));
     }
 
-    return { success: true, coords: result.coords, name: locationName, isApproximate: result.isApproximate };
+    return { success: true, coords: result.coords, name: locationName };
   }
 
   return { success: false, errorType: result.errorType || 'unavailable' };
