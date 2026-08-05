@@ -35,16 +35,21 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Generate Release Keystore
+      - name: Verify Release Keystore
         run: |
-          keytool -genkey -v -keystore android/loomus-release-key.jks \
-            -alias loomus-key \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass loomuspass123 \
-            -keypass loomuspass123 \
-            -dname "CN=Loomus, OU=App, O=Loomus, L=Delhi, S=Delhi, C=IN"
+          if [ -f "android/loomus-release-key.jks" ]; then
+            echo "Keystore verified: android/loomus-release-key.jks"
+          else
+            echo "Generating fallback keystore..."
+            keytool -genkey -v -keystore android/loomus-release-key.jks \
+              -alias loomus-key \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass loomuspass123 \
+              -keypass loomuspass123 \
+              -dname "CN=Loomus, OU=App, O=Loomus, L=Delhi, S=Delhi, C=IN"
+          fi
 
       - name: Build Android App Bundle (.aab) and APK (.apk)
         working-directory: ./android
@@ -72,7 +77,7 @@ jobs:
           path: ./loomus-release.aab
           if-no-files-found: error
 
-      - name: Upload Release Keystore (Save this safely!)
+      - name: Upload Release Keystore
         uses: actions/upload-artifact@v4
         with:
           name: loomus-release-keystore
