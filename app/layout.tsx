@@ -2,6 +2,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import MobileNav from "@/components/MobileNav";
 import PullToRefresh from "@/components/PullToRefresh";
+import AuthGuard from "@/components/AuthGuard";
 import { RoomProvider } from "@/context/RoomContext";
 
 import { GoogleOAuthProvider } from "@react-oauth/google";
@@ -41,11 +42,13 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "179896098236-k92cj68fkliirf291ruuu6sk6rp1e7q4.apps.googleusercontent.com"}>
           <RoomProvider>
-            <Navbar />
-            <PullToRefresh>
-              {children}
-            </PullToRefresh>
-            <MobileNav />
+            <AuthGuard>
+              <Navbar />
+              <PullToRefresh>
+                {children}
+              </PullToRefresh>
+              <MobileNav />
+            </AuthGuard>
           </RoomProvider>
         </GoogleOAuthProvider>
       </body>

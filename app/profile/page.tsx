@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { logout } from "@/lib/auth";
 
 
 export default function ProfilePage() {
@@ -100,8 +101,7 @@ const handleSaveProfile = async () => {
 };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    router.push("/auth/login");
+    logout();
   };
 
   const removeItem = (item: string, list: string[], setList: (v: string[]) => void) => {

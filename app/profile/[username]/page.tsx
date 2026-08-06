@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Settings } from "lucide-react";
+import { logout } from "@/lib/auth";
 
 type User = {
   id: string;
@@ -642,8 +643,7 @@ export default function ProfilePage() {
           <div style={{ marginTop: "20px", display: "flex", justifyContent: "center" }}>
             <button
               onClick={() => {
-                localStorage.removeItem("token");
-                router.push("/auth/login");
+                logout();
               }}
               style={{
                 padding: "12px 32px",

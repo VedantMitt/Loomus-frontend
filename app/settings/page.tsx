@@ -2,15 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { ChevronRight, LogOut, Settings as SettingsIcon, User } from "lucide-react";
+import { logout } from "@/lib/auth";
 
 export default function SettingsMenu() {
   const router = useRouter();
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    window.dispatchEvent(new Event("auth-change"));
-    router.push("/auth/login");
+    logout();
   };
 
   return (

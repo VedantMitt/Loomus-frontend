@@ -55,7 +55,15 @@ export default function AuthPage() {
     const checkNative = Capacitor.isNativePlatform();
     setIsNative(checkNative);
     if (checkNative) {
-      GoogleAuth.initialize();
+      try {
+        GoogleAuth.initialize({
+          clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '179896098236-k92cj68fkliirf291ruuu6sk6rp1e7q4.apps.googleusercontent.com',
+          scopes: ['profile', 'email'],
+          grantOfflineAccess: true,
+        });
+      } catch (e) {
+        console.warn("GoogleAuth initialize warning:", e);
+      }
     }
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
@@ -94,7 +102,7 @@ export default function AuthPage() {
         body: JSON.stringify({ credential: idToken }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || "Google Authentication failed");
 
       if (data.needsCompletion) {
         setProfileCompletion({ id: data.user.id });
@@ -117,12 +125,26 @@ export default function AuthPage() {
   };
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
-    processGoogleToken(credentialResponse.credential);
+    if (credentialResponse?.credential) {
+      processGoogleToken(credentialResponse.credential);
+    } else {
+      setError("Google Login failed: No credential returned");
+    }
   };
 
   const handleNativeGoogleLogin = async () => {
     setError("");
     try {
+      try {
+        GoogleAuth.initialize({
+          clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '179896098236-k92cj68fkliirf291ruuu6sk6rp1e7q4.apps.googleusercontent.com',
+          scopes: ['profile', 'email'],
+          grantOfflineAccess: true,
+        });
+      } catch (initErr) {
+        console.warn("GoogleAuth init warning:", initErr);
+      }
+
       const user = await GoogleAuth.signIn();
       if (user?.authentication?.idToken) {
         processGoogleToken(user.authentication.idToken);
@@ -130,8 +152,25 @@ export default function AuthPage() {
         setError("Google Login failed: No token received");
       }
     } catch (err: any) {
-      console.error(err);
-      setError("Native Google Login Cancelled or Failed");
+      console.error("Native Google Login error:", err);
+      let msg = "";
+      if (typeof err === "string") {
+        msg = err;
+      } else if (err?.message) {
+        msg = err.message;
+      } else if (err?.error) {
+        msg = typeof err.error === "string" ? err.error : JSON.stringify(err.error);
+      }
+
+      if (msg.includes("12501") || msg.toLowerCase().includes("cancel")) {
+        setError("Google Sign-In was cancelled.");
+      } else if (msg.includes("10") || msg.includes("DEVELOPER_ERROR")) {
+        setError("Google Sign-In error: SHA-1 or Client ID mismatch in Google Console.");
+      } else if (msg) {
+        setError(`Google Login Failed: ${msg}`);
+      } else {
+        setError("Google Login was cancelled or failed. Please try again or use email sign up.");
+      }
     }
   };
 

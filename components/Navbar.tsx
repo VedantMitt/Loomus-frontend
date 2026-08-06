@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import LocationAutocomplete from "./LocationAutocomplete";
 import { autoDetectAndSetLocation, requestAllAppPermissions } from "@/lib/permissions";
+import { logout } from "@/lib/auth";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -243,10 +244,7 @@ export default function Navbar() {
   if (hideNavOn.includes(pathname)) return null;
 
   const handleLogout = () => {
-    localStorage.clear();
-    document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax";
-    setUser(null);
-    window.location.href = "/auth/login";
+    logout();
   };
 
   const navLinks = [
