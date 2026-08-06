@@ -59,7 +59,7 @@ export default function AuthPage() {
         GoogleAuth.initialize({
           clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '179896098236-k92cj68fkliirf291ruuu6sk6rp1e7q4.apps.googleusercontent.com',
           scopes: ['profile', 'email'],
-          grantOfflineAccess: true,
+          grantOfflineAccess: false,
         });
       } catch (e) {
         console.warn("GoogleAuth initialize warning:", e);
@@ -139,7 +139,7 @@ export default function AuthPage() {
         GoogleAuth.initialize({
           clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '179896098236-k92cj68fkliirf291ruuu6sk6rp1e7q4.apps.googleusercontent.com',
           scopes: ['profile', 'email'],
-          grantOfflineAccess: true,
+          grantOfflineAccess: false,
         });
       } catch (initErr) {
         console.warn("GoogleAuth init warning:", initErr);
@@ -153,23 +153,19 @@ export default function AuthPage() {
       }
     } catch (err: any) {
       console.error("Native Google Login error:", err);
-      let msg = "";
-      if (typeof err === "string") {
-        msg = err;
-      } else if (err?.message) {
-        msg = err.message;
-      } else if (err?.error) {
-        msg = typeof err.error === "string" ? err.error : JSON.stringify(err.error);
-      }
+      const code = String(err?.code || err?.statusCode || "");
+      const msg = typeof err === "string" ? err : (err?.message || JSON.stringify(err));
 
-      if (msg.includes("12501") || msg.toLowerCase().includes("cancel")) {
+      if (code === "12501" || msg.includes("12501") || msg.toLowerCase().includes("cancel")) {
         setError("Google Sign-In was cancelled.");
-      } else if (msg.includes("10") || msg.includes("DEVELOPER_ERROR")) {
-        setError("Google Sign-In error: SHA-1 or Client ID mismatch in Google Console.");
+      } else if (code === "10" || msg.includes("10") || msg.includes("DEVELOPER_ERROR")) {
+        setError("Google Sign-In Error (Code 10 / DEVELOPER_ERROR): Check OAuth Consent Screen Publishing Status (Publish App / Test Users).");
+      } else if (code) {
+        setError(`Google Login Failed (Code ${code}): ${msg}`);
       } else if (msg) {
         setError(`Google Login Failed: ${msg}`);
       } else {
-        setError("Google Login was cancelled or failed. Please try again or use email sign up.");
+        setError("Google Login failed. Please try again or use email sign up.");
       }
     }
   };
@@ -832,7 +828,10 @@ export default function AuthPage() {
                             <GoogleLogin
                               text="signin_with"
                               onSuccess={handleGoogleSuccess}
-                              onError={() => setError("Google Login Failed")}
+                              onError={() => {
+                                console.error("Web Google Login failed - check Authorized JavaScript origins in Google Cloud Console");
+                                setError("Google Login Failed on Web. Please check Authorized Origins in Google Console or use Email OTP.");
+                              }}
                               useOneTap={false}
                               theme="filled_blue"
                               shape="pill"
@@ -939,7 +938,10 @@ export default function AuthPage() {
                                 <GoogleLogin
                                   text="signup_with"
                                   onSuccess={handleGoogleSuccess}
-                                  onError={() => setError("Google Login Failed")}
+                                  onError={() => {
+                                    console.error("Web Google Sign-up failed - check Authorized JavaScript origins in Google Cloud Console");
+                                    setError("Google Login Failed on Web. Please check Authorized Origins in Google Console or use Email OTP.");
+                                  }}
                                   useOneTap={false}
                                   theme="filled_blue"
                                   shape="pill"
