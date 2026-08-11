@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls", "delegate_permission/common.get_login_creds"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.loomus.loomus",
+      "sha256_cert_fingerprints": [
+        "09:14:57:82:FE:6C:C9:EC:2F:AF:66:3A:3C:A6:33:CB:D9:34:62:75:40:0A:12:A2:AE:52:23:AA:37:70:DF:58"
+      ]
+    }
+  }
+]
