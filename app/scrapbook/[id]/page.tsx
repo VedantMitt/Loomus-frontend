@@ -672,7 +672,7 @@ export default function ScrapbookStoryPage() {
       </div>
 
       {/* Add Snap Button (Available for all members) */}
-      {(
+      {(activity?.has_joined || activity?.host_id === myUserId) && (
         <div className="fixed bottom-24 right-6 z-50 flex items-end gap-2">
           <input type="file" accept="image/*" className="hidden" id="gal-scrapbook" onChange={e => { if(e.target.files?.[0]) handleQuickSnap(e.target.files[0], 'gallery'); }} />
           <button
