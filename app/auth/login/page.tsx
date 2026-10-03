@@ -405,299 +405,397 @@ export default function AuthPage() {
   );
 
   const subtitles: Record<Screen, string> = {
-    login: "Welcome back 👋",
-    register: profileCompletion ? "Almost there ✨" : "Create your account",
-    otp: "Check your email 📬",
-    forgot: "Reset your password 🔑",
-    reset: "Set new password 🔐",
+    login: "Welcome back",
+    register: profileCompletion ? "Almost there" : "Create your account",
+    otp: "Check your email",
+    forgot: "Reset your password",
+    reset: "Set new password",
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#0a0a0a",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        fontFamily: "'DM Sans', sans-serif",
-        padding: "24px 16px",
-      }}
-    >
+    <div className="auth-container">
+      {/* Aurora Fluid Gradient Background */}
+      <div className="aurora-bg"></div>
+
+      {/* Doodle Overlay */}
+      <div className="absolute inset-0 z-[1] pointer-events-none mix-blend-screen" style={{ backgroundImage: "url('/abstract_doodles.jpg')", backgroundSize: "900px", opacity: 0.05, filter: "invert(1)" }}></div>
+
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Syne:wght@600;700;800&family=Permanent+Marker&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        .auth-container {
+          min-height: 100vh;
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          font-family: 'DM Sans', sans-serif;
+          padding: 24px 16px;
+          position: relative;
+          overflow: hidden;
+          background: #0a0a0a; /* Dark mode background */
+        }
+
+        /* The Aurora Background */
+        .aurora-bg {
+          position: absolute;
+          top: -50%; left: -50%; width: 200%; height: 200%;
+          background: 
+            radial-gradient(circle at 50% 50%, rgba(255, 107, 107, 0.12), transparent 45%),
+            radial-gradient(circle at 80% 20%, rgba(77, 150, 255, 0.12), transparent 45%),
+            radial-gradient(circle at 20% 80%, rgba(255, 217, 61, 0.12), transparent 45%),
+            radial-gradient(circle at 10% 20%, rgba(168, 85, 247, 0.12), transparent 45%);
+          filter: blur(80px);
+          animation: aurora 25s infinite alternate ease-in-out;
+          z-index: 0;
+          pointer-events: none;
+        }
+
+        @keyframes aurora {
+          0% { transform: rotate(0deg) scale(1); }
+          50% { transform: rotate(180deg) scale(1.1); }
+          100% { transform: rotate(360deg) scale(1); }
+        }
 
         .auth-wrapper {
           width: 100%;
-          max-width: 380px;
-          animation: fadeSlideUp 0.4s ease-out;
+          max-width: 440px;
+          animation: fadeSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+          position: relative;
+          z-index: 10;
         }
 
         @keyframes fadeSlideUp {
-          from { opacity: 0; transform: translateY(12px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-6px); }
-          75% { transform: translateX(6px); }
+          from { opacity: 0; transform: translateY(30px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         .auth-card {
-          background: #111;
-          border: 1px solid #1e1e1e;
-          border-radius: 20px;
-          padding: 32px 28px;
+          background: rgba(10, 10, 10, 0.6);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 28px;
+          padding: 40px 32px;
           position: relative;
           overflow: hidden;
-        }
-        .auth-card::before {
-          content: '';
-          position: absolute;
-          top: -80px; left: -80px;
-          width: 200px; height: 200px;
-          background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%);
-          pointer-events: none;
-        }
-        .auth-card::after {
-          content: '';
-          position: absolute;
-          bottom: -80px; right: -80px;
-          width: 200px; height: 200px;
-          background: radial-gradient(circle, rgba(168,85,247,0.08) 0%, transparent 70%);
-          pointer-events: none;
+          box-shadow: 
+            0 24px 48px rgba(0, 0, 0, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1),
+            inset 0 -1px 0 rgba(255, 255, 255, 0.05);
         }
 
         .tab-row {
           display: flex;
-          background: #1a1a1a;
-          border-radius: 12px;
-          padding: 4px;
-          margin-bottom: 24px;
+          background: rgba(255, 255, 255, 0.03);
+          border-radius: 18px;
+          padding: 6px;
+          margin-bottom: 32px;
           position: relative;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
         }
         .tab {
           flex: 1;
-          padding: 10px;
+          padding: 12px;
           border: none;
-          border-radius: 9px;
+          border-radius: 14px;
           font-family: 'DM Sans', sans-serif;
-          font-size: 13px;
-          font-weight: 500;
+          font-size: 14px;
+          font-weight: 700;
           cursor: pointer;
           background: transparent;
-          color: #666;
-          transition: all 0.25s ease;
+          color: #aaa;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
           position: relative;
           z-index: 1;
         }
+        .tab:hover:not(.active) { color: #fff; }
         .tab.active {
-          background: linear-gradient(135deg, #1d4ed8, #2563eb);
+          background: rgba(255, 255, 255, 0.1);
           color: #fff;
-          box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.1);
         }
 
         .lbl {
           display: block;
-          font-size: 11px;
-          font-weight: 500;
-          color: #666;
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          margin-bottom: 6px;
+          font-size: 12px;
+          font-weight: 700;
+          color: #fff;
+          margin-bottom: 8px;
+          margin-left: 4px;
+          letter-spacing: 0.02em;
         }
         .inp {
           width: 100%;
-          background: #1a1a1a;
-          border: 1px solid #2a2a2a;
-          border-radius: 10px;
-          padding: 12px 14px;
-          color: #f0f0f0;
+          background: rgba(0, 0, 0, 0.4);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 16px;
+          padding: 16px;
+          color: #fff;
           font-family: 'DM Sans', sans-serif;
-          font-size: 14px;
+          font-size: 15px;
+          font-weight: 500;
           outline: none;
-          margin-bottom: 16px;
-          transition: border-color 0.2s, box-shadow 0.2s;
+          margin-bottom: 24px;
+          transition: all 0.3s ease;
+          box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
         }
         .inp:focus {
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+          background: rgba(0, 0, 0, 0.6);
+          border-color: rgba(96, 165, 250, 0.5);
+          box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.1), inset 0 2px 4px rgba(0,0,0,0.2);
+          transform: translateY(-1px);
         }
-        .inp::placeholder { color: #3a3a3a; }
+        .inp::placeholder { color: #666; font-weight: 400; }
 
-        .pw-wrap {
-          position: relative;
-          width: 100%;
-          margin-bottom: 16px;
-        }
-        .pw-wrap .inp {
-          padding-right: 42px;
-          margin-bottom: 0;
-        }
+        .pw-wrap { position: relative; width: 100%; margin-bottom: 24px; }
+        .pw-wrap .inp { padding-right: 42px; margin-bottom: 0; }
 
         .btn {
           width: 100%;
-          padding: 13px;
-          background: linear-gradient(135deg, #1d4ed8, #2563eb);
+          padding: 16px;
+          background: #2563eb;
           color: #fff;
-          border: none;
-          border-radius: 10px;
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 16px;
           font-family: 'DM Sans', sans-serif;
-          font-size: 14px;
-          font-weight: 600;
+          font-size: 15px;
+          font-weight: 700;
+          letter-spacing: 0.01em;
           cursor: pointer;
-          margin-top: 4px;
-          transition: all 0.2s ease;
+          margin-top: 8px;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
           position: relative;
           overflow: hidden;
+          box-shadow: 0 12px 24px rgba(37,99,235,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
         }
         .btn:hover {
-          background: linear-gradient(135deg, #1e40af, #1d4ed8);
-          box-shadow: 0 4px 12px rgba(37,99,235,0.35);
-          transform: translateY(-1px);
+          transform: translateY(-2px);
+          box-shadow: 0 16px 32px rgba(37,99,235,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+          background: #3b82f6;
         }
-        .btn:active { transform: scale(0.98) translateY(0); }
-        .btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-          transform: none !important;
-          box-shadow: none !important;
+        .btn:active { transform: translateY(0); box-shadow: 0 4px 12px rgba(37,99,235,0.2); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-4px); }
+          75% { transform: translateX(4px); }
         }
 
         .err {
-          background: rgba(239,68,68,0.08);
-          border: 1px solid rgba(239,68,68,0.2);
-          border-radius: 10px;
-          padding: 10px 14px;
-          color: #f87171;
+          background: rgba(255, 107, 107, 0.08);
+          border: 1px solid rgba(255, 107, 107, 0.2);
+          border-radius: 12px;
+          padding: 12px 16px;
+          color: #d32f2f;
+          font-weight: 500;
           font-size: 13px;
-          margin-bottom: 16px;
+          margin-bottom: 20px;
           animation: shake 0.3s ease;
-          display: flex;
-          align-items: center;
-          gap: 8px;
+          display: flex; align-items: center; gap: 8px;
         }
         .suc {
-          background: rgba(34,197,94,0.08);
-          border: 1px solid rgba(34,197,94,0.2);
-          border-radius: 10px;
-          padding: 10px 14px;
-          color: #4ade80;
+          background: rgba(74, 222, 128, 0.08);
+          border: 1px solid rgba(74, 222, 128, 0.2);
+          border-radius: 12px;
+          padding: 12px 16px;
+          color: #2e7d32;
+          font-weight: 500;
           font-size: 13px;
-          margin-bottom: 16px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
+          margin-bottom: 20px;
+          display: flex; align-items: center; gap: 8px;
         }
 
-        .foot {
-          text-align: center;
-          margin-top: 20px;
-          color: #555;
-          font-size: 12px;
-        }
+        .foot { text-align: center; margin-top: 24px; color: #777; font-size: 13px; font-weight: 500; }
         .link {
-          color: #60a5fa;
-          background: none;
-          border: none;
-          cursor: pointer;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 12px;
-          font-weight: 500;
-          transition: color 0.2s;
+          color: #111;
+          background: none; border: none; cursor: pointer;
+          font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+          text-decoration: underline; text-underline-offset: 4px;
+          transition: opacity 0.2s;
         }
-        .link:hover { color: #93c5fd; }
+        .link:hover { opacity: 0.7; }
 
         .divider {
           text-align: center;
-          margin: 20px 0;
-          color: #444;
-          font-size: 11px;
+          margin: 32px 0;
+          color: #aaa;
+          font-size: 12px;
+          font-weight: 700;
           position: relative;
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
         }
-        .divider span {
-          background: #111;
-          padding: 0 12px;
-          position: relative;
-          z-index: 1;
-        }
+        .divider span { background: rgba(0,0,0,0.6); padding: 0 16px; position: relative; z-index: 1; border-radius: 20px; backdrop-filter: blur(10px);}
         .divider::before {
-          content: '';
-          position: absolute;
-          top: 50%;
-          left: 0;
-          right: 0;
-          height: 1px;
-          background: linear-gradient(to right, transparent, #333, transparent);
+          content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px;
+          background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent);
         }
 
         .otp-input {
           width: 100%;
-          background: #1a1a1a;
-          border: 1px solid #2a2a2a;
-          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.7);
+          border: 1px solid rgba(255,255,255,0.9);
+          border-radius: 16px;
           padding: 16px;
-          color: #f0f0f0;
+          color: #111;
           font-family: 'DM Sans', sans-serif;
-          font-size: 28px;
-          font-weight: 600;
-          letter-spacing: 12px;
+          font-size: 32px;
+          font-weight: 700;
+          letter-spacing: 16px;
           text-align: center;
           outline: none;
-          margin-bottom: 16px;
-          transition: border-color 0.2s, box-shadow 0.2s;
+          margin-bottom: 24px;
+          transition: all 0.3s ease;
         }
         .otp-input:focus {
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+          background: #fff;
+          border-color: rgba(77, 150, 255, 0.5);
+          box-shadow: 0 0 0 4px rgba(77, 150, 255, 0.1);
         }
 
         .google-wrap {
-          display: flex;
-          justify-content: center;
-          border-radius: 10px;
-          overflow: hidden;
+          display: flex; justify-content: center;
+          transition: all 0.3s ease;
         }
+        .google-wrap:hover { transform: translateY(-1px); }
 
         .back-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          background: none;
-          border: none;
-          color: #555;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 13px;
-          cursor: pointer;
-          padding: 0;
-          margin-bottom: 20px;
-          transition: color 0.2s;
+          display: inline-flex; align-items: center; gap: 6px;
+          background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+          color: #aaa;
+          font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+          cursor: pointer; border-radius: 12px; padding: 8px 14px; margin-bottom: 24px;
+          transition: all 0.2s ease;
         }
-        .back-btn:hover { color: #aaa; }
+        .back-btn:hover { background: rgba(255,255,255,0.1); color: #fff; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+
+        /* Polaroid Elements */
+        .polaroid {
+          background: #fcf9f2; /* Authentic vintage cream */
+          padding: 8px 8px 24px 8px;
+          border: 1px solid #f0eee9;
+          border-radius: 4px;
+          box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+          backdrop-filter: blur(10px);
+          position: relative;
+        }
+        .polaroid-img {
+          width: 140px;
+          height: 140px;
+          background: #eee;
+          object-fit: cover;
+          border-radius: 2px;
+        }
+        .polaroid-caption {
+          margin-top: 8px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 9px;
+          font-weight: 700;
+          color: #999;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        @media (max-width: 768px) {
+          .polaroid {
+            padding: 6px 6px 18px 6px;
+          }
+          .polaroid-img {
+            width: 90px;
+            height: 90px;
+          }
+          .polaroid-caption {
+            font-size: 7px;
+            margin-top: 6px;
+          }
+        }
+        @keyframes sway-1 {
+          0%, 100% { transform: translateY(0) rotate(-10deg); }
+          50% { transform: translateY(-12px) rotate(-8deg); }
+        }
+        @keyframes sway-2 {
+          0%, 100% { transform: translateY(0) rotate(12deg); }
+          50% { transform: translateY(-15px) rotate(10deg); }
+        }
+        @keyframes sway-3 {
+          0%, 100% { transform: translateY(0) rotate(8deg); }
+          50% { transform: translateY(-10px) rotate(10deg); }
+        }
+        .polaroid-1 { animation: sway-1 10s ease-in-out infinite; }
+        .polaroid-2 { animation: sway-2 12s ease-in-out infinite; }
+        .polaroid-3 { animation: sway-3 11s ease-in-out infinite; }
       `}</style>
+
+      {/* Scrapbook Background Elements */}
+      <div className="absolute top-[8%] left-[2%] md:top-[15%] md:left-[8%] z-[5] polaroid-1">
+        <div className="polaroid">
+          <img className="polaroid-img" src="/polaroid1.jpg" alt="Memory" />
+          <div className="polaroid-caption">
+            <span>DELHI, IND</span>
+            <span>02:30 PM</span>
+          </div>
+        </div>
+      </div>
+      <div className="absolute bottom-[10%] left-[4%] md:bottom-[15%] md:left-[12%] z-[5] polaroid-2">
+        <div className="polaroid">
+          <img className="polaroid-img" src="/polaroid2.jpg" alt="Memory" />
+          <div className="polaroid-caption">
+            <span>UTTARAKHAND, IND</span>
+            <span>11:45 PM</span>
+          </div>
+        </div>
+      </div>
+      <div className="absolute top-[20%] right-[2%] md:top-[25%] md:right-[10%] z-[5] polaroid-3">
+        <div className="polaroid">
+          <img className="polaroid-img" src="/polaroid3.jpg" alt="Memory" />
+          <div className="polaroid-caption">
+            <span>PUNE, IND</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+              <span>08:15 AM</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" strokeWidth="3" style={{ opacity: 0.6 }}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="absolute bottom-[15%] right-[2%] md:bottom-[20%] md:right-[15%] z-[5] polaroid-1" style={{ animationDelay: '2s' }}>
+        <div className="polaroid">
+          <img className="polaroid-img" src="/polaroid4.jpg" alt="Memory" />
+          <div className="polaroid-caption">
+            <span>GOA, IND</span>
+            <span>05:20 PM</span>
+          </div>
+        </div>
+      </div>
 
       <div className="auth-wrapper" key={screen}>
         {/* Logo */}
-        <div style={{ marginBottom: "28px", textAlign: "center" }}>
-          <div
-            style={{
-              fontFamily: "'Syne', sans-serif",
-              fontSize: "28px",
-              fontWeight: 800,
-              color: "#fff",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Loom<span style={{ color: "#3b82f6" }}>us</span>
+        <div style={{ marginBottom: "36px", display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
+
+          <div style={{ position: "relative", display: "inline-block", margin: "10px 0" }}>
+            <div
+              style={{
+                fontFamily: "'Syne', sans-serif",
+                fontSize: "40px",
+                fontWeight: 800,
+                letterSpacing: "-0.04em",
+                lineHeight: 1,
+                position: "relative",
+                zIndex: 2,
+                textShadow: "0 8px 24px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.9)"
+              }}
+            >
+              <span style={{ color: "#fcf9f2" }}>Loom</span>
+              <span style={{ color: "#60a5fa" }}>us</span>
+            </div>
           </div>
-          <p style={{ color: "#555", fontSize: "13px", marginTop: "6px" }}>
-            {subtitles[screen]}
-          </p>
+          <div style={{ marginTop: "12px" }}>
+            <p className="inline-block" style={{ color: "#e2e8f0", fontSize: "14px", fontWeight: 700, background: "rgba(0,0,0,0.4)", padding: "6px 14px", borderRadius: "16px", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
+              {subtitles[screen]}
+            </p>
+          </div>
         </div>
 
         <div className="auth-card">
@@ -707,10 +805,10 @@ export default function AuthPage() {
               <button className="back-btn" onClick={() => { setScreen("register"); setOtp(""); }}>
                 ← Back
               </button>
-              <p style={{ color: "#888", fontSize: "13px", marginBottom: "20px", textAlign: "center" }}>
+              <p style={{ color: "#666", fontSize: "14px", fontWeight: 700, marginBottom: "20px", textAlign: "center" }}>
                 We sent a 6-digit code to
                 <br />
-                <span style={{ color: "#f0f0f0", fontWeight: 500 }}>{pendingEmail}</span>
+                <span style={{ color: "#1A1A1A", fontWeight: 800 }}>{pendingEmail}</span>
               </p>
               {error && <div className="err">⚠ {error}</div>}
               <label className="lbl">Enter OTP</label>
@@ -762,8 +860,8 @@ export default function AuthPage() {
               <button className="back-btn" onClick={() => setScreen("forgot")}>
                 ← Back
               </button>
-              <p style={{ color: "#888", fontSize: "13px", marginBottom: "20px", textAlign: "center" }}>
-                Enter the code sent to <span style={{ color: "#f0f0f0", fontWeight: 500 }}>{forgotEmail}</span>
+              <p style={{ color: "#666", fontSize: "14px", fontWeight: 700, marginBottom: "20px", textAlign: "center" }}>
+                Enter the code sent to <span style={{ color: "#1A1A1A", fontWeight: 800 }}>{forgotEmail}</span>
               </p>
               {error && <div className="err">⚠ {error}</div>}
               {success && <div className="suc">✓ {success}</div>}
@@ -843,12 +941,12 @@ export default function AuthPage() {
                         </>
                       ) : (
                         <>
-                          <button 
-                            className="btn" 
-                            style={{ background: "#fff", color: "#333", marginBottom: "4px", display: "flex", justifyContent: "center", alignItems: "center", gap: "10px" }} 
+                          <button
+                            className="btn"
+                            style={{ background: "#fff", color: "#1A1A1A", marginBottom: "4px", display: "flex", justifyContent: "center", alignItems: "center", gap: "10px" }}
                             onClick={handleNativeGoogleLogin}
                           >
-                            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" /><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" /><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" /><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" /></svg>
                             Continue with Google
                           </button>
                           <div className="divider"><span>or continue with email</span></div>
@@ -876,8 +974,8 @@ export default function AuthPage() {
                       <button className="back-btn" onClick={() => setLoginStep(1)}>
                         ← Back
                       </button>
-                      <p style={{ color: "#888", fontSize: "13px", marginBottom: "20px", textAlign: "center" }}>
-                        Signing in as <span style={{ color: "#f0f0f0", fontWeight: 500 }}>{loginIdentifier}</span>
+                      <p style={{ color: "#666", fontSize: "14px", fontWeight: 700, marginBottom: "20px", textAlign: "center" }}>
+                        Signing in as <span style={{ color: "#1A1A1A", fontWeight: 800 }}>{loginIdentifier}</span>
                       </p>
                       <label className="lbl">Password</label>
                       <div className="pw-wrap">
@@ -910,7 +1008,7 @@ export default function AuthPage() {
                 <>
                   {profileCompletion ? (
                     <>
-                      <p style={{ color: "#888", fontSize: "13px", marginBottom: "20px", textAlign: "center" }}>
+                      <p style={{ color: "#666", fontSize: "14px", fontWeight: 700, marginBottom: "20px", textAlign: "center" }}>
                         Pick your username to finish setup.
                       </p>
                       <label className="lbl">Username</label>
@@ -953,12 +1051,12 @@ export default function AuthPage() {
                             </>
                           ) : (
                             <>
-                              <button 
-                                className="btn" 
-                                style={{ background: "#fff", color: "#333", marginBottom: "4px", display: "flex", justifyContent: "center", alignItems: "center", gap: "10px" }} 
+                              <button
+                                className="btn"
+                                style={{ background: "#fff", color: "#1A1A1A", marginBottom: "4px", display: "flex", justifyContent: "center", alignItems: "center", gap: "10px" }}
                                 onClick={handleNativeGoogleLogin}
                               >
-                                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" /><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" /><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" /><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" /></svg>
                                 Continue with Google
                               </button>
                               <div className="divider"><span>or continue with email</span></div>
@@ -995,7 +1093,7 @@ export default function AuthPage() {
                           <button className="back-btn" onClick={() => setRegStep(1)}>
                             ← Back
                           </button>
-                          <p style={{ color: "#888", fontSize: "13px", marginBottom: "20px", textAlign: "center" }}>
+                          <p style={{ color: "#666", fontSize: "14px", fontWeight: 700, marginBottom: "20px", textAlign: "center" }}>
                             Let&apos;s pick a username
                           </p>
                           <label className="lbl">Username</label>
@@ -1019,7 +1117,7 @@ export default function AuthPage() {
                           <button className="back-btn" onClick={() => setRegStep(2)}>
                             ← Back
                           </button>
-                          <p style={{ color: "#888", fontSize: "13px", marginBottom: "20px", textAlign: "center" }}>
+                          <p style={{ color: "#666", fontSize: "14px", fontWeight: 700, marginBottom: "20px", textAlign: "center" }}>
                             Create a secure password
                           </p>
                           <label className="lbl">Password</label>
@@ -1048,16 +1146,7 @@ export default function AuthPage() {
           )}
         </div>
 
-        <p
-          style={{
-            color: "#333",
-            fontSize: "11px",
-            marginTop: "24px",
-            textAlign: "center",
-          }}
-        >
-          Welcome to Loomus ✨
-        </p>
+
       </div>
     </div>
   );

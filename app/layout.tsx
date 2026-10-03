@@ -39,7 +39,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body suppressHydrationWarning>
+      <body className="bg-[#fdfdfd] text-[#111] antialiased min-h-screen relative" suppressHydrationWarning>
         <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "179896098236-k92cj68fkliirf291ruuu6sk6rp1e7q4.apps.googleusercontent.com"}>
           <RoomProvider>
             <AuthGuard>
