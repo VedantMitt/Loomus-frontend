@@ -1,0 +1,257 @@
+<!DOCTYPE html><!--6LRdB9_v_loX_XLwCIqd6--><html lang="en"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"/><link rel="stylesheet" href="/_next/static/chunks/9abf4e83d9291e34.css" data-precedence="next"/><link rel="preload" as="script" fetchPriority="low" href="/_next/static/chunks/a513b75599563a36.js"/><script src="/_next/static/chunks/82abf2d65f5428ae.js" async=""></script><script src="/_next/static/chunks/dde2c8e6322d1671.js" async=""></script><script src="/_next/static/chunks/c795c17f69be8184.js" async=""></script><script src="/_next/static/chunks/turbopack-649dfccb0490f6d8.js" async=""></script><script src="/_next/static/chunks/5c2175fda35f3c4c.js" async=""></script><script src="/_next/static/chunks/1c4c86565bd4fe57.js" async=""></script><script src="/_next/static/chunks/ff1a16fafef87110.js" async=""></script><script src="/_next/static/chunks/d2be314c3ece3fbe.js" async=""></script><script src="/_next/static/chunks/6ea7a480dca0e9e3.js" async=""></script><title>Loomus</title><meta name="description" content="Connect with your campus community"/><link rel="icon" href="/favicon.ico?favicon.0b3bf435.ico" sizes="256x256" type="image/x-icon"/><script src="/_next/static/chunks/a6dad97d9634a72d.js" noModule=""></script></head><body><div hidden=""><!--$--><!--/$--></div><div style="position:relative"><div style="position:absolute;top:0;left:0;right:0;height:0px;z-index:900;display:flex;justify-content:center;align-items:center;pointer-events:none;opacity:0;transition:height 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.2), opacity 0.3s;overflow:hidden"><div style="display:flex;justify-content:center;align-items:center;color:rgba(255,255,255,0.7);transform:scale(0) rotate(0deg);animation:none"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"></path></svg><style>
+            @keyframes ptr-spin { 100% { transform: rotate(360deg); } }
+          </style></div></div><div style="padding-top:0px;transition:padding-top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.2);min-height:100vh;position:relative;z-index:10"><div class="min-h-screen bg-black text-white flex items-center justify-center"><div style="min-height:100vh;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:&#x27;DM Sans&#x27;, sans-serif;padding:24px 16px"><style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@700;800&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        .auth-wrapper {
+          width: 100%;
+          max-width: 380px;
+          animation: fadeSlideUp 0.4s ease-out;
+        }
+
+        @keyframes fadeSlideUp {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-6px); }
+          75% { transform: translateX(6px); }
+        }
+
+        .auth-card {
+          background: #111;
+          border: 1px solid #1e1e1e;
+          border-radius: 20px;
+          padding: 32px 28px;
+          position: relative;
+          overflow: hidden;
+        }
+        .auth-card::before {
+          content: '';
+          position: absolute;
+          top: -80px; left: -80px;
+          width: 200px; height: 200px;
+          background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%);
+          pointer-events: none;
+        }
+        .auth-card::after {
+          content: '';
+          position: absolute;
+          bottom: -80px; right: -80px;
+          width: 200px; height: 200px;
+          background: radial-gradient(circle, rgba(168,85,247,0.08) 0%, transparent 70%);
+          pointer-events: none;
+        }
+
+        .tab-row {
+          display: flex;
+          background: #1a1a1a;
+          border-radius: 12px;
+          padding: 4px;
+          margin-bottom: 24px;
+          position: relative;
+        }
+        .tab {
+          flex: 1;
+          padding: 10px;
+          border: none;
+          border-radius: 9px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          font-weight: 500;
+          cursor: pointer;
+          background: transparent;
+          color: #666;
+          transition: all 0.25s ease;
+          position: relative;
+          z-index: 1;
+        }
+        .tab.active {
+          background: linear-gradient(135deg, #1d4ed8, #2563eb);
+          color: #fff;
+          box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+        }
+
+        .lbl {
+          display: block;
+          font-size: 11px;
+          font-weight: 500;
+          color: #666;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          margin-bottom: 6px;
+        }
+        .inp {
+          width: 100%;
+          background: #1a1a1a;
+          border: 1px solid #2a2a2a;
+          border-radius: 10px;
+          padding: 12px 14px;
+          color: #f0f0f0;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 14px;
+          outline: none;
+          margin-bottom: 16px;
+          transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .inp:focus {
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+        .inp::placeholder { color: #3a3a3a; }
+
+        .pw-wrap {
+          position: relative;
+          width: 100%;
+          margin-bottom: 16px;
+        }
+        .pw-wrap .inp {
+          padding-right: 42px;
+          margin-bottom: 0;
+        }
+
+        .btn {
+          width: 100%;
+          padding: 13px;
+          background: linear-gradient(135deg, #1d4ed8, #2563eb);
+          color: #fff;
+          border: none;
+          border-radius: 10px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          margin-top: 4px;
+          transition: all 0.2s ease;
+          position: relative;
+          overflow: hidden;
+        }
+        .btn:hover {
+          background: linear-gradient(135deg, #1e40af, #1d4ed8);
+          box-shadow: 0 4px 12px rgba(37,99,235,0.35);
+          transform: translateY(-1px);
+        }
+        .btn:active { transform: scale(0.98) translateY(0); }
+        .btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          transform: none !important;
+          box-shadow: none !important;
+        }
+
+        .err {
+          background: rgba(239,68,68,0.08);
+          border: 1px solid rgba(239,68,68,0.2);
+          border-radius: 10px;
+          padding: 10px 14px;
+          color: #f87171;
+          font-size: 13px;
+          margin-bottom: 16px;
+          animation: shake 0.3s ease;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .suc {
+          background: rgba(34,197,94,0.08);
+          border: 1px solid rgba(34,197,94,0.2);
+          border-radius: 10px;
+          padding: 10px 14px;
+          color: #4ade80;
+          font-size: 13px;
+          margin-bottom: 16px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .foot {
+          text-align: center;
+          margin-top: 20px;
+          color: #555;
+          font-size: 12px;
+        }
+        .link {
+          color: #60a5fa;
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 12px;
+          font-weight: 500;
+          transition: color 0.2s;
+        }
+        .link:hover { color: #93c5fd; }
+
+        .divider {
+          text-align: center;
+          margin: 20px 0;
+          color: #444;
+          font-size: 11px;
+          position: relative;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+        }
+        .divider span {
+          background: #111;
+          padding: 0 12px;
+          position: relative;
+          z-index: 1;
+        }
+        .divider::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 0;
+          right: 0;
+          height: 1px;
+          background: linear-gradient(to right, transparent, #333, transparent);
+        }
+
+        .otp-input {
+          width: 100%;
+          background: #1a1a1a;
+          border: 1px solid #2a2a2a;
+          border-radius: 10px;
+          padding: 16px;
+          color: #f0f0f0;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 28px;
+          font-weight: 600;
+          letter-spacing: 12px;
+          text-align: center;
+          outline: none;
+          margin-bottom: 16px;
+          transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .otp-input:focus {
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        .google-wrap {
+          display: flex;
+          justify-content: center;
+          border-radius: 10px;
+          overflow: hidden;
+        }
+
+        .back-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: none;
+          border: none;
+          color: #555;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          cursor: pointer;
+          padding: 0;
+          margin-bottom: 20px;
+          transition: color 0.2s;
+        }
+        .back-btn:hover { color: #aaa; }
+      </style><div class="auth-wrapper"><div style="margin-bottom:28px;text-align:center"><div style="font-family:&#x27;Syne&#x27;, sans-serif;font-size:28px;font-weight:800;color:#fff;letter-spacing:-0.02em">Loom<span style="color:#3b82f6">us</span></div><p style="color:#555;font-size:13px;margin-top:6px">Welcome back 👋</p></div><div class="auth-card"><div class="tab-row"><button class="tab active">Sign In</button><button class="tab ">Sign Up</button></div><div class="google-wrap" style="margin-bottom:4px"><div style="height:40px"></div></div><div class="divider"><span>or continue with email</span></div><label class="lbl">Email or Username</label><input class="inp" type="text" placeholder="email or username" value=""/><button class="btn">Continue →</button></div><p style="color:#333;font-size:11px;margin-top:24px;text-align:center">Welcome to Loomus ✨</p></div></div><!--$--><!--/$--></div></div></div><script src="/_next/static/chunks/a513b75599563a36.js" id="_R_" async=""></script><script>(self.__next_f=self.__next_f||[]).push([0])</script><script>self.__next_f.push([1,"1:\"$Sreact.fragment\"\n2:I[93936,[\"/_next/static/chunks/5c2175fda35f3c4c.js\",\"/_next/static/chunks/1c4c86565bd4fe57.js\"],\"GoogleOAuthProvider\"]\n3:I[78534,[\"/_next/static/chunks/5c2175fda35f3c4c.js\",\"/_next/static/chunks/1c4c86565bd4fe57.js\"],\"RoomProvider\"]\n4:I[62319,[\"/_next/static/chunks/5c2175fda35f3c4c.js\",\"/_next/static/chunks/1c4c86565bd4fe57.js\"],\"default\"]\n5:I[88585,[\"/_next/static/chunks/5c2175fda35f3c4c.js\",\"/_next/static/chunks/1c4c86565bd4fe57.js\"],\"default\"]\n6:I[39756,[\"/_next/static/chunks/ff1a16fafef87110.js\",\"/_next/static/chunks/d2be314c3ece3fbe.js\"],\"default\"]\n7:I[37457,[\"/_next/static/chunks/ff1a16fafef87110.js\",\"/_next/static/chunks/d2be314c3ece3fbe.js\"],\"default\"]\n8:I[32119,[\"/_next/static/chunks/5c2175fda35f3c4c.js\",\"/_next/static/chunks/1c4c86565bd4fe57.js\"],\"default\"]\n9:I[47257,[\"/_next/static/chunks/ff1a16fafef87110.js\",\"/_next/static/chunks/d2be314c3ece3fbe.js\"],\"ClientPageRoot\"]\na:I[87942,[\"/_next/static/chunks/5c2175fda35f3c4c.js\",\"/_next/static/chunks/1c4c86565bd4fe57.js\",\"/_next/static/chunks/6ea7a480dca0e9e3.js\"],\"default\"]\nd:I[97367,[\"/_next/static/chunks/ff1a16fafef87110.js\",\"/_next/static/chunks/d2be314c3ece3fbe.js\"],\"OutletBoundary\"]\ne:\"$Sreact.suspense\"\n10:I[97367,[\"/_next/static/chunks/ff1a16fafef87110.js\",\"/_next/static/chunks/d2be314c3ece3fbe.js\"],\"ViewportBoundary\"]\n12:I[97367,[\"/_next/static/chunks/ff1a16fafef87110.js\",\"/_next/static/chunks/d2be314c3ece3fbe.js\"],\"MetadataBoundary\"]\n14:I[68027,[],\"default\"]\n:HL[\"/_next/static/chunks/9abf4e83d9291e34.css\",\"style\"]\n"])</script><script>self.__next_f.push([1,"0:{\"P\":null,\"b\":\"6LRdB9_v-loX-XLwCIqd6\",\"c\":[\"\",\"auth\",\"login\"],\"q\":\"\",\"i\":false,\"f\":[[[\"\",{\"children\":[\"auth\",{\"children\":[\"login\",{\"children\":[\"__PAGE__\",{}]}]}]},\"$undefined\",\"$undefined\",true],[[\"$\",\"$1\",\"c\",{\"children\":[[[\"$\",\"link\",\"0\",{\"rel\":\"stylesheet\",\"href\":\"/_next/static/chunks/9abf4e83d9291e34.css\",\"precedence\":\"next\",\"crossOrigin\":\"$undefined\",\"nonce\":\"$undefined\"}],[\"$\",\"script\",\"script-0\",{\"src\":\"/_next/static/chunks/5c2175fda35f3c4c.js\",\"async\":true,\"nonce\":\"$undefined\"}],[\"$\",\"script\",\"script-1\",{\"src\":\"/_next/static/chunks/1c4c86565bd4fe57.js\",\"async\":true,\"nonce\":\"$undefined\"}]],[\"$\",\"html\",null,{\"lang\":\"en\",\"suppressHydrationWarning\":true,\"children\":[\"$\",\"body\",null,{\"suppressHydrationWarning\":true,\"children\":[\"$\",\"$L2\",null,{\"clientId\":\"\",\"children\":[\"$\",\"$L3\",null,{\"children\":[[\"$\",\"$L4\",null,{}],[\"$\",\"$L5\",null,{\"children\":[\"$\",\"$L6\",null,{\"parallelRouterKey\":\"children\",\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L7\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":[[[\"$\",\"title\",null,{\"children\":\"404: This page could not be found.\"}],[\"$\",\"div\",null,{\"style\":{\"fontFamily\":\"system-ui,\\\"Segoe UI\\\",Roboto,Helvetica,Arial,sans-serif,\\\"Apple Color Emoji\\\",\\\"Segoe UI Emoji\\\"\",\"height\":\"100vh\",\"textAlign\":\"center\",\"display\":\"flex\",\"flexDirection\":\"column\",\"alignItems\":\"center\",\"justifyContent\":\"center\"},\"children\":[\"$\",\"div\",null,{\"children\":[[\"$\",\"style\",null,{\"dangerouslySetInnerHTML\":{\"__html\":\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\"}}],[\"$\",\"h1\",null,{\"className\":\"next-error-h1\",\"style\":{\"display\":\"inline-block\",\"margin\":\"0 20px 0 0\",\"padding\":\"0 23px 0 0\",\"fontSize\":24,\"fontWeight\":500,\"verticalAlign\":\"top\",\"lineHeight\":\"49px\"},\"children\":404}],[\"$\",\"div\",null,{\"style\":{\"display\":\"inline-block\"},\"children\":[\"$\",\"h2\",null,{\"style\":{\"fontSize\":14,\"fontWeight\":400,\"lineHeight\":\"49px\",\"margin\":0},\"children\":\"This page could not be found.\"}]}]]}]}]],[]],\"forbidden\":\"$undefined\",\"unauthorized\":\"$undefined\"}]}],[\"$\",\"$L8\",null,{}]]}]}]}]}]]}],{\"children\":[[\"$\",\"$1\",\"c\",{\"children\":[null,[\"$\",\"div\",null,{\"className\":\"min-h-screen bg-black text-white flex items-center justify-center\",\"children\":[\"$\",\"$L6\",null,{\"parallelRouterKey\":\"children\",\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L7\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":\"$undefined\",\"forbidden\":\"$undefined\",\"unauthorized\":\"$undefined\"}]}]]}],{\"children\":[[\"$\",\"$1\",\"c\",{\"children\":[null,[\"$\",\"$L6\",null,{\"parallelRouterKey\":\"children\",\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L7\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":\"$undefined\",\"forbidden\":\"$undefined\",\"unauthorized\":\"$undefined\"}]]}],{\"children\":[[\"$\",\"$1\",\"c\",{\"children\":[[\"$\",\"$L9\",null,{\"Component\":\"$a\",\"serverProvidedParams\":{\"searchParams\":{},\"params\":{},\"promises\":[\"$@b\",\"$@c\"]}}],[[\"$\",\"script\",\"script-0\",{\"src\":\"/_next/static/chunks/6ea7a480dca0e9e3.js\",\"async\":true,\"nonce\":\"$undefined\"}]],[\"$\",\"$Ld\",null,{\"children\":[\"$\",\"$e\",null,{\"name\":\"Next.MetadataOutlet\",\"children\":\"$@f\"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],[\"$\",\"$1\",\"h\",{\"children\":[null,[\"$\",\"$L10\",null,{\"children\":\"$L11\"}],[\"$\",\"div\",null,{\"hidden\":true,\"children\":[\"$\",\"$L12\",null,{\"children\":[\"$\",\"$e\",null,{\"name\":\"Next.Metadata\",\"children\":\"$L13\"}]}]}],null]}],false]],\"m\":\"$undefined\",\"G\":[\"$14\",[]],\"S\":true}\n"])</script><script>self.__next_f.push([1,"b:{}\nc:\"$0:f:0:1:1:children:1:children:1:children:0:props:children:0:props:serverProvidedParams:params\"\n"])</script><script>self.__next_f.push([1,"11:[[\"$\",\"meta\",\"0\",{\"charSet\":\"utf-8\"}],[\"$\",\"meta\",\"1\",{\"name\":\"viewport\",\"content\":\"width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover\"}]]\n"])</script><script>self.__next_f.push([1,"15:I[27201,[\"/_next/static/chunks/ff1a16fafef87110.js\",\"/_next/static/chunks/d2be314c3ece3fbe.js\"],\"IconMark\"]\nf:null\n13:[[\"$\",\"title\",\"0\",{\"children\":\"Loomus\"}],[\"$\",\"meta\",\"1\",{\"name\":\"description\",\"content\":\"Connect with your campus community\"}],[\"$\",\"link\",\"2\",{\"rel\":\"icon\",\"href\":\"/favicon.ico?favicon.0b3bf435.ico\",\"sizes\":\"256x256\",\"type\":\"image/x-icon\"}],[\"$\",\"$L15\",\"3\",{}]]\n"])</script></body></html>

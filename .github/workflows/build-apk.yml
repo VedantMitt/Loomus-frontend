@@ -1,0 +1,60 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Create Assets Directory
+        run: mkdir -p android/app/src/main/assets
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Build Android APK
+        working-directory: ./android
+        run: |
+          sudo apt-get update && sudo apt-get install -y dos2unix
+          dos2unix ./gradlew
+          chmod +x ./gradlew
+          ./gradlew assembleDebug
+          echo "Finding APK files:"
+          find . -name "*.apk"
+
+      - name: Upload Gradle Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-logs
+          path: android/gradle_output.txt
+
+      - name: Upload APK
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: '**/*.apk'

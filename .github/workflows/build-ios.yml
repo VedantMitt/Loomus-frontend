@@ -1,0 +1,77 @@
+name: Build iOS App
+
+on:
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build iOS (Simulator & Package)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Build Web App
+        run: npm run build:mobile
+
+      - name: Sync Capacitor iOS
+        run: npx cap sync ios
+
+      - name: Build iOS App
+        working-directory: ./ios/App
+        run: |
+          if [ -d "App.xcworkspace" ]; then
+            XCODE_TARGET="-workspace App.xcworkspace"
+          else
+            XCODE_TARGET="-project App.xcodeproj"
+          fi
+
+          echo "Building with $XCODE_TARGET..."
+          xcodebuild $XCODE_TARGET \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath ./DerivedData \
+            build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: Package iOS App & Simulator Bundle
+        working-directory: ./ios/App
+        run: |
+          APP_PATH=$(find ./DerivedData -name "App.app" -type d | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: App.app was not found!"
+            exit 1
+          fi
+          echo "Found App bundle at: $APP_PATH"
+
+          # Package 1: Simulator ZIP
+          mkdir -p ../../dist-ios
+          zip -r ../../dist-ios/Loomus-iOS-Simulator.zip "$APP_PATH"
+
+          # Package 2: Unsigned IPA Payload (Payload/App.app)
+          mkdir -p ./Payload
+          cp -R "$APP_PATH" ./Payload/
+          zip -r ../../dist-ios/Loomus-iOS-Unsigned.ipa ./Payload
+          rm -rf ./Payload
+
+      - name: Upload iOS App Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Loomus-iOS-Build
+          path: dist-ios/
+
