@@ -178,8 +178,16 @@ export default function ActivitiesPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [userPreferences, setUserPreferences] = useState<string[]>([]);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const [userLocation, setUserLocation] = useState<string>("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setInitialLoading(false);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const stored = localStorage.getItem("global_location");
@@ -890,6 +898,18 @@ export default function ActivitiesPage() {
         }
       `}</style>
 
+      {initialLoading ? (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
+          <img src="/logo.png" alt="Loomus Logo" style={{ width: 120, height: 120, animation: 'pulse 1.5s infinite', filter: 'drop-shadow(0 0 30px rgba(192, 132, 252, 0.4))' }} />
+          <style>{`
+            @keyframes pulse {
+              0% { transform: scale(0.95); opacity: 0.8; }
+              50% { transform: scale(1.05); opacity: 1; }
+              100% { transform: scale(0.95); opacity: 0.8; }
+            }
+          `}</style>
+        </div>
+      ) : (
       <main className="exp-container">
 
         <div className="exp-tabs">
@@ -1263,6 +1283,7 @@ export default function ActivitiesPage() {
           </div>
         )}
       </main>
+      )}
     </div>
   );
 }
