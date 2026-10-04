@@ -900,7 +900,9 @@ export default function ActivitiesPage() {
 
       {initialLoading ? (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
-          <img src="/logo-removebg.png" alt="Loomus Logo" style={{ width: 180, height: 'auto', animation: 'pulseLogo 1.5s ease-in-out infinite alternate', filter: 'drop-shadow(0 0 20px rgba(192, 132, 252, 0.3))' }} />
+          <div style={{ transform: 'translateY(-10vh)' }}>
+            <img src="/logo-removebg.png" alt="Loomus Logo" style={{ width: 180, height: 'auto', animation: 'pulseLogo 1.5s ease-in-out infinite alternate', filter: 'drop-shadow(0 0 20px rgba(192, 132, 252, 0.3))' }} />
+          </div>
           <style>{`
             @keyframes pulseLogo {
               0% { transform: scale(0.95); opacity: 0.8; }
