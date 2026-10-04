@@ -162,44 +162,6 @@ const EXPERIENCE_CATEGORIES = [
   },
 ];
 
-const TOP_LIVE_EVENTS = [
-  {
-    id: "live_1",
-    title: "Karan Aujla Concert",
-    location: "JLN Stadium, Delhi",
-    time: "Starting in 30 mins",
-    type: "Concert",
-    image: "https://images.unsplash.com/photo-1540039155733-d7696d4eb959?w=600&h=400&fit=crop",
-    gradient: "rgba(255, 65, 108, 0.4)",
-  },
-  {
-    id: "live_2",
-    title: "Standup Comedy Open Mic",
-    location: "Hauz Khas Social",
-    time: "Live Now",
-    type: "Comedy",
-    image: "https://images.unsplash.com/photo-1585699324551-f6c309eedeca?w=600&h=400&fit=crop",
-    gradient: "rgba(17, 153, 142, 0.4)",
-  },
-  {
-    id: "live_3",
-    title: "Street Dance Battle",
-    location: "Connaught Place",
-    time: "8:00 PM",
-    type: "Dance",
-    image: "https://images.unsplash.com/photo-1535592201833-53b47814b7e8?w=600&h=400&fit=crop",
-    gradient: "rgba(142, 45, 226, 0.4)",
-  },
-  {
-    id: "live_4",
-    title: "Midnight Run Fest",
-    location: "India Gate",
-    time: "11:30 PM",
-    type: "Fitness",
-    image: "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=600&h=400&fit=crop",
-    gradient: "rgba(0, 210, 255, 0.4)",
-  },
-];
 
 export default function ActivitiesPage() {
   const router = useRouter();
@@ -207,7 +169,7 @@ export default function ActivitiesPage() {
   const [myPlans, setMyPlans] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(false);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
-  const [topEvents, setTopEvents] = useState<any[]>(TOP_LIVE_EVENTS);
+  const [topEvents, setTopEvents] = useState<any[]>([]);
   const [hobbyMeetups, setHobbyMeetups] = useState<Activity[]>([]);
   const [publicPlans, setPublicPlans] = useState<Activity[]>([]);
   const [myUserId, setMyUserId] = useState<string | null>(null);
@@ -328,10 +290,10 @@ export default function ActivitiesPage() {
             return;
           }
         }
-        setTopEvents(TOP_LIVE_EVENTS);
+        setTopEvents([]);
       } catch (err) {
         console.error("Failed to fetch AI hot events", err);
-        setTopEvents(TOP_LIVE_EVENTS);
+        setTopEvents([]);
       }
     };
     fetchHotEvents();

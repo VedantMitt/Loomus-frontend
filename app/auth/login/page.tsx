@@ -672,7 +672,7 @@ export default function AuthPage() {
 
         /* Polaroid Elements */
         .polaroid {
-          background: #fcf9f2; /* Authentic vintage cream */
+          background: #e9dec5ff; /* Authentic vintage cream */
           padding: 8px 8px 24px 8px;
           border: 1px solid #f0eee9;
           border-radius: 4px;
@@ -974,8 +974,8 @@ export default function AuthPage() {
                       <button className="back-btn" onClick={() => setLoginStep(1)}>
                         ← Back
                       </button>
-                      <p style={{ color: "#666", fontSize: "14px", fontWeight: 700, marginBottom: "20px", textAlign: "center" }}>
-                        Signing in as <span style={{ color: "#1A1A1A", fontWeight: 800 }}>{loginIdentifier}</span>
+                      <p style={{ color: "#ffffff", fontSize: "14px", fontWeight: 700, marginBottom: "20px", textAlign: "center" }}>
+                        Signing in as <span style={{ color: "#60a5fa", fontWeight: 800 }}>{loginIdentifier}</span>
                       </p>
                       <label className="lbl">Password</label>
                       <div className="pw-wrap">
@@ -994,7 +994,7 @@ export default function AuthPage() {
                         {loading ? "Signing in..." : "Sign In →"}
                       </button>
                       <div className="foot">
-                        <button className="link" onClick={() => setScreen("forgot")}>
+                        <button className="link" style={{ color: "#ffffff" }} onClick={() => setScreen("forgot")}>
                           Forgot password?
                         </button>
                       </div>
