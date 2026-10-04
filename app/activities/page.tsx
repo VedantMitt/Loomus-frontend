@@ -899,37 +899,12 @@ export default function ActivitiesPage() {
       `}</style>
 
       {initialLoading ? (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
-          <div style={{ 
-            fontFamily: "'Syne', sans-serif", 
-            fontSize: '48px', 
-            fontWeight: 800, 
-            letterSpacing: '-0.04em',
-            display: 'flex',
-            alignItems: 'center'
-          }}>
-            <span style={{ 
-              background: 'linear-gradient(135deg, #c084fc 0%, #f472b6 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              fontSize: '64px',
-              animation: 'glow 1.5s ease-in-out infinite alternate',
-              paddingRight: '2px'
-            }}>L</span>
-            <span style={{ 
-              color: '#ffffff',
-              animation: 'pulse 1.5s ease-in-out infinite' 
-            }}>oomus</span>
-          </div>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
+          <img src="/logo-removebg.png" alt="Loomus Logo" style={{ width: 180, height: 'auto', animation: 'pulseLogo 1.5s ease-in-out infinite alternate', filter: 'drop-shadow(0 0 20px rgba(192, 132, 252, 0.3))' }} />
           <style>{`
-            @keyframes glow {
-              0% { filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.4)); transform: scale(0.98); }
-              100% { filter: drop-shadow(0 0 24px rgba(244, 114, 182, 0.8)); transform: scale(1.05); }
-            }
-            @keyframes pulse {
-              0% { opacity: 0.7; }
-              50% { opacity: 1; }
-              100% { opacity: 0.7; }
+            @keyframes pulseLogo {
+              0% { transform: scale(0.95); opacity: 0.8; }
+              100% { transform: scale(1.05); opacity: 1; }
             }
           `}</style>
         </div>
