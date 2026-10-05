@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import NebulaBackground from "@/components/NebulaBackground";
 import HobbyAnimatedBg from "@/components/HobbyAnimatedBg";
 import { 
-  Sparkles, ClipboardList, Flame, Palette, Globe, MapPin, 
+  Zap, Compass, ClipboardList, Flame, Palette, Globe, MapPin, 
   Clock, Calendar, Moon, Edit3, Mail, Trash2, LogOut,
   Target, Flag, Gamepad2, Music, Coffee, Film, Luggage, Car, Building2,
   Tv, BookOpen, Utensils, Dumbbell, Mic, Plus
@@ -928,7 +928,7 @@ export default function ActivitiesPage() {
               className={`exp-tab ${activeTab === "discover" ? "active" : ""}`}
               onClick={() => setActiveTab("discover")}
             >
-              <><Sparkles className="w-4 h-4 inline mr-2" /> Start a Loom</>
+              <><Zap className="w-4 h-4 inline mr-2" /> Start a Loom</>
             </button>
             <button
               className={`exp-tab ${activeTab === "my_plans" ? "active" : ""}`}
@@ -1044,7 +1044,7 @@ export default function ActivitiesPage() {
                 </div>
 
                 <div className="exp-section-label" style={{ marginTop: 32 }}>
-                  <><Sparkles className="w-5 h-5 inline mr-2 text-yellow-400" /> Pick your vibe</>
+                  <><Compass className="w-5 h-5 inline mr-2 text-yellow-400" /> Pick your vibe</>
                 </div>
                 <div className="vibe-scroll">
                   {sortedCategories.map((cat) => (
@@ -1056,7 +1056,7 @@ export default function ActivitiesPage() {
                         onMouseEnter={() => setHoveredCard(cat.key)}
                         onMouseLeave={() => setHoveredCard(null)}
                       >
-                        <div className="exp-card-emoji text-white/90 flex items-center justify-center w-full h-full"><cat.icon size={42} strokeWidth={1.5} /></div>
+                        <div className="exp-card-emoji text-white/90"><cat.icon size={42} strokeWidth={1.5} /></div>
                         <div className="exp-card-content">
                           <h3 className="exp-card-label">{cat.label}</h3>
                           <div className="exp-card-vibe">{cat.vibe}</div>
@@ -1143,7 +1143,7 @@ export default function ActivitiesPage() {
                     <div className="flex justify-center mb-4 text-gray-500"><Moon size={48} /></div>
                     <div className="exp-empty-text">No plans yet. Start one!</div>
                     <button className="exp-empty-btn" onClick={() => setActiveTab("discover")}>
-                      <><Sparkles className="w-4 h-4 inline mr-2" /> Create a Plan</>
+                      <><Zap className="w-4 h-4 inline mr-2" /> Create a Plan</>
                     </button>
                   </div>
                 ) : (
