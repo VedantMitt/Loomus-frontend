@@ -181,6 +181,7 @@ export default function ActivitiesPage() {
   const [initialLoading, setInitialLoading] = useState(true);
 
   const [userLocation, setUserLocation] = useState<string>("");
+  const [isLocationLoaded, setIsLocationLoaded] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -192,6 +193,7 @@ export default function ActivitiesPage() {
   useEffect(() => {
     const stored = localStorage.getItem("global_location");
     if (stored) setUserLocation(stored);
+    setIsLocationLoaded(true);
 
     const handleLocChange = (e: any) => {
       const locName = typeof e.detail === "string" ? e.detail : (e.detail?.name || "");
@@ -271,7 +273,7 @@ export default function ActivitiesPage() {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         setMyUserId(payload.userId || payload.id);
-      } catch (e) {}
+      } catch (e) { }
     }
     const userStr = localStorage.getItem("user");
     if (userStr) {
@@ -279,11 +281,12 @@ export default function ActivitiesPage() {
         const user = JSON.parse(userStr);
         const prefs = [...(user.interests || []), ...(user.vibe_tags || [])].map((p: string) => p.toLowerCase());
         setUserPreferences(prefs);
-      } catch (e) {}
+      } catch (e) { }
     }
   }, []);
 
   useEffect(() => {
+    if (!isLocationLoaded) return;
     const fetchHotEvents = async () => {
       try {
         const token = localStorage.getItem("token");
@@ -305,7 +308,7 @@ export default function ActivitiesPage() {
       }
     };
     fetchHotEvents();
-  }, [refreshTrigger, userLocation]);
+  }, [refreshTrigger, userLocation, isLocationLoaded]);
 
   const fetchMyPlans = useCallback(async () => {
     const token = localStorage.getItem("token");
@@ -333,6 +336,7 @@ export default function ActivitiesPage() {
   }, [activeTab, fetchMyPlans, refreshTrigger]);
 
   useEffect(() => {
+    if (!isLocationLoaded) return;
     const fetchPublicPlans = async () => {
       const token = localStorage.getItem("token");
       if (!token) return;
@@ -370,7 +374,7 @@ export default function ActivitiesPage() {
       }
     };
     fetchPublicPlans();
-  }, [refreshTrigger, userLocation]);
+  }, [refreshTrigger, userLocation, isLocationLoaded]);
 
   const handleDeletePlan = async () => {
     if (!planToDelete) return;
@@ -911,379 +915,379 @@ export default function ActivitiesPage() {
           `}</style>
         </div>
       ) : (
-      <main className="exp-container">
+        <main className="exp-container">
 
-        <div className="exp-tabs">
-          <button
-            className={`exp-tab ${activeTab === "discover" ? "active" : ""}`}
-            onClick={() => setActiveTab("discover")}
-          >
-            ✨ Start a Loom
-          </button>
-          <button
-            className={`exp-tab ${activeTab === "my_plans" ? "active" : ""}`}
-            onClick={() => setActiveTab("my_plans")}
-          >
-            📋 My Looms
-          </button>
-        </div>
+          <div className="exp-tabs">
+            <button
+              className={`exp-tab ${activeTab === "discover" ? "active" : ""}`}
+              onClick={() => setActiveTab("discover")}
+            >
+              ✨ Start a Loom
+            </button>
+            <button
+              className={`exp-tab ${activeTab === "my_plans" ? "active" : ""}`}
+              onClick={() => setActiveTab("my_plans")}
+            >
+              📋 My Looms
+            </button>
+          </div>
 
-        <div style={{ pointerEvents: isRefreshing ? "none" : "auto", transition: "all 0.3s ease" }}>
-        {activeTab === "discover" && (
-          <>
-            <div className="exp-section-label">
-              <span className="glow-icon">🔥</span> Top Upcoming Events {cityKeyword ? `in ${cityKeyword.charAt(0).toUpperCase() + cityKeyword.slice(1)}` : ""}
-            </div>
-            
-            <div className="live-scroll">
-              {isRefreshing || sortedTopEvents.length === 0 ? (
-                // Show skeletons while loading or refreshing
-                [...Array(4)].map((_, i) => (
-                  <div key={`skel-${i}`} className="live-card-wrapper">
-                    <div className="live-card-category" style={{ width: '60px', height: '20px', background: 'rgba(255,255,255,0.05)' }} />
-                    <div className="live-card exp-skeleton" />
-                  </div>
-                ))
-              ) : (
-                sortedTopEvents.map((event) => {
-                  const nearby = isNearby(event.location);
-                  return (
-                    <div key={event.id} className="live-card-wrapper">
-                      <div className="live-card-category" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span>{event.type}</span>
-                        {nearby && (
-                          <span style={{ fontSize: '10px', color: '#34d399', background: 'rgba(52,211,153,0.15)', padding: '1px 6px', borderRadius: '8px' }}>
-                            📍 Nearby
-                          </span>
-                        )}
-                      </div>
-                      <div className="live-card" onClick={() => handleEventClick(event)}>
-                        <img src={event.image} alt={event.title} className="live-img" />
-                        <div 
-                          className="live-overlay" 
-                          style={{ background: `linear-gradient(to top, rgba(0,0,0,0.95) 0%, ${event.gradient || 'rgba(0,0,0,0.4)'} 60%, transparent 100%)` }} 
-                        />
-                        <div className="live-badge" style={{ background: nearby ? 'rgba(52,211,153,0.95)' : 'rgba(192, 132, 252, 0.9)', boxShadow: nearby ? '0 4px 12px rgba(52,211,153,0.4)' : '0 4px 12px rgba(192, 132, 252, 0.4)' }}>
-                          <div className="live-badge-dot" style={{ animation: 'none' }} /> {nearby ? 'LOCAL' : 'UPCOMING'}
-                        </div>
-                        <div className="live-content">
-                          <h3 className="live-title">{event.title}</h3>
-                          <div className="live-meta">
-                            <span>📍 {event.location}</span>
-                            <span>⏰ {event.time}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            <div className="exp-section-label" style={{ marginTop: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingRight: '20px' }}>
-              <div><span className="glow-icon">🎨</span> Hobbies based meetups</div>
-              <button onClick={() => router.push('/activities/create?type=hobby')} style={{ background: 'rgba(255,154,158,0.2)', color: '#ff9a9e', border: 'none', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '18px', paddingBottom: '2px' }}>+</button>
-            </div>
-            
-            <div className="live-scroll">
-              {isRefreshing ? (
-                [...Array(3)].map((_, i) => (
-                  <div key={`skel-hobby-${i}`} className="live-card-wrapper">
-                    <div className="live-card-category" style={{ width: '60px', height: '20px', background: 'rgba(255,255,255,0.05)' }} />
-                    <div className="live-card exp-skeleton" />
-                  </div>
-                ))
-              ) : sortedHobbyMeetups.length > 0 ? (
-                sortedHobbyMeetups.map((event) => {
-                  const nearby = isNearby(event.location);
-                  return (
-                    <div key={event.id} className="live-card-wrapper">
-                      <div className="live-card-category" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span>{event.type || "Hobby"}</span>
-                        {nearby && (
-                          <span style={{ fontSize: '10px', color: '#34d399', background: 'rgba(52,211,153,0.15)', padding: '1px 6px', borderRadius: '8px' }}>
-                            📍 Nearby
-                          </span>
-                        )}
-                      </div>
-                      <div className="live-card" onClick={() => router.push(`/activities/${event.id}`)}>
-                        <HobbyAnimatedBg seed={event.id ? event.id.charCodeAt(0) : 0} />
-                        <div 
-                          className="live-overlay" 
-                          style={{ background: `linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)` }} 
-                        />
-                        <div className="live-badge" style={{ background: nearby ? 'rgba(52,211,153,0.95)' : 'rgba(255, 154, 158, 0.9)', boxShadow: nearby ? '0 4px 12px rgba(52,211,153,0.4)' : '0 4px 12px rgba(255, 154, 158, 0.4)' }}>
-                          <div className="live-badge-dot" style={{ animation: 'none' }} /> MEETUP
-                        </div>
-                        <div className="live-content">
-                          <h3 className="live-title">{event.title}</h3>
-                          <div className="live-meta">
-                            <span>📍 {event.location}</span>
-                            <span>⏰ {(event as any).time || (new Date(event.date).toLocaleDateString() + ' ' + new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div style={{ padding: '20px', color: 'rgba(255,255,255,0.4)', fontSize: '13px', fontStyle: 'italic', width: '100%', textAlign: 'center' }}>
-                  No hobby meetups yet. Be the first to host one!
-                </div>
-              )}
-            </div>
-
-            <div className="exp-section-label" style={{ marginTop: 32 }}>
-              <span>✨</span> Pick your vibe
-            </div>
-            <div className="vibe-scroll">
-              {sortedCategories.map((cat) => (
-                <div key={cat.key} className="vibe-card-wrapper">
-                  <div
-                    className="exp-card"
-                    style={{ background: cat.gradient }}
-                    onClick={() => handleCategoryClick(cat.key)}
-                    onMouseEnter={() => setHoveredCard(cat.key)}
-                    onMouseLeave={() => setHoveredCard(null)}
-                  >
-                    <div className="exp-card-emoji">{cat.emoji}</div>
-                    <div className="exp-card-content">
-                      <h3 className="exp-card-label">{cat.label}</h3>
-                      <div className="exp-card-vibe">{cat.vibe}</div>
-                      <div className="exp-card-ai">{cat.aiSuggestion}</div>
-                    </div>
-                    <div className="exp-card-arrow">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M5 12h14M12 5l7 7-7 7"/>
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
+          <div style={{ pointerEvents: isRefreshing ? "none" : "auto", transition: "all 0.3s ease" }}>
+            {activeTab === "discover" && (
               <>
-                <div className="exp-section-label" style={{ marginTop: 32 }}>
-                  <span>🌍</span> Hop into random plans
+                <div className="exp-section-label">
+                  <span className="glow-icon"></span> Top Upcoming Events {cityKeyword ? `in ${cityKeyword.charAt(0).toUpperCase() + cityKeyword.slice(1)}` : ""}
                 </div>
-                {isRefreshing ? (
-                  <div className="live-scroll">
-                    {[...Array(4)].map((_, i) => (
-                      <div key={`skel-pub-${i}`} className="live-card-wrapper">
-                        <div className="live-card-category" style={{ width: '80px', height: '20px', background: 'rgba(255,255,255,0.05)' }} />
+
+                <div className="live-scroll">
+                  {isRefreshing || sortedTopEvents.length === 0 ? (
+                    // Show skeletons while loading or refreshing
+                    [...Array(4)].map((_, i) => (
+                      <div key={`skel-${i}`} className="live-card-wrapper">
+                        <div className="live-card-category" style={{ width: '60px', height: '20px', background: 'rgba(255,255,255,0.05)' }} />
                         <div className="live-card exp-skeleton" />
                       </div>
-                    ))}
-                  </div>
-                ) : sortedPublicPlans.length > 0 ? (
-                  <div className="live-scroll">
-                    {sortedPublicPlans.map((plan) => {
-                      const nearby = isNearby(plan.location);
+                    ))
+                  ) : (
+                    sortedTopEvents.map((event) => {
+                      const nearby = isNearby(event.location);
                       return (
-                        <div key={plan.id} className="live-card-wrapper">
-                          <div className="live-card-category" style={{
-                            background: nearby ? 'rgba(52,211,153,0.2)' : 'rgba(52,211,153,0.15)',
-                            color: '#34d399',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px'
-                          }}>
-                            <span>{plan.type || 'Public Plan'}</span>
+                        <div key={event.id} className="live-card-wrapper">
+                          <div className="live-card-category" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>{event.type}</span>
                             {nearby && (
                               <span style={{ fontSize: '10px', color: '#34d399', background: 'rgba(52,211,153,0.15)', padding: '1px 6px', borderRadius: '8px' }}>
                                 📍 Nearby
                               </span>
                             )}
                           </div>
-                          <div className="live-card" onClick={() => router.push(`/activities/${plan.id}`)}>
-                            <img src={plan.banner || `https://source.unsplash.com/random/800x600/?${plan.type || 'party'}`} alt={plan.title} className="live-img" />
-                            <div 
-                              className="live-overlay" 
-                              style={{ background: `linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(52,211,153,0.3) 60%, transparent 100%)` }} 
+                          <div className="live-card" onClick={() => handleEventClick(event)}>
+                            <img src={event.image} alt={event.title} className="live-img" />
+                            <div
+                              className="live-overlay"
+                              style={{ background: `linear-gradient(to top, rgba(0,0,0,0.95) 0%, ${event.gradient || 'rgba(0,0,0,0.4)'} 60%, transparent 100%)` }}
                             />
+                            <div className="live-badge" style={{ background: nearby ? 'rgba(52,211,153,0.95)' : 'rgba(192, 132, 252, 0.9)', boxShadow: nearby ? '0 4px 12px rgba(52,211,153,0.4)' : '0 4px 12px rgba(192, 132, 252, 0.4)' }}>
+                              <div className="live-badge-dot" style={{ animation: 'none' }} /> {nearby ? 'LOCAL' : 'UPCOMING'}
+                            </div>
                             <div className="live-content">
-                              <h3 className="live-title">{plan.title}</h3>
+                              <h3 className="live-title">{event.title}</h3>
                               <div className="live-meta">
-                                <span>📍 {plan.location}</span>
-                                <span>⏰ {new Date(plan.date).toLocaleDateString()} {new Date(plan.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                <span>📍 {event.location}</span>
+                                <span>⏰ {event.time}</span>
                               </div>
                             </div>
                           </div>
                         </div>
                       );
-                    })}
+                    })
+                  )}
+                </div>
+
+                <div className="exp-section-label" style={{ marginTop: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingRight: '20px' }}>
+                  <div><span className="glow-icon">🎨</span> Hobbies based meetups</div>
+                  <button onClick={() => router.push('/activities/create?type=hobby')} style={{ background: 'rgba(255,154,158,0.2)', color: '#ff9a9e', border: 'none', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '18px', paddingBottom: '2px' }}>+</button>
+                </div>
+
+                <div className="live-scroll">
+                  {isRefreshing ? (
+                    [...Array(3)].map((_, i) => (
+                      <div key={`skel-hobby-${i}`} className="live-card-wrapper">
+                        <div className="live-card-category" style={{ width: '60px', height: '20px', background: 'rgba(255,255,255,0.05)' }} />
+                        <div className="live-card exp-skeleton" />
+                      </div>
+                    ))
+                  ) : sortedHobbyMeetups.length > 0 ? (
+                    sortedHobbyMeetups.map((event) => {
+                      const nearby = isNearby(event.location);
+                      return (
+                        <div key={event.id} className="live-card-wrapper">
+                          <div className="live-card-category" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>{event.type || "Hobby"}</span>
+                            {nearby && (
+                              <span style={{ fontSize: '10px', color: '#34d399', background: 'rgba(52,211,153,0.15)', padding: '1px 6px', borderRadius: '8px' }}>
+                                📍 Nearby
+                              </span>
+                            )}
+                          </div>
+                          <div className="live-card" onClick={() => router.push(`/activities/${event.id}`)}>
+                            <HobbyAnimatedBg seed={event.id ? event.id.charCodeAt(0) : 0} />
+                            <div
+                              className="live-overlay"
+                              style={{ background: `linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)` }}
+                            />
+                            <div className="live-badge" style={{ background: nearby ? 'rgba(52,211,153,0.95)' : 'rgba(255, 154, 158, 0.9)', boxShadow: nearby ? '0 4px 12px rgba(52,211,153,0.4)' : '0 4px 12px rgba(255, 154, 158, 0.4)' }}>
+                              <div className="live-badge-dot" style={{ animation: 'none' }} /> MEETUP
+                            </div>
+                            <div className="live-content">
+                              <h3 className="live-title">{event.title}</h3>
+                              <div className="live-meta">
+                                <span>📍 {event.location}</span>
+                                <span>⏰ {(event as any).time || (new Date(event.date).toLocaleDateString() + ' ' + new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div style={{ padding: '20px', color: 'rgba(255,255,255,0.4)', fontSize: '13px', fontStyle: 'italic', width: '100%', textAlign: 'center' }}>
+                      No hobby meetups yet. Be the first to host one!
+                    </div>
+                  )}
+                </div>
+
+                <div className="exp-section-label" style={{ marginTop: 32 }}>
+                  <span>✨</span> Pick your vibe
+                </div>
+                <div className="vibe-scroll">
+                  {sortedCategories.map((cat) => (
+                    <div key={cat.key} className="vibe-card-wrapper">
+                      <div
+                        className="exp-card"
+                        style={{ background: cat.gradient }}
+                        onClick={() => handleCategoryClick(cat.key)}
+                        onMouseEnter={() => setHoveredCard(cat.key)}
+                        onMouseLeave={() => setHoveredCard(null)}
+                      >
+                        <div className="exp-card-emoji">{cat.emoji}</div>
+                        <div className="exp-card-content">
+                          <h3 className="exp-card-label">{cat.label}</h3>
+                          <div className="exp-card-vibe">{cat.vibe}</div>
+                          <div className="exp-card-ai">{cat.aiSuggestion}</div>
+                        </div>
+                        <div className="exp-card-arrow">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <>
+                  <div className="exp-section-label" style={{ marginTop: 32 }}>
+                    <span>🌍</span> Hop into random plans
+                  </div>
+                  {isRefreshing ? (
+                    <div className="live-scroll">
+                      {[...Array(4)].map((_, i) => (
+                        <div key={`skel-pub-${i}`} className="live-card-wrapper">
+                          <div className="live-card-category" style={{ width: '80px', height: '20px', background: 'rgba(255,255,255,0.05)' }} />
+                          <div className="live-card exp-skeleton" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : sortedPublicPlans.length > 0 ? (
+                    <div className="live-scroll">
+                      {sortedPublicPlans.map((plan) => {
+                        const nearby = isNearby(plan.location);
+                        return (
+                          <div key={plan.id} className="live-card-wrapper">
+                            <div className="live-card-category" style={{
+                              background: nearby ? 'rgba(52,211,153,0.2)' : 'rgba(52,211,153,0.15)',
+                              color: '#34d399',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px'
+                            }}>
+                              <span>{plan.type || 'Public Plan'}</span>
+                              {nearby && (
+                                <span style={{ fontSize: '10px', color: '#34d399', background: 'rgba(52,211,153,0.15)', padding: '1px 6px', borderRadius: '8px' }}>
+                                  📍 Nearby
+                                </span>
+                              )}
+                            </div>
+                            <div className="live-card" onClick={() => router.push(`/activities/${plan.id}`)}>
+                              <img src={plan.banner || `https://source.unsplash.com/random/800x600/?${plan.type || 'party'}`} alt={plan.title} className="live-img" />
+                              <div
+                                className="live-overlay"
+                                style={{ background: `linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(52,211,153,0.3) 60%, transparent 100%)` }}
+                              />
+                              <div className="live-content">
+                                <h3 className="live-title">{plan.title}</h3>
+                                <div className="live-meta">
+                                  <span>📍 {plan.location}</span>
+                                  <span>⏰ {new Date(plan.date).toLocaleDateString()} {new Date(plan.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px', padding: '16px 0', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                      No public plans nearby yet. Be the first to start one! 🌍
+                    </div>
+                  )}
+                </>
+              </>
+            )}
+
+            {activeTab === "my_plans" && (
+              <>
+                {isRefreshing || loading ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {[...Array(6)].map((_, i) => <div key={`skel-my-${i}`} className="exp-skeleton" style={{ width: '100%', aspectRatio: '16/4' }} />)}
+                  </div>
+                ) : myPlans.length === 0 ? (
+                  <div className="exp-empty">
+                    <div className="exp-empty-emoji">🌙</div>
+                    <div className="exp-empty-text">No plans yet. Start one!</div>
+                    <button className="exp-empty-btn" onClick={() => setActiveTab("discover")}>
+                      ✨ Create a Plan
+                    </button>
                   </div>
                 ) : (
-                  <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px', padding: '16px 0', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.1)' }}>
-                    No public plans nearby yet. Be the first to start one! 🌍
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {myPlans.map((plan) => {
+                      const d = new Date(plan.date);
+                      const now = new Date();
+                      const isUpcoming = d > now && !plan.end_date;
+                      const isPast = !!plan.end_date;
+                      const isLive = !isUpcoming && !isPast;
+                      const previews = plan.participant_previews || [];
+
+                      return (
+                        <Link
+                          key={plan.id}
+                          href={`/activities/${plan.id}`}
+                          className="plan-card group relative"
+                        >
+                          {isLive && (
+                            <div className="plan-status" style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444" }}>
+                              <div style={{ width: 6, height: 6, borderRadius: 3, background: "#ef4444", animation: "exp-pulse 1.5s infinite" }} />
+                              Live Now
+                            </div>
+                          )}
+                          {isUpcoming && (
+                            <div className="plan-status" style={{ background: "rgba(192,132,252,0.1)", color: "#c084fc" }}>
+                              Upcoming
+                            </div>
+                          )}
+                          {isPast && (
+                            <div className="plan-status flex items-center justify-between" style={{ background: "rgba(255,255,255,0.05)", color: "#555" }}>
+                              <span>Past</span>
+                            </div>
+                          )}
+
+                          <div className="absolute top-4 right-4 z-30" onClick={e => e.preventDefault()}>
+                            <button
+                              onClick={() => setOpenMenuId(openMenuId === plan.id ? null : plan.id)}
+                              className="w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center text-white backdrop-blur-md transition-colors"
+                            >
+                              <span className="text-xl leading-none -translate-y-[2px]">...</span>
+                            </button>
+                            {openMenuId === plan.id && (
+                              <div className="absolute right-0 mt-2 w-40 bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-40">
+                                {plan.host_id === myUserId && (
+                                  <>
+                                    <button
+                                      onClick={() => { router.push(`/activities/${plan.id}?modal=edit`); setOpenMenuId(null); }}
+                                      className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
+                                    >
+                                      📝 Edit Details
+                                    </button>
+                                    <button
+                                      onClick={() => { router.push(`/activities/${plan.id}?modal=invite`); setOpenMenuId(null); }}
+                                      className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
+                                    >
+                                      ✉️ Invite
+                                    </button>
+                                    <button
+                                      onClick={() => { setPlanToDelete(plan.id); setOpenMenuId(null); }}
+                                      className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors border-t border-white/5"
+                                    >
+                                      🗑️ Delete Plan
+                                    </button>
+                                  </>
+                                )}
+                                {plan.host_id !== myUserId && (
+                                  <button
+                                    onClick={() => { router.push(`/activities/${plan.id}`); setOpenMenuId(null); }}
+                                    className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
+                                  >
+                                    🚪 View & Leave
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="plan-title">{plan.title}</div>
+                          <div className="plan-meta">
+                            <span className="plan-meta-item">📍 {plan.location}</span>
+                            <span className="plan-meta-item">
+                              📅 {d.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                            </span>
+                            <span className="plan-meta-item">
+                              🕐 {d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
+                            </span>
+                          </div>
+
+                          <div className="plan-people">
+                            {previews.slice(0, 4).map((p, i) => {
+                              const src = p.profile_pic
+                                ? p.profile_pic.startsWith("/uploads")
+                                  ? `${API}${p.profile_pic}`
+                                  : p.profile_pic
+                                : null;
+                              return src ? (
+                                <img key={i} src={src} alt="" className="plan-avatar" />
+                              ) : (
+                                <div key={i} className="plan-avatar">{p.name?.charAt(0)}</div>
+                              );
+                            })}
+                            {Number(plan.going_count) > 0 && (
+                              <span className="plan-count">{plan.going_count} going</span>
+                            )}
+                          </div>
+                        </Link>
+                      );
+                    })}
                   </div>
                 )}
               </>
-          </>
-        )}
-
-        {activeTab === "my_plans" && (
-          <>
-            {isRefreshing || loading ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {[...Array(6)].map((_, i) => <div key={`skel-my-${i}`} className="exp-skeleton" style={{ width: '100%', aspectRatio: '16/4' }} />)}
-              </div>
-            ) : myPlans.length === 0 ? (
-              <div className="exp-empty">
-                <div className="exp-empty-emoji">🌙</div>
-                <div className="exp-empty-text">No plans yet. Start one!</div>
-                <button className="exp-empty-btn" onClick={() => setActiveTab("discover")}>
-                  ✨ Create a Plan
-                </button>
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {myPlans.map((plan) => {
-                  const d = new Date(plan.date);
-                  const now = new Date();
-                  const isUpcoming = d > now && !plan.end_date;
-                  const isPast = !!plan.end_date;
-                  const isLive = !isUpcoming && !isPast;
-                  const previews = plan.participant_previews || [];
-
-                  return (
-                    <Link
-                      key={plan.id}
-                      href={`/activities/${plan.id}`}
-                      className="plan-card group relative"
-                    >
-                      {isLive && (
-                        <div className="plan-status" style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444" }}>
-                          <div style={{ width: 6, height: 6, borderRadius: 3, background: "#ef4444", animation: "exp-pulse 1.5s infinite" }} />
-                          Live Now
-                        </div>
-                      )}
-                      {isUpcoming && (
-                        <div className="plan-status" style={{ background: "rgba(192,132,252,0.1)", color: "#c084fc" }}>
-                          Upcoming
-                        </div>
-                      )}
-                      {isPast && (
-                        <div className="plan-status flex items-center justify-between" style={{ background: "rgba(255,255,255,0.05)", color: "#555" }}>
-                          <span>Past</span>
-                        </div>
-                      )}
-                      
-                      <div className="absolute top-4 right-4 z-30" onClick={e => e.preventDefault()}>
-                        <button 
-                          onClick={() => setOpenMenuId(openMenuId === plan.id ? null : plan.id)}
-                          className="w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center text-white backdrop-blur-md transition-colors"
-                        >
-                          <span className="text-xl leading-none -translate-y-[2px]">...</span>
-                        </button>
-                        {openMenuId === plan.id && (
-                          <div className="absolute right-0 mt-2 w-40 bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-40">
-                            {plan.host_id === myUserId && (
-                              <>
-                                <button 
-                                  onClick={() => { router.push(`/activities/${plan.id}?modal=edit`); setOpenMenuId(null); }} 
-                                  className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
-                                >
-                                  📝 Edit Details
-                                </button>
-                                <button 
-                                  onClick={() => { router.push(`/activities/${plan.id}?modal=invite`); setOpenMenuId(null); }} 
-                                  className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
-                                >
-                                  ✉️ Invite
-                                </button>
-                                <button 
-                                  onClick={() => { setPlanToDelete(plan.id); setOpenMenuId(null); }} 
-                                  className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors border-t border-white/5"
-                                >
-                                  🗑️ Delete Plan
-                                </button>
-                              </>
-                            )}
-                            {plan.host_id !== myUserId && (
-                              <button 
-                                onClick={() => { router.push(`/activities/${plan.id}`); setOpenMenuId(null); }} 
-                                className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
-                              >
-                                🚪 View & Leave
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="plan-title">{plan.title}</div>
-                      <div className="plan-meta">
-                        <span className="plan-meta-item">📍 {plan.location}</span>
-                        <span className="plan-meta-item">
-                          📅 {d.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                        </span>
-                        <span className="plan-meta-item">
-                          🕐 {d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
-                        </span>
-                      </div>
-
-                      <div className="plan-people">
-                        {previews.slice(0, 4).map((p, i) => {
-                          const src = p.profile_pic
-                            ? p.profile_pic.startsWith("/uploads")
-                              ? `${API}${p.profile_pic}`
-                              : p.profile_pic
-                            : null;
-                          return src ? (
-                            <img key={i} src={src} alt="" className="plan-avatar" />
-                          ) : (
-                            <div key={i} className="plan-avatar">{p.name?.charAt(0)}</div>
-                          );
-                        })}
-                        {Number(plan.going_count) > 0 && (
-                          <span className="plan-count">{plan.going_count} going</span>
-                        )}
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
             )}
-          </>
-        )}
-        </div>
+          </div>
 
-        {/* Floating Create Button */}
-        <button
-          onClick={() => router.push("/activities/create")}
-          className="create-fab"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-        </button>
-        {/* Delete Plan Modal */}
-        {planToDelete && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl text-center">
-              <h2 className="text-xl font-bold mb-2 font-['Syne'] text-white">Delete Plan?</h2>
-              <p className="text-sm text-gray-400 mb-6">Are you sure you want to delete this plan? This cannot be undone.</p>
-              
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => setPlanToDelete(null)}
-                  className="flex-1 py-3 px-4 rounded-xl font-bold text-sm bg-white/5 text-white hover:bg-white/10 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleDeletePlan}
-                  className="flex-1 py-3 px-4 rounded-xl font-bold text-sm bg-red-500/20 text-red-500 hover:bg-red-500/30 transition-colors border border-red-500/30"
-                >
-                  Delete
-                </button>
+          {/* Floating Create Button */}
+          <button
+            onClick={() => router.push("/activities/create")}
+            className="create-fab"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
+          {/* Delete Plan Modal */}
+          {planToDelete && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+              <div className="bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl text-center">
+                <h2 className="text-xl font-bold mb-2 font-['Syne'] text-white">Delete Plan?</h2>
+                <p className="text-sm text-gray-400 mb-6">Are you sure you want to delete this plan? This cannot be undone.</p>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setPlanToDelete(null)}
+                    className="flex-1 py-3 px-4 rounded-xl font-bold text-sm bg-white/5 text-white hover:bg-white/10 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDeletePlan}
+                    className="flex-1 py-3 px-4 rounded-xl font-bold text-sm bg-red-500/20 text-red-500 hover:bg-red-500/30 transition-colors border border-red-500/30"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </main>
+          )}
+        </main>
       )}
     </div>
   );
