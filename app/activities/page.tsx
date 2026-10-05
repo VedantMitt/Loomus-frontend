@@ -5,6 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import NebulaBackground from "@/components/NebulaBackground";
 import HobbyAnimatedBg from "@/components/HobbyAnimatedBg";
+import { 
+  Sparkles, ClipboardList, Flame, Palette, Globe, MapPin, 
+  Clock, Calendar, Moon, Edit3, Mail, Trash2, LogOut,
+  Target, Flag, Gamepad2, Music, Coffee, Film, Luggage, Car, Building2,
+  Tv, BookOpen, Utensils, Dumbbell, Mic, Plus
+} from "lucide-react";
 
 type Activity = {
   id: string;
@@ -35,7 +41,7 @@ const EXPERIENCE_CATEGORIES = [
   {
     key: "bowling",
     label: "Bowling",
-    emoji: "🎳",
+    icon: Target,
     gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
     vibe: "Competitive & fun",
     aiSuggestion: "Book lanes at a nearby bowling alley. Split into teams, play 3 rounds, loser buys snacks. Perfect for groups of 4-8.",
@@ -43,7 +49,7 @@ const EXPERIENCE_CATEGORIES = [
   {
     key: "golf",
     label: "Golf",
-    emoji: "⛳",
+    icon: Flag,
     gradient: "linear-gradient(135deg, #11998e 0%, #38ef7d 100%)",
     vibe: "Chill & classy",
     aiSuggestion: "Mini golf or driving range session. Great for casual hangs. No skill needed. Grab smoothies after.",
@@ -51,7 +57,7 @@ const EXPERIENCE_CATEGORIES = [
   {
     key: "pickleball",
     label: "Pickleball",
-    emoji: "🏓",
+    icon: Gamepad2,
     gradient: "linear-gradient(135deg, #F09819 0%, #EDDE5D 100%)",
     vibe: "Active & energetic",
     aiSuggestion: "Book a court for 2 hours. Doubles tournament style. Bring water bottles. Winner gets bragging rights forever.",
@@ -59,7 +65,7 @@ const EXPERIENCE_CATEGORIES = [
   {
     key: "clubbing",
     label: "Clubbing",
-    emoji: "🎶",
+    icon: Music,
     gradient: "linear-gradient(135deg, #e040fb 0%, #7c4dff 100%)",
     vibe: "Wild & spontaneous",
     aiSuggestion: "Pre-game at someone's place. Hit the club by 11. Set a budget. Designate a navigator. Dance like nobody's watching.",
@@ -67,7 +73,7 @@ const EXPERIENCE_CATEGORIES = [
   {
     key: "cafe_hopping",
     label: "Café Hopping",
-    emoji: "☕",
+    icon: Coffee,
     gradient: "linear-gradient(135deg, #D4A373 0%, #FAEDCD 100%)",
     vibe: "Cozy & aesthetic",
     aiSuggestion: "Pick 3-4 cafés in one area. Try a different drink at each. Rate them. Find your new favourite spot. Take aesthetic photos.",
@@ -75,7 +81,7 @@ const EXPERIENCE_CATEGORIES = [
   {
     key: "movie",
     label: "Movie",
-    emoji: "🎬",
+    icon: Film,
     gradient: "linear-gradient(135deg, #1a1a2e 0%, #e94560 100%)",
     vibe: "Relaxed & cinematic",
     aiSuggestion: "Pick the movie together. Book seats in the last row. Sneak in snacks (or don't 😂). Post-movie dinner to discuss plot holes.",
@@ -83,7 +89,7 @@ const EXPERIENCE_CATEGORIES = [
   {
     key: "trip",
     label: "Trip",
-    emoji: "🧳",
+    icon: Luggage,
     gradient: "linear-gradient(135deg, #0575E6 0%, #021B79 100%)",
     vibe: "Adventure & memories",
     aiSuggestion: "Pick a destination within 4-6 hours. Split costs equally. Make a shared playlist. Assign roles: navigator, DJ, photographer, snack manager.",
@@ -91,7 +97,7 @@ const EXPERIENCE_CATEGORIES = [
   {
     key: "road_trip",
     label: "Road Trip",
-    emoji: "🚗",
+    icon: Car,
     gradient: "linear-gradient(135deg, #f5af19 0%, #f12711 100%)",
     vibe: "Freedom & vibes",
     aiSuggestion: "Midnight drive or sunrise chase. Pick a route with scenic stops. Fuel up the car. Aux cord rules: driver picks first song. Stop at every dhaba.",
@@ -99,7 +105,7 @@ const EXPERIENCE_CATEGORIES = [
   {
     key: "city_exploration",
     label: "City Exploration",
-    emoji: "🏙️",
+    icon: Building2,
     gradient: "linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)",
     vibe: "Curious & spontaneous",
     aiSuggestion: "Pick an area you've never been to. Walk around with no plan. Try street food. Talk to locals. Document everything. Get lost on purpose.",
@@ -107,7 +113,7 @@ const EXPERIENCE_CATEGORIES = [
   {
     key: "explore_spot",
     label: "Explore a Spot",
-    emoji: "📍",
+    icon: MapPin,
     gradient: "linear-gradient(135deg, #00b09b 0%, #96c93d 100%)",
     vibe: "Discover & wander",
     aiSuggestion: "Explore a hidden gem. Eat local food, visit shops, find street art. Take candid photos. Make it a chapter worth remembering.",
@@ -115,7 +121,7 @@ const EXPERIENCE_CATEGORIES = [
   {
     key: "gaming",
     label: "Gaming Night",
-    emoji: "🎮",
+    icon: Gamepad2,
     gradient: "linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%)",
     vibe: "Competitive & loud",
     aiSuggestion: "Pick the game: Valorant, FIFA, Mario Kart, or board games. Set up a tournament bracket. Loser does a dare. Stream it in a Room.",
@@ -123,7 +129,7 @@ const EXPERIENCE_CATEGORIES = [
   {
     key: "watch_party",
     label: "Watch Party",
-    emoji: "📺",
+    icon: Tv,
     gradient: "linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%)",
     vibe: "Cozy & connected",
     aiSuggestion: "Pick a series or movie. Sync up on a Room. React together in real time. Bring blankets and snacks. The best kind of lazy plan.",
@@ -131,7 +137,7 @@ const EXPERIENCE_CATEGORIES = [
   {
     key: "study_session",
     label: "Study Session",
-    emoji: "📖",
+    icon: BookOpen,
     gradient: "linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%)",
     vibe: "Productive & focused",
     aiSuggestion: "Pick a café or library. Set pomodoro timers. No phones for 25 mins. Break together. Accountability partners make all the difference.",
@@ -139,7 +145,7 @@ const EXPERIENCE_CATEGORIES = [
   {
     key: "food_walk",
     label: "Food Walk",
-    emoji: "🍜",
+    icon: Utensils,
     gradient: "linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)",
     vibe: "Hungry & adventurous",
     aiSuggestion: "Pick a food street. Try 5 different things. Rate each one. Split the bill. Find the best momos in Delhi. Document the journey.",
@@ -147,7 +153,7 @@ const EXPERIENCE_CATEGORIES = [
   {
     key: "workout",
     label: "Workout",
-    emoji: "💪",
+    icon: Dumbbell,
     gradient: "linear-gradient(135deg, #434343 0%, #000000 100%)",
     vibe: "Grind & discipline",
     aiSuggestion: "Gym session or outdoor run. Push each other. Spot each other. Post-workout protein shake. Consistency > motivation.",
@@ -155,7 +161,7 @@ const EXPERIENCE_CATEGORIES = [
   {
     key: "concert",
     label: "Concert / Gig",
-    emoji: "🎤",
+    icon: Mic,
     gradient: "linear-gradient(135deg, #fc466b 0%, #3f5efb 100%)",
     vibe: "Electric & alive",
     aiSuggestion: "Find a live gig or open mic. Get there early for good spots. Sing along. Record clips for the chapter. Feel the bass in your chest.",
@@ -922,13 +928,13 @@ export default function ActivitiesPage() {
               className={`exp-tab ${activeTab === "discover" ? "active" : ""}`}
               onClick={() => setActiveTab("discover")}
             >
-              ✨ Start a Loom
+              <><Sparkles className="w-4 h-4 inline mr-2" /> Start a Loom</>
             </button>
             <button
               className={`exp-tab ${activeTab === "my_plans" ? "active" : ""}`}
               onClick={() => setActiveTab("my_plans")}
             >
-              📋 My Looms
+              <><ClipboardList className="w-4 h-4 inline mr-2" /> My Looms</>
             </button>
           </div>
 
@@ -957,7 +963,7 @@ export default function ActivitiesPage() {
                             <span>{event.type}</span>
                             {nearby && (
                               <span style={{ fontSize: '10px', color: '#34d399', background: 'rgba(52,211,153,0.15)', padding: '1px 6px', borderRadius: '8px' }}>
-                                📍 Nearby
+                                <><MapPin className="w-3 h-3 inline mr-1" /> Nearby</>
                               </span>
                             )}
                           </div>
@@ -973,8 +979,8 @@ export default function ActivitiesPage() {
                             <div className="live-content">
                               <h3 className="live-title">{event.title}</h3>
                               <div className="live-meta">
-                                <span>📍 {event.location}</span>
-                                <span>⏰ {event.time}</span>
+                                <span><><MapPin className="w-4 h-4 inline mr-1" /> {event.location}</></span>
+                                <span><><Clock className="w-4 h-4 inline mr-1" /> {event.time}</></span>
                               </div>
                             </div>
                           </div>
@@ -985,7 +991,7 @@ export default function ActivitiesPage() {
                 </div>
 
                 <div className="exp-section-label" style={{ marginTop: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingRight: '20px' }}>
-                  <div><span className="glow-icon">🎨</span> Hobbies based meetups</div>
+                  <div className="flex items-center"><Palette className="w-5 h-5 inline mr-2 text-pink-400" /> Hobbies based meetups</div>
                   <button onClick={() => router.push('/activities/create?type=hobby')} style={{ background: 'rgba(255,154,158,0.2)', color: '#ff9a9e', border: 'none', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '18px', paddingBottom: '2px' }}>+</button>
                 </div>
 
@@ -1022,8 +1028,8 @@ export default function ActivitiesPage() {
                             <div className="live-content">
                               <h3 className="live-title">{event.title}</h3>
                               <div className="live-meta">
-                                <span>📍 {event.location}</span>
-                                <span>⏰ {(event as any).time || (new Date(event.date).toLocaleDateString() + ' ' + new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))}</span>
+                                <span><MapPin className="w-4 h-4 inline mr-1" /> {event.location}</span>
+                                <span><Clock className="w-4 h-4 inline mr-1" /> {(event as any).time || (new Date(event.date).toLocaleDateString() + ' ' + new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))}</span>
                               </div>
                             </div>
                           </div>
@@ -1038,7 +1044,7 @@ export default function ActivitiesPage() {
                 </div>
 
                 <div className="exp-section-label" style={{ marginTop: 32 }}>
-                  <span>✨</span> Pick your vibe
+                  <><Sparkles className="w-5 h-5 inline mr-2 text-yellow-400" /> Pick your vibe</>
                 </div>
                 <div className="vibe-scroll">
                   {sortedCategories.map((cat) => (
@@ -1050,7 +1056,7 @@ export default function ActivitiesPage() {
                         onMouseEnter={() => setHoveredCard(cat.key)}
                         onMouseLeave={() => setHoveredCard(null)}
                       >
-                        <div className="exp-card-emoji">{cat.emoji}</div>
+                        <div className="exp-card-emoji text-white/90 flex items-center justify-center w-full h-full"><cat.icon size={42} strokeWidth={1.5} /></div>
                         <div className="exp-card-content">
                           <h3 className="exp-card-label">{cat.label}</h3>
                           <div className="exp-card-vibe">{cat.vibe}</div>
@@ -1068,7 +1074,7 @@ export default function ActivitiesPage() {
 
                 <>
                   <div className="exp-section-label" style={{ marginTop: 32 }}>
-                    <span>🌍</span> Hop into random plans
+                    <><Globe className="w-5 h-5 inline mr-2 text-blue-400" /> Hop into random plans</>
                   </div>
                   {isRefreshing ? (
                     <div className="live-scroll">
@@ -1108,7 +1114,7 @@ export default function ActivitiesPage() {
                               <div className="live-content">
                                 <h3 className="live-title">{plan.title}</h3>
                                 <div className="live-meta">
-                                  <span>📍 {plan.location}</span>
+                                  <span><><MapPin className="w-4 h-4 inline mr-1" /> {plan.location}</></span>
                                   <span>⏰ {new Date(plan.date).toLocaleDateString()} {new Date(plan.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                 </div>
                               </div>
@@ -1119,7 +1125,7 @@ export default function ActivitiesPage() {
                     </div>
                   ) : (
                     <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px', padding: '16px 0', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.1)' }}>
-                      No public plans nearby yet. Be the first to start one! 🌍
+                      No public plans nearby yet. Be the first to start one! <Globe className="w-4 h-4 inline ml-1" />
                     </div>
                   )}
                 </>
@@ -1134,10 +1140,10 @@ export default function ActivitiesPage() {
                   </div>
                 ) : myPlans.length === 0 ? (
                   <div className="exp-empty">
-                    <div className="exp-empty-emoji">🌙</div>
+                    <div className="flex justify-center mb-4 text-gray-500"><Moon size={48} /></div>
                     <div className="exp-empty-text">No plans yet. Start one!</div>
                     <button className="exp-empty-btn" onClick={() => setActiveTab("discover")}>
-                      ✨ Create a Plan
+                      <><Sparkles className="w-4 h-4 inline mr-2" /> Create a Plan</>
                     </button>
                   </div>
                 ) : (
@@ -1188,19 +1194,19 @@ export default function ActivitiesPage() {
                                       onClick={() => { router.push(`/activities/${plan.id}?modal=edit`); setOpenMenuId(null); }}
                                       className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
                                     >
-                                      📝 Edit Details
+                                      <><Edit3 className="w-4 h-4 mr-2" /> Edit Details</>
                                     </button>
                                     <button
                                       onClick={() => { router.push(`/activities/${plan.id}?modal=invite`); setOpenMenuId(null); }}
                                       className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
                                     >
-                                      ✉️ Invite
+                                      <><Mail className="w-4 h-4 mr-2" /> Invite</>
                                     </button>
                                     <button
                                       onClick={() => { setPlanToDelete(plan.id); setOpenMenuId(null); }}
                                       className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors border-t border-white/5"
                                     >
-                                      🗑️ Delete Plan
+                                      <><Trash2 className="w-4 h-4 mr-2" /> Delete Plan</>
                                     </button>
                                   </>
                                 )}
@@ -1209,7 +1215,7 @@ export default function ActivitiesPage() {
                                     onClick={() => { router.push(`/activities/${plan.id}`); setOpenMenuId(null); }}
                                     className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
                                   >
-                                    🚪 View & Leave
+                                    <><LogOut className="w-4 h-4 mr-2" /> View & Leave</>
                                   </button>
                                 )}
                               </div>
@@ -1218,12 +1224,12 @@ export default function ActivitiesPage() {
 
                           <div className="plan-title">{plan.title}</div>
                           <div className="plan-meta">
-                            <span className="plan-meta-item">📍 {plan.location}</span>
+                            <span className="plan-meta-item"><><MapPin className="w-4 h-4 inline mr-1" /> {plan.location}</></span>
                             <span className="plan-meta-item">
-                              📅 {d.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                              <Calendar className="w-4 h-4 inline mr-1" /> {d.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                             </span>
                             <span className="plan-meta-item">
-                              🕐 {d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
+                              <Clock className="w-4 h-4 inline mr-1" /> {d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
                             </span>
                           </div>
 
