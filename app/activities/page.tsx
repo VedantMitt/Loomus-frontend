@@ -1056,6 +1056,10 @@ export default function ActivitiesPage() {
                         onMouseEnter={() => setHoveredCard(cat.key)}
                         onMouseLeave={() => setHoveredCard(null)}
                       >
+                        {/* Background Doodle Element */}
+                        <div style={{ position: "absolute", top: "-5%", right: "-5%", opacity: 0.15, zIndex: 0, transform: "rotate(-15deg) scale(1.2)", pointerEvents: "none" }}>
+                          <cat.icon size={160} strokeWidth={1} />
+                        </div>
                         <div className="exp-card-emoji text-white/90"><cat.icon size={42} strokeWidth={1.5} /></div>
                         <div className="exp-card-content">
                           <h3 className="exp-card-label">{cat.label}</h3>
