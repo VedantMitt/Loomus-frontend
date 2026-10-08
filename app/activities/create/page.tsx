@@ -6,6 +6,7 @@ import { uploadSubmission } from "@/lib/uploadSubmission";
 import Link from "next/link";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { requestLocationPermission } from "@/lib/permissions";
+import { ImagePlus, Lock, Globe, MessageSquare, Sparkles, Star, MapPin, Check } from "lucide-react";
 
 const AI_SUGGESTIONS: Record<string, { title: string; description: string; location: string }> = {
   bowling: { title: "Bowling Night", description: "Book lanes, split into teams, play 3 rounds. Loser buys snacks. Perfect for groups of 4-8.", location: "Smaaash (Cyberhub) / Yes Minister (HKV)" },
@@ -425,7 +426,7 @@ function CreateActivityContent() {
               <div key={label} style={{ display: "flex", alignItems: "center", flex: 1 }}>
                 <div className="wiz-step">
                   <div className={`wiz-step-dot ${status}`}>
-                    {status === "done" ? "✓" : num}
+                    {status === "done" ? <Check size={16} /> : num}
                   </div>
                   <span className={`wiz-step-label ${status === "active" ? "active" : ""}`}>{label}</span>
                 </div>
@@ -441,7 +442,7 @@ function CreateActivityContent() {
         {step === 1 && (
           <>
             {categoryType && AI_SUGGESTIONS[categoryType] && (
-              <div className="wiz-ai-badge">✨ AI-suggested plan for {categoryType.replace("_", " ")}</div>
+              <div className="wiz-ai-badge"><Sparkles size={14} /> AI-suggested plan for {categoryType.replace("_", " ")}</div>
             )}
 
             {categoryType === "hobby" && (
@@ -512,10 +513,10 @@ function CreateActivityContent() {
                         <h4 className="place-slide-name">{place.name}</h4>
                         <div className="place-slide-meta">
                           <span className="place-slide-badge">{place.opening_hours}</span>
-                          <span className="place-slide-rating">⭐ {place.rating}</span>
+                          <span className="place-slide-rating" style={{ display: "flex", alignItems: "center", gap: "4px" }}><Star size={12} fill="currentColor" /> {place.rating}</span>
                         </div>
-                        <div className="place-slide-location">
-                          📍 {place.location}
+                        <div className="place-slide-location" style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                          <MapPin size={12} /> {place.location}
                         </div>
                       </div>
                     </div>
@@ -563,7 +564,7 @@ function CreateActivityContent() {
               <label className="wiz-label">Cover Photo (Optional)</label>
               <div style={{ border: "2px dashed rgba(255,255,255,0.1)", borderRadius: 16, padding: 24, textAlign: "center", position: "relative", cursor: "pointer", background: "rgba(255,255,255,0.02)" }}>
                 <input type="file" accept="image/*" style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", zIndex: 10 }} onChange={e => setBanner(e.target.files?.[0] || null)} />
-                <div style={{ fontSize: 28, marginBottom: 4 }}>🖼️</div>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><ImagePlus size={32} color="rgba(255,255,255,0.8)" /></div>
                 <div style={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}>{banner ? banner.name : "Click to upload"}</div>
               </div>
             </div>
@@ -573,12 +574,12 @@ function CreateActivityContent() {
                 <label className="wiz-label">Visibility</label>
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <div onClick={() => setIsPublic(false)} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: `1px solid ${!isPublic ? 'rgba(192,132,252,0.8)' : 'rgba(255,255,255,0.1)'}`, background: !isPublic ? 'rgba(192,132,252,0.1)' : 'rgba(255,255,255,0.03)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.3s' }}>
-                    <div style={{ fontSize: '20px', marginBottom: '4px' }}>🔒</div>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px', color: !isPublic ? '#c084fc' : 'rgba(255,255,255,0.5)' }}><Lock size={24} /></div>
                     <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff' }}>Private</div>
                     <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>Invite only</div>
                   </div>
                   <div onClick={() => setIsPublic(true)} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: `1px solid ${isPublic ? 'rgba(52,211,153,0.8)' : 'rgba(255,255,255,0.1)'}`, background: isPublic ? 'rgba(52,211,153,0.1)' : 'rgba(255,255,255,0.03)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.3s' }}>
-                    <div style={{ fontSize: '20px', marginBottom: '4px' }}>🌍</div>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px', color: isPublic ? '#34d399' : 'rgba(255,255,255,0.5)' }}><Globe size={24} /></div>
                     <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff' }}>Public</div>
                     <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>Hop into random</div>
                   </div>
@@ -648,14 +649,14 @@ function CreateActivityContent() {
         {step === 3 && (
           <>
             <div style={{ textAlign: "center", padding: "40px 0" }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>💬</div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 24, color: "#c084fc" }}><MessageSquare size={56} /></div>
               <h3 style={{ color: "#fff", fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Discuss & Suggest Changes</h3>
               <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, maxWidth: 360, margin: "0 auto 32px", lineHeight: 1.6 }}>
                 Head to your plan's page to discuss with friends, suggest changes, vote on ideas, and finalize the details together.
               </p>
               <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-                <button className="wiz-btn" style={{ width: "auto", padding: "14px 32px" }} onClick={goToActivity}>
-                  Open Plan Page 💬
+                <button className="wiz-btn" style={{ width: "auto", padding: "14px 32px", display: "flex", alignItems: "center", gap: "8px" }} onClick={goToActivity}>
+                  <MessageSquare size={18} /> Open Plan Page
                 </button>
               </div>
             </div>

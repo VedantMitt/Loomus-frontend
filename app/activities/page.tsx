@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import NebulaBackground from "@/components/NebulaBackground";
 import HobbyAnimatedBg from "@/components/HobbyAnimatedBg";
-import { 
-  Zap, Compass, ClipboardList, Flame, Palette, Globe, MapPin, 
+import {
+  Zap, Compass, ClipboardList, Flame, Palette, Globe, MapPin,
   Clock, Calendar, Moon, Edit3, Mail, Trash2, LogOut,
   Target, Flag, Gamepad2, Music, Coffee, Film, Luggage, Car, Building2,
   Tv, BookOpen, Utensils, Dumbbell, Mic, Plus
@@ -928,7 +928,7 @@ export default function ActivitiesPage() {
               className={`exp-tab ${activeTab === "discover" ? "active" : ""}`}
               onClick={() => setActiveTab("discover")}
             >
-              <><Zap className="w-4 h-4 inline mr-2" /> Start a Loom</>
+              <><Zap className="w-4 h-4 inline mr-2" /> Discover</>
             </button>
             <button
               className={`exp-tab ${activeTab === "my_plans" ? "active" : ""}`}
