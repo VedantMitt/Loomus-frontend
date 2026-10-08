@@ -427,18 +427,28 @@ export default function ScrapbookStoryPage() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto p-4 md:p-8 relative z-10 pb-32">
-        {submissions.length === 0 ? (
-          <div className="text-center py-20 text-gray-500">
-            <div className="text-4xl mb-4">📖</div>
-            <p>This chapter is empty.</p>
-          </div>
-        ) : (
-          <div className="relative">
-            {/* Connection Line */}
-            <div className="absolute left-[27px] top-4 bottom-4 w-0.5 bg-gradient-to-b from-pink-500/50 via-purple-500/50 to-transparent z-0"></div>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600&display=swap');
+        .polaroid-text { font-family: 'Caveat', cursive; font-size: 1.3rem; color: #333; }
+      `}</style>
+      
+      <div className="max-w-2xl mx-auto relative z-10 pb-32 md:mt-8 mt-4">
+        {/* Scrapbook Pages Background */}
+        <div className="absolute -inset-2 md:-inset-8 bg-[#2a2622] shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-[#4a433a] rounded-sm pointer-events-none transform -rotate-[1deg]" style={{ backgroundImage: `url('https://www.transparenttextures.com/patterns/handmade-paper.png')` }}></div>
+        <div className="absolute -inset-2 md:-inset-8 bg-[#211d1a] shadow-xl border border-[#3a332d] rounded-sm pointer-events-none transform rotate-[0.5deg]" style={{ backgroundImage: `url('https://www.transparenttextures.com/patterns/handmade-paper.png')` }}></div>
+        
+        <div className="relative p-4 md:p-8 z-10">
+          {submissions.length === 0 ? (
+            <div className="text-center py-20 text-gray-500">
+              <div className="text-4xl mb-4">📖</div>
+              <p>This chapter is empty.</p>
+            </div>
+          ) : (
+            <div className="relative">
+              {/* Connection Line */}
+              <div className="absolute left-[27px] top-4 bottom-4 w-0.5 bg-gradient-to-b from-pink-500/50 via-purple-500/50 to-transparent z-0 opacity-60"></div>
 
-            <div className="space-y-12">
+              <div className="space-y-16">
               {submissions.map((s, i) => {
                 let meta: any = null;
                 try { if (s.description && s.description.startsWith('{')) meta = JSON.parse(s.description); } catch(e) {}
@@ -500,30 +510,36 @@ export default function ScrapbookStoryPage() {
                         )}
                       </div>
                       
-                      <div className={`p-1 rounded-2xl transition-all duration-300 ${isNote ? 'bg-white/5 border border-white/10 p-4 hover:bg-white/10' : 'hover:scale-[1.02]'}`}>
+                      <div className={`transition-all duration-300 pl-2`}>
                         {isNote ? (
-                          <p className="text-sm text-gray-200 leading-relaxed font-medium">
-                            {meta?.note}
-                          </p>
+                          <div className={`relative bg-[#fdfbf7] p-6 pb-8 shadow-xl transition-transform duration-300 hover:scale-105 hover:z-30 text-gray-800 ${i % 2 === 0 ? 'rotate-[-2deg]' : 'rotate-[2deg]'}`}>
+                            <p className="text-lg leading-relaxed font-medium polaroid-text">
+                              {meta?.note}
+                            </p>
+                            {/* Tape Effect */}
+                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-6 bg-white/40 shadow-sm backdrop-blur-sm z-20" style={{ transform: `rotate(${i % 2 === 0 ? '3deg' : '-3deg'})` }}></div>
+                          </div>
                         ) : (
                           <div 
-                            className="relative rounded-xl overflow-hidden border border-white/10"
-                            style={meta?.source === 'gallery' ? { boxShadow: '0 0 35px rgba(80, 125, 42, 0.8)' } : meta?.source === 'camera' ? { boxShadow: '0 0 35px rgba(239, 68, 68, 0.8)' } : { boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' }}
+                            className={`relative bg-[#fdfbf7] p-3 pb-12 rounded-sm shadow-2xl transition-transform duration-300 hover:scale-105 hover:z-30 ${i % 2 === 0 ? 'rotate-[-3deg]' : 'rotate-[3deg]'}`}
+                            style={meta?.source === 'gallery' ? { boxShadow: '0 15px 35px rgba(80, 125, 42, 0.2)' } : meta?.source === 'camera' ? { boxShadow: '0 15px 35px rgba(239, 68, 68, 0.2)' } : { boxShadow: '0 15px 30px rgba(0, 0, 0, 0.5)' }}
                           >
-                            <img src={s.content_url.startsWith('/uploads') ? `${API}${s.content_url}` : s.content_url} className="w-full max-h-[500px] object-cover" alt="Memory" />
+                            <img src={s.content_url.startsWith('/uploads') ? `${API}${s.content_url}` : s.content_url} className="w-full max-h-[400px] object-cover rounded-sm border border-black/5" alt="Memory" />
                             {myUserId === activity.host_id && (
                               <button 
                                 onClick={() => handleSetCover(s.content_url)}
-                                className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 text-xs font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="absolute top-5 right-5 bg-black/60 hover:bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 text-xs font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity"
                               >
                                 Set as Cover
                               </button>
                             )}
                             {meta?.location && (
-                              <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
-                                <span className="text-xs font-bold text-pink-300">📍 {meta.location}</span>
+                              <div className="absolute bottom-3 left-0 w-full text-center">
+                                <span className="polaroid-text">📍 {meta.location}</span>
                               </div>
                             )}
+                            {/* Tape Effect */}
+                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-24 h-8 bg-white/30 shadow-sm backdrop-blur-md z-20" style={{ transform: `rotate(${i % 2 === 0 ? '2deg' : '-2deg'})` }}></div>
                           </div>
                         )}
                       </div>
